@@ -210,6 +210,49 @@ body {
     border-radius: var(--border-radius);
 }
 
+.note-content {
+    /* Basic styling for rendered markdown */
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+
+.note-content p:last-child {
+    margin-bottom: 0;
+}
+
+.note-content ul,
+.note-content ol {
+    padding-left: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.note-content pre {
+    background-color: var(--muted-border-color);
+    padding: 0.75em;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    font-size: 0.9em;
+}
+
+.note-content code {
+    font-family: var(--font-mono);
+    background-color: var(--muted-border-color);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+
+.note-content pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.note-content blockquote {
+    border-left: 4px solid var(--muted-border-color);
+    padding-left: 1em;
+    margin-left: 0;
+    color: var(--muted-color);
+}
+
 .note-tags .tag {
     display: inline-block;
     background-color: var(--muted-border-color);

@@ -91,7 +91,6 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
-                noteCard.appendChild(noteTitle);
 
                 if (note.tags && note.tags.length > 0) {
                     const tagsContainer = document.createElement('div');
@@ -107,8 +106,11 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteHeader.appendChild(noteTitle);
                 noteHeader.appendChild(deleteNoteButton);
                 noteCard.appendChild(noteHeader);
-                const noteContent = document.createElement('p');
-                noteContent.textContent = note.content;
+                const noteContent = document.createElement('div');
+                noteContent.className = 'note-content';
+                // Use the 'marked' library to parse markdown content to HTML.
+                // Fallback to textContent if the library isn't loaded.
+                noteContent.innerHTML = window.marked ? window.marked.parse(note.content || '') : note.content;
                 noteCard.appendChild(noteContent);
 
                 notesList.appendChild(noteCard);

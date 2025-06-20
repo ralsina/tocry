@@ -1,38 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TODO App</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link to the external CSS file -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Link to the external CSS file -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
     <header class="page-header">
-        <div class="container">
-            <nav>
-                <ul>
-                    <li><h1>TODO</h1></li>
-                </ul>
-                <ul>
-                    <li><input type="search" id="search" name="search" placeholder="Search..."></li>
-                    <li><button aria-label="Add new item">+</button></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav>
+          <ul>
+            <li><h1>TODO</h1></li>
+          </ul>
+          <ul>
+            <li>
+              <input
+                type="search"
+                id="search"
+                name="search"
+                placeholder="Search..."
+              />
+            </li>
+            <li><button aria-label="Add new item">+</button></li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="main-content container">
-        <div id="lanes-container" class="grid">
-            <!-- Lanes will be dynamically inserted here -->
-        </div>
+      <div id="lanes-container" class="grid">
+        <!-- Lanes will be dynamically inserted here -->
+      </div>
     </main>
 
     <footer class="page-footer">
-        <div class="container">
-            <small>TODO-more to write later</small>
-        </div>
+      <div class="container">
+        <small>TODO-more to write later</small>
+      </div>
     </footer>
     <script type="module" src="app.js" defer></script>
-</body>
+  </body>
 </html>
