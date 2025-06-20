@@ -90,7 +90,7 @@ module ToCry
       # Find all markdown symlinks, sort them to maintain order
       symlink_paths = Dir.glob(File.join(folder, "*.md")).sort
 
-      notes = symlink_paths.map do |symlink_path|
+      notes = symlink_paths.compact_map do |symlink_path|
         begin
           next nil unless File.symlink?(symlink_path)
           target_path = File.readlink(symlink_path)
@@ -100,7 +100,7 @@ module ToCry
           Log.warn(exception: ex) { "Skipping note: Failed to load from symlink '#{symlink_path}'" }
           nil
         end
-      end.compact
+      end
 
       Lane.new(name: lane_name, notes: notes)
     end
