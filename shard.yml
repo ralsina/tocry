@@ -1,0 +1,28 @@
+name: tocry
+version: 0.1.0
+
+dependencies:
+  baked_file_system:
+    github: ralsina/baked_file_system
+    branch: master
+  docopt:
+    github: ralsina/docopt.cr
+  html_builder:
+    github: crystal-lang/html_builder
+  kemal:
+    github: kemalcr/kemal
+  kemal-basic-auth:
+    github: kemalcr/kemal-basic-auth
+  baked_file_handler:
+    github: ralsina/baked_file_handler
+
+authors:
+  - Roberto Alsina <roberto.alsina@gmail.com>
+
+targets:
+  tocry:
+    main: src/main.cr
+
+crystal: '>= 1.16.0'
+
+license: MIT
