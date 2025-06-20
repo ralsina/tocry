@@ -22,8 +22,10 @@ body {
     overflow-y: auto;
     /* Add vertical scroll if content overflows */
     overflow-x: auto;
-    /* Add horizontal scroll if content overflows */
-    /* Pico's .container class will be applied directly for padding */
+    /* Add horizontal scroll if content overflows */    
+    /* Override Pico's .container to use more width */
+    max-width: 95%;
+    padding: var(--spacing);
 }
 
 /* Custom class for the footer section */
@@ -198,6 +200,8 @@ body {
     /* Make the list fill the available space in the lane */
     min-height: 50px;
     /* Ensure even an empty list has a drop target area */
+    overflow-y: auto;
+    /* Add vertical scroll when content overflows */
 }
 
 .note-card--dragging {

@@ -171,6 +171,62 @@ async function handleEditNoteSubmit(event) {
     }
 }
 
+// --- Drag and Drop Auto-Scrolling ---
+
+let scrollInterval = null;
+const SCROLL_SPEED = 15; // Speed of the scroll in pixels
+const EDGE_ZONE_WIDTH = 120; // Width of the edge zone in pixels that triggers scrolling
+
+/**
+ * Checks the mouse position during a drag event and scrolls the main container
+ * horizontally if the cursor is near the left or right edge of the viewport.
+ * @param {DragEvent} event The dragover event.
+ */
+function handleDragAutoScroll(event) {
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+
+    const x = event.clientX;
+    const screenWidth = window.innerWidth;
+
+    // Check if we are in the right edge zone
+    if (x > screenWidth - EDGE_ZONE_WIDTH) {
+        // If not already scrolling right, start a new scroll interval
+        if (!scrollInterval || (scrollInterval && scrollInterval.direction !== 'right')) {
+            stopDragAutoScroll(); // Stop any left scroll
+            scrollInterval = {
+                id: setInterval(() => { mainContent.scrollLeft += SCROLL_SPEED; }, 20), // ~50fps
+                direction: 'right'
+            };
+        }
+    }
+    // Check if we are in the left edge zone
+    else if (x < EDGE_ZONE_WIDTH) {
+        // If not already scrolling left, start a new scroll interval
+        if (!scrollInterval || (scrollInterval && scrollInterval.direction !== 'left')) {
+            stopDragAutoScroll(); // Stop any right scroll
+            scrollInterval = {
+                id: setInterval(() => { mainContent.scrollLeft -= SCROLL_SPEED; }, 20),
+                direction: 'left'
+            };
+        }
+    }
+    // If we are not in an edge zone, stop any active scrolling
+    else {
+        stopDragAutoScroll();
+    }
+}
+
+/**
+ * Stops any active horizontal auto-scrolling.
+ */
+function stopDragAutoScroll() {
+    if (scrollInterval) {
+        clearInterval(scrollInterval.id);
+        scrollInterval = null;
+    }
+}
+
 // --- Drag and Drop Handlers for Lanes ---
 
 function handleLaneDragStart(event) {
@@ -273,6 +329,9 @@ function handleNoteDragStart(event) {
     event.dataTransfer.setData('text/plain', noteCard.dataset.noteId);
     event.dataTransfer.effectAllowed = 'move';
 
+    // Add a global listener to handle auto-scrolling when dragging near the viewport edges
+    document.addEventListener('dragover', handleDragAutoScroll);
+
     setTimeout(() => {
         noteCard.classList.add('note-card--dragging');
     }, 0);
@@ -358,6 +417,10 @@ async function handleNoteDrop(event) {
 function handleNoteDragEnd(event) {
     event.currentTarget.classList.remove('note-card--dragging');
     document.querySelectorAll('.notes-list--drag-over').forEach(el => el.classList.remove('notes-list--drag-over'));
+
+    // Clean up the auto-scroll listener and stop any active scrolling
+    document.removeEventListener('dragover', handleDragAutoScroll);
+    stopDragAutoScroll();
 }
 
 const noteDragAndDropCallbacks = {
