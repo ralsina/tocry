@@ -201,7 +201,10 @@ body {
     margin-left: 5px;
     border-radius: 3px;
     cursor: grab;
-    /* Pico's <article> styling will apply, you can override here */
+    /* --- New styles for search animation --- */
+    transition: all 0.35s ease-in-out;
+    max-height: 1000px; /* Generous max-height for transition */
+    overflow: hidden; /* Crucial for the max-height animation */
 }
 
 .notes-list {
@@ -211,6 +214,16 @@ body {
     /* Ensure even an empty list has a drop target area */
     overflow-y: auto;
     /* Add vertical scroll when content overflows */
+}
+
+.note-card--hidden {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0 !important; /* Use important to ensure override */
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
 }
 
 .note-card--dragging {

@@ -431,11 +431,41 @@ const noteDragAndDropCallbacks = {
     dragend: handleNoteDragEnd,
 };
 
+// --- Search Functionality ---
+
+function handleSearchInput(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const allNotes = document.querySelectorAll('.note-card');
+
+    allNotes.forEach(noteCard => {
+        const titleElement = noteCard.querySelector('.note-card-header h4');
+        const contentElement = noteCard.querySelector('.note-content');
+        const tagElements = noteCard.querySelectorAll('.note-tags .tag');
+
+        const title = titleElement ? titleElement.textContent.toLowerCase() : '';
+        const content = contentElement ? contentElement.textContent.toLowerCase() : '';
+        const tags = [...tagElements].map(tag => tag.textContent.toLowerCase()).join(' ');
+
+        const searchableText = `${title} ${content} ${tags}`;
+
+        if (searchableText.includes(searchTerm)) {
+            noteCard.classList.remove('note-card--hidden');
+        } else {
+            noteCard.classList.add('note-card--hidden');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeLanes();
     const addLaneButton = document.querySelector('button[aria-label="Add new item"]');
     if (addLaneButton) {
         addLaneButton.addEventListener('click', handleAddLaneButtonClick);
+    }
+
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearchInput);
     }
 
     // Wire up the edit modal's form and buttons
