@@ -75,13 +75,22 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteCard.dataset.noteId = note.id;
                 noteCard.dataset.laneName = lane.name;
 
-                // Create the <details> element to make the note collapsable
-                const detailsElement = document.createElement('details');
-                // By default, notes are collapsed. If you want them open, add detailsElement.open = true;
-
-                // Create the <summary> element, which will contain the note header (title, tags, delete button)
-                const summaryElement = document.createElement('summary');
-                summaryElement.className = 'note-card-summary'; // Add a class for potential styling
+                // Centralized event handling on the note card
+                noteCard.addEventListener('dragstart', dragAndDropCallbacks.note.dragstart);
+                noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
+                noteCard.addEventListener('dblclick', (e) => {
+                    // Prevent editing when clicking a button.
+                    if (e.target.closest('button')) {
+                        return;
+                    }
+                    // Prevent the default dblclick action on a summary (which is to toggle)
+                    if (e.target.closest('summary')) {
+                        e.preventDefault();
+                    }
+                    if (onEditNoteCallback) {
+                        onEditNoteCallback(note);
+                    }
+                });
 
                 const noteHeader = document.createElement('div');
                 noteHeader.className = 'note-card-header';
@@ -97,20 +106,6 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                         onDeleteNoteCallback(note.id, note.title);
                     }
                 });
-                deleteNoteButton.addEventListener('click', () => {
-                    if (onDeleteNoteCallback) {
-                        onDeleteNoteCallback(note.id, note.title);
-                    }
-                });
-                // Add double-click listener to open the edit modal
-                detailsElement.addEventListener('dblclick', (e) => {
-                    e.stopPropagation(); // Prevent default details toggle on dblclick
-                    if (onEditNoteCallback) {
-                        onEditNoteCallback(note);
-                    }
-                });
-                noteCard.addEventListener('dragstart', dragAndDropCallbacks.note.dragstart);
-                noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
 
@@ -129,21 +124,29 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 }
                 noteHeader.appendChild(deleteNoteButton);
 
-                // Append the noteHeader to the summary
-                summaryElement.appendChild(noteHeader);
+                const hasContent = note.content && note.content.trim() !== '';
 
-                const noteContent = document.createElement('div');
-                noteContent.className = 'note-content';
-                // Use the 'marked' library to parse markdown content to HTML.
-                // Fallback to textContent if the library isn't loaded.
-                noteContent.innerHTML = window.marked ? window.marked.parse(note.content || '') : note.content;
+                if (hasContent) {
+                    const detailsElement = document.createElement('details');
+                    const summaryElement = document.createElement('summary');
+                    summaryElement.className = 'note-card-summary';
+                    summaryElement.appendChild(noteHeader);
 
-                // Append summary and content to the details element
-                detailsElement.appendChild(summaryElement);
-                detailsElement.appendChild(noteContent);
+                    const noteContent = document.createElement('div');
+                    noteContent.className = 'note-content';
+                    // Use the 'marked' library to parse markdown content to HTML.
+                    noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content;
 
-                // Append the details element to the noteCard
-                noteCard.appendChild(detailsElement);
+                    detailsElement.appendChild(summaryElement);
+                    detailsElement.appendChild(noteContent);
+                    noteCard.appendChild(detailsElement);
+                } else {
+                    // No content, not collapsable. Wrap the header in a div to provide consistent padding.
+                    const headerWrapper = document.createElement('div');
+                    headerWrapper.className = 'note-card-summary-placeholder';
+                    headerWrapper.appendChild(noteHeader);
+                    noteCard.appendChild(headerWrapper);
+                }
 
                 notesList.appendChild(noteCard);
             });

@@ -164,6 +164,11 @@ body {
     /* Space between header and content */
 }
 
+/* A placeholder for the summary element on non-collapsable notes to maintain consistent padding. */
+.note-card-summary-placeholder {
+    padding: var(--spacing);
+}
+
 .note-card-header h4 {
     margin: 0;
     /* Remove default h4 margin */
@@ -191,7 +196,10 @@ body {
 }
 
 .note-card {
-    margin-bottom: var(--spacing);
+    margin-bottom: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
+    border-radius: 3px;
     cursor: grab;
     /* Pico's <article> styling will apply, you can override here */
 }
