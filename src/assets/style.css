@@ -52,6 +52,8 @@ html, body {
     border: 2px solid #add8e6; /* Light blue border */
     border-radius: 6px; /* Explicit rounded corners */
     padding: 15px; /* Explicit padding value for testing */
+    flex-grow: 1; /* Allow lanes to grow and fill available space */
+    flex-shrink: 0; /* Prevent lanes from shrinking below their min-width */
     background-color: var(--card-background-color); /* Add a background color to make the lane visible */
 }
 
