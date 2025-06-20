@@ -40,7 +40,13 @@ end
 # { "name": "New Lane Name" }
 post "/lane" do |env|
   begin
-    json_body = env.request.body.not_nil!.gets_to_end
+    body = env.request.body
+    if body.nil?
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      next {error: "Request body is missing."}.to_json
+    end
+    json_body = body.gets_to_end
     payload = NewLanePayload.from_json(json_body)
 
     requested_name = payload.name
@@ -87,7 +93,13 @@ end
 put "/lane/:name" do |env|
   begin
     current_lane_name = env.params.url["name"].as(String)
-    json_body = env.request.body.not_nil!.gets_to_end
+    body = env.request.body
+    if body.nil?
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      next {error: "Request body is missing."}.to_json
+    end
+    json_body = body.gets_to_end
 
     payload = UpdateLanePayload.from_json(json_body)
     new_lane_data = payload.lane
@@ -140,7 +152,13 @@ end
 # }
 post "/note" do |env|
   begin
-    json_body = env.request.body.not_nil!.gets_to_end
+    body = env.request.body
+    if body.nil?
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      next {error: "Request body is missing."}.to_json
+    end
+    json_body = body.gets_to_end
     payload = NewNotePayload.from_json(json_body)
 
     target_lane_name = payload.lane_name
@@ -188,7 +206,13 @@ end
 put "/note/:id" do |env|
   begin
     note_id = env.params.url["id"].as(String)
-    json_body = env.request.body.not_nil!.gets_to_end
+    body = env.request.body
+    if body.nil?
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      next {error: "Request body is missing."}.to_json
+    end
+    json_body = body.gets_to_end
     payload = UpdateNotePayload.from_json(json_body)
     new_note_data = payload.note
 
