@@ -1,6 +1,6 @@
-require "spec"
-require "../src/note" # Note must be defined before Lane as Lane uses Note
-require "../src/lane" # The class we are testing
+require "./spec_helper"
+require "json" # Required for JSON.parse
+require "file_utils"
 
 describe ToCry::Lane do
   describe "JSON Serialization" do
@@ -68,6 +68,55 @@ describe ToCry::Lane do
       note_json["title"].as_s.should eq("Structure Test Note") # Note constructor normalizes title
       note_json["tags"].as_a.map(&.as_s).should eq(["struct"])
       note_json["content"].as_s.should eq("Structure content")
+    end
+  end
+
+  describe "File Persistence" do
+    data_dir = "data" 
+    notes_dir = File.join(data_dir, ".notes")
+
+    before_each do
+      FileUtils.mkdir_p(notes_dir)
+    end
+
+    after_each do
+      FileUtils.rm_rf(data_dir) if Dir.exists?(data_dir)
+    end
+
+    it "saves a lane and can be loaded back (round-trip)" do
+      # 1. Create an original lane and add some notes to it
+      original_lane = ToCry::Lane.new("To Do")
+      note1 = original_lane.note_add("First Task", ["urgent", "testing"], "Content for the first task.")
+      note2 = original_lane.note_add("Second Task", ["testing"], "Content for the second task.")
+
+      # 2. Save the lane to the filesystem at position 0
+      original_lane.save(0)
+
+      # 3. Determine the path where the lane was saved and load it back
+      lane_dir_path = File.join(data_dir, "0000_To Do")
+      # Sanity check that the directory was actually created
+      Dir.exists?(lane_dir_path).should be_true
+
+      loaded_lane = ToCry::Lane.load(lane_dir_path)
+
+      # 4. Assert that the loaded lane has the same properties as the original
+      loaded_lane.name.should eq(original_lane.name)
+      loaded_lane.notes.size.should eq(2)
+
+      # 5. Assert that the notes within the loaded lane are identical to the original notes
+      loaded_note1 = loaded_lane.notes[0]
+      loaded_note2 = loaded_lane.notes[1]
+
+      # These are backwards because notes are inserted at the top
+      loaded_note1.id.should eq(note2.id)
+      loaded_note1.title.should eq(note2.title)
+      loaded_note1.tags.should eq(note2.tags)
+      loaded_note1.content.should eq(note2.content)
+
+      loaded_note2.id.should eq(note1.id)
+      loaded_note2.title.should eq(note1.title)
+      loaded_note2.tags.should eq(note1.tags)
+      loaded_note2.content.should eq(note1.content)
     end
   end
 end

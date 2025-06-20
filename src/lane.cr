@@ -62,5 +62,47 @@ module ToCry
       Log.error(exception: ex) { "Error saving lane '#{self.name}' (directory: #{lane_directory_name}) at #{lane_dir}" }
       raise ex # Re-raise the exception after logging
     end
+
+    # Loads a Lane from a directory on the filesystem.
+    #
+    # The directory name is expected to be in the format "NNNN_lane_name".
+    # It finds all note symlinks within the directory, which are expected
+    # to be in the format "MMMM_note_slug.md", sorted by MMMM.
+    # It follows each symlink to load the corresponding Note.
+    #
+    # Returns a new `Lane` instance.
+    # Raises `RuntimeError` if the directory doesn't exist or has an invalid name format.
+    def self.load(folder : String)
+      # TODO: normalize numbers so notes are all consecutive and whatnot like lanes
+      # in Board.load
+      unless Dir.exists?(folder)
+        raise "Lane directory not found: #{folder}"
+      end
+
+      folder_basename = File.basename(folder)
+      # Regex to extract lane name from "NNNN_lane_name"
+      match = folder_basename.match(/^\d{4,}_(.*)$/)
+      unless match
+        raise "Invalid lane folder name format: #{folder_basename}. Expected 'NNNN_lane_name'."
+      end
+      lane_name = match[1]
+
+      # Find all markdown symlinks, sort them to maintain order
+      symlink_paths = Dir.glob(File.join(folder, "*.md")).sort
+
+      notes = symlink_paths.map do |symlink_path|
+        begin
+          next nil unless File.symlink?(symlink_path)
+          target_path = File.readlink(symlink_path)
+          note_id = File.basename(target_path, ".md")
+          Note.load(note_id)
+        rescue ex
+          Log.warn(exception: ex) { "Skipping note: Failed to load from symlink '#{symlink_path}'" }
+          nil
+        end
+      end.compact
+
+      Lane.new(name: lane_name, notes: notes)
+    end
   end
 end
