@@ -13,6 +13,13 @@ struct NewLanePayload
   property name : String
 end
 
+# Helper struct for parsing the PUT /lane/:name request payload
+struct UpdateLanePayload
+  include JSON::Serializable
+  property lane : ToCry::Lane # The updated lane data (including potentially new name)
+  property position : UInt64  # The desired 0-based index in the board's lanes array
+end
+
 # API Endpoint to add a new lane
 # Expects a JSON body with a lane name, e.g.:
 # { "name": "New Lane Name" }
@@ -50,6 +57,57 @@ post "/lane" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing POST /lane: #{ex.message}" }
+    {error: "An unexpected error occurred."}.to_json
+  end
+end
+
+# API Endpoint to update a lane's name and/or position
+# Expects the current lane name in the URL path, e.g.:
+# PUT /lane/Old%20Lane%20Name
+# Expects a JSON body like:
+# { "lane": { "name": "New Lane Name", "notes": [...] }, "position": 1 }
+# Note: This implementation primarily uses the 'name' and 'position' from the payload.
+# Updating notes via this endpoint is not implemented here.
+put "/lane/:name" do |env|
+  begin
+    current_lane_name = env.params.url["name"].as(String)
+    json_body = env.request.body.not_nil!.gets_to_end
+
+    payload = UpdateLanePayload.from_json(json_body)
+    new_lane_data = payload.lane
+    new_position = payload.position
+
+    # Find the existing lane by its current name
+    existing_lane = ToCry::BOARD.lanes.find { |lane| lane.name == current_lane_name }
+
+    unless existing_lane
+      env.response.status_code = 404 # Not Found
+      env.response.content_type = "application/json"
+      next {error: "Lane with name '#{current_lane_name}' not found."}.to_json
+    end
+
+
+    # Update the lane's name if it has changed
+    existing_lane.name = new_lane_data.name
+
+    # Move the lane to the new position
+    # Ensure the new position is within valid bounds
+    actual_new_position = new_position.clamp(0, ToCry::BOARD.lanes.size - 1)
+    ToCry::BOARD.lanes.delete(existing_lane)
+    ToCry::BOARD.lanes.insert(actual_new_position, existing_lane)
+
+    ToCry::BOARD.save # Save the board to persist changes (renaming and reordering directories)
+
+    env.response.status_code = 200 # OK
+    env.response.content_type = "application/json"
+    existing_lane.to_json # Return the updated lane data
+  rescue ex : JSON::ParseException
+    env.response.status_code = 400 # Bad Request
+    env.response.content_type = "application/json"
+    {error: "Invalid JSON format: #{ex.message}"}.to_json
+  rescue ex
+    env.response.status_code = 500 # Internal Server Error
+    ToCry::Log.error(exception: ex) { "Error processing PUT /lane/:name for lane '#{env.params.url["name"]}'" }
     {error: "An unexpected error occurred."}.to_json
   end
 end

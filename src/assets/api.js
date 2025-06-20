@@ -44,3 +44,21 @@ export async function deleteLane(laneName) {
         throw error; // Re-throw the error for the caller to handle
     }
 }
+
+export async function updateLanePosition(laneName, newPosition) {
+    try {
+        const encodedLaneName = encodeURIComponent(laneName);
+        const response = await fetch(`${API_BASE_URL}/lane/${encodedLaneName}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // The backend expects a Lane object and a position. We only care about the name and position here.
+            body: JSON.stringify({ lane: { name: laneName, notes: [] }, position: newPosition })
+        });
+        return response; // Return the full response object for the caller to handle
+    } catch (error) {
+        console.error(`Error updating lane "${laneName}" position to ${newPosition}:`, error);
+        throw error; // Re-throw the error for the caller to handle
+    }
+}

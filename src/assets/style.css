@@ -57,6 +57,16 @@ html, body {
     background-color: var(--card-background-color); /* Add a background color to make the lane visible */
 }
 
+/* Drag and Drop styles for lanes */
+.lane--dragging {
+    opacity: 0.5; /* Make the dragged lane semi-transparent */
+    border: 2px dashed var(--primary); /* Add a dashed border */
+}
+
+.lane--drag-over {
+    box-shadow: 0 0 0 3px var(--primary); /* Highlight the drop target */
+}
+
 .lane-header {
     display: flex;
     justify-content: space-between;

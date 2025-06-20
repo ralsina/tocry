@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback) {
+export function renderLanes(lanes, onDeleteLaneCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -15,7 +15,15 @@ export function renderLanes(lanes, onDeleteLaneCallback) {
         // Create lane column
         const laneColumn = document.createElement('div');
         laneColumn.className = 'lane'; // Add the 'lane' class for styling
+        laneColumn.draggable = true; // Make the lane draggable
+        laneColumn.dataset.laneName = lane.name; // Store the lane name for drag/drop operations
 
+        // Attach drag and drop event listeners
+        laneColumn.addEventListener('dragstart', dragAndDropCallbacks.dragstart);
+        laneColumn.addEventListener('dragover', dragAndDropCallbacks.dragover);
+        laneColumn.addEventListener('dragleave', dragAndDropCallbacks.dragleave);
+        laneColumn.addEventListener('drop', dragAndDropCallbacks.drop);
+        laneColumn.addEventListener('dragend', dragAndDropCallbacks.dragend);
         const laneHeader = document.createElement('div');
         laneHeader.className = 'lane-header';
 
