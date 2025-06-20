@@ -143,8 +143,6 @@ post "/note" do |env|
     json_body = env.request.body.not_nil!.gets_to_end
     payload = NewNotePayload.from_json(json_body)
 
-    pp! payload
-
     target_lane_name = payload.lane_name
     note_data = payload.note
 
@@ -236,7 +234,7 @@ put "/note/:id" do |env|
       structure_changed = true
       ToCry::Log.info { "Note '#{existing_note.title}' moved from '#{current_lane.name}' to '#{target_lane.name}' at position #{insert_pos}." }
 
-    # Case 2: Re-ordering within the same lane
+      # Case 2: Re-ordering within the same lane
     elsif new_position
       current_position = current_lane.notes.index(existing_note)
       if current_position && current_position != new_position
