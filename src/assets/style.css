@@ -1,5 +1,6 @@
 html,
 body {
+    font-size: 90%;
     height: 100vh;
     /* Use vh for full viewport height */
     margin: 0;
@@ -269,6 +270,18 @@ body {
     font-family: var(--font-mono);
     min-height: 200px;
     resize: vertical;
+}
+
+/* The footer of the modal should have buttons side-by-side on the right */
+#modal-edit-note footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing);
+}
+
+/* Override Pico's default full-width buttons inside the modal footer */
+#modal-edit-note footer button {
+    width: auto;
 }
 
 /* EasyMDE overrides to better fit Pico.css */
