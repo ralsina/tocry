@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -29,6 +29,27 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
 
         const laneTitle = document.createElement('h2');
         laneTitle.textContent = lane.name;
+        laneTitle.contentEditable = true;
+        laneTitle.dataset.originalName = lane.name; // Store original name for comparison
+
+        // Add event listeners for editing the lane title
+        laneTitle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent creating a new line
+                e.target.blur();    // Trigger blur to save the change
+            } else if (e.key === 'Escape') {
+                e.target.textContent = e.target.dataset.originalName; // Revert changes
+                e.target.blur();
+            }
+        });
+
+        laneTitle.addEventListener('blur', (e) => {
+            const newName = e.target.textContent.trim();
+            const oldName = e.target.dataset.originalName;
+            if (onUpdateLaneNameCallback && newName && newName !== oldName) {
+                onUpdateLaneNameCallback(oldName, newName);
+            }
+        });
 
         const addNoteButton = document.createElement('button');
         addNoteButton.className = 'add-note-btn';

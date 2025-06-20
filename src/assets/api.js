@@ -64,6 +64,23 @@ export async function updateLanePosition(laneName, newPosition) {
     }
 }
 
+export async function updateLane(oldName, laneData, position) {
+    try {
+        const encodedOldName = encodeURIComponent(oldName);
+        const response = await fetch(`${API_BASE_URL}/lane/${encodedOldName}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ lane: laneData, position: position })
+        });
+        return response;
+    } catch (error) {
+        console.error(`Error updating lane "${oldName}":`, error);
+        throw error;
+    }
+}
+
 export async function addNote(laneName, title, content = "", tags = []) {
     try {
         const response = await fetch(`${API_BASE_URL}/note`, {

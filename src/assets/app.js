@@ -1,11 +1,11 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote, updateNote, deleteNote } from './api.js';
+import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote } from './api.js';
 import { renderLanes } from './render.js';
 
 async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
@@ -64,6 +64,40 @@ async function handleDeleteLaneRequest(laneName) {
             console.error('Error during delete lane operation:', error);
             alert("An error occurred while trying to delete the lane.");
         }
+    }
+}
+
+// Handler for updating a lane's name. This is more complex because the PUT
+// endpoint requires the full lane object and its current position.
+async function handleUpdateLaneNameRequest(oldName, newName) {
+    const trimmedNewName = newName.trim();
+    if (!trimmedNewName || oldName === trimmedNewName) {
+        return; // No action needed if name is empty or unchanged
+    }
+
+    try {
+        // To use the PUT endpoint for renaming, we need the lane's current
+        // position and its full data object.
+        const allLanes = await fetchLanes();
+        const laneToUpdate = allLanes.find(lane => lane.name === oldName);
+
+        if (!laneToUpdate) {
+            alert(`Error: Could not find lane "${oldName}" to rename.`);
+            return initializeLanes(); // Refresh to be safe
+        }
+
+        const currentPosition = allLanes.indexOf(laneToUpdate);
+        const updatedLaneData = { ...laneToUpdate, name: trimmedNewName };
+
+        const response = await updateLane(oldName, updatedLaneData, currentPosition);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to rename lane: ${errorData.error || response.statusText}`);
+        }
+        await initializeLanes(); // Always re-render to show result or revert optimistic UI change
+    } catch (error) {
+        alert("An error occurred while trying to rename the lane.");
+        await initializeLanes(); // Revert UI
     }
 }
 

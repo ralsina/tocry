@@ -123,6 +123,15 @@ body {
     margin: 0;
     /* Remove default h2 margin to align better */
     font-weight: 500;
+    cursor: text;
+    padding: 0.1em 0.3em;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease-in-out;
+}
+
+.lane-header h2:hover, .lane-header h2:focus {
+    background-color: var(--form-element-background-color);
+    outline: none;
 }
 
 .delete-lane-btn {
