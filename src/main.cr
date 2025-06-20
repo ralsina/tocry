@@ -1,4 +1,5 @@
 require "./tocry"
+require "./endpoints" # Add this line to include your new endpoints file
 require "baked_file_handler"
 require "baked_file_system"
 require "docopt"

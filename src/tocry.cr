@@ -8,6 +8,11 @@ module ToCry
 
   VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
 
+  # The global singleton instance of the Board.
+  # This instance holds the current state of the application's board in memory.
+  # Persistence (loading/saving) is handled by the Board#save method.
+  BOARD = Board.new
+
   class Board
     include JSON::Serializable
 

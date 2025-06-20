@@ -14,7 +14,8 @@ html, body {
 /* Custom class for the main content area */
 .main-content {
     flex-grow: 1; /* Allow main content to grow and fill available space */
-    overflow-y: auto; /* Add scroll if content overflows */
+    overflow-y: auto; /* Add vertical scroll if content overflows */
+    overflow-x: auto; /* Add horizontal scroll if content overflows */
     /* Pico's .container class will be applied directly for padding */
 }
 
@@ -22,8 +23,9 @@ html, body {
 .page-footer {
     flex-shrink: 0; /* Prevent footer from shrinking */
     text-align: center;
-    padding-top: var(--spacing);
-    padding-bottom: var(--spacing);
+    /* Use Pico's container class on the div inside the footer for consistent padding */
+    /* padding-top: var(--spacing); */
+    /* padding-bottom: var(--spacing); */
 }
 
 /* Ensure h1 in nav doesn't have excessive margins */
@@ -31,4 +33,39 @@ html, body {
     margin: 0;
     font-size: 1.25rem; /* Adjust size as needed for nav header */
     line-height: inherit; /* Align with other nav items */
+}
+
+/* Lanes container specific styling if needed, Pico's .grid handles columns */
+#lanes-container {
+    display: flex; /* Override Pico's .grid or establish flex layout */
+    flex-direction: row; /* Lay out lanes horizontally */
+    gap: 20px; /* Explicitly set space between lanes */
+    height: 100%; /* Make the container of lanes use full available vertical space */
+    /* align-items: stretch; is the default for flex containers, making lanes stretch vertically */
+    min-width: max-content; /* Ensure the container is wide enough for all lanes */
+    padding-bottom: var(--spacing); /* Add some padding at the bottom if lanes are tall and scroll */
+}
+
+/* Individual lane styling (each column in the grid) */
+.lane {
+    min-width: 25em; /* Minimum width for the lane */
+    border: 2px solid #add8e6; /* Light blue border */
+    border-radius: 6px; /* Explicit rounded corners */
+    padding: 15px; /* Explicit padding value for testing */
+    background-color: var(--card-background-color); /* Add a background color to make the lane visible */
+}
+
+.note-card {
+    margin-bottom: var(--spacing);
+    /* Pico's <article> styling will apply, you can override here */
+}
+
+.note-tags .tag {
+    display: inline-block;
+    background-color: var(--muted-border-color); /* Example color */
+    padding: 0.25em 0.5em;
+    border-radius: var(--border-radius);
+    font-size: 0.8em;
+    margin-right: 0.5em;
+    margin-bottom: 0.25em;
 }

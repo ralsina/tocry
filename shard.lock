@@ -1,0 +1,38 @@
+version: 2.0
+shards:
+  backtracer:
+    git: https://github.com/sija/backtracer.cr.git
+    version: 1.2.4
+
+  baked_file_handler:
+    git: https://github.com/ralsina/baked_file_handler.git
+    version: 0.1.0+git.commit.80c0a25097d4af2f6536d7503e911f8d8dceb14e
+
+  baked_file_system:
+    git: https://github.com/ralsina/baked_file_system.git
+    version: 0.10.0+git.commit.beb373124c7a235cfb9cd94e36849d8168eaa04b
+
+  docopt:
+    git: https://github.com/ralsina/docopt.cr.git
+    version: 0.2.1
+
+  exception_page:
+    git: https://github.com/crystal-loot/exception_page.git
+    version: 0.5.0
+
+  html_builder:
+    git: https://github.com/crystal-lang/html_builder.git
+    version: 0.2.2
+
+  kemal:
+    git: https://github.com/kemalcr/kemal.git
+    version: 1.7.1
+
+  kemal-basic-auth:
+    git: https://github.com/kemalcr/kemal-basic-auth.git
+    version: 1.0.0
+
+  radix:
+    git: https://github.com/luislavena/radix.git
+    version: 0.4.1
+

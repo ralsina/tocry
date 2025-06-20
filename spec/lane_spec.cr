@@ -14,7 +14,7 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with one note" do
-      note1 = ToCry::Note.new(title_param: "Note 1", tags_param: ["tagA"], content_param: "Content for Note 1")
+      note1 = ToCry::Note.new(title: "Note 1", tags: ["tagA"], content: "Content for Note 1")
       original_lane = ToCry::Lane.new(name: "Lane With One Note", notes: [note1])
 
       json_string = original_lane.to_json
@@ -33,8 +33,8 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with multiple notes" do
-      note1 = ToCry::Note.new(title_param: "Alpha Note", tags_param: ["test", "alpha"], content_param: "Alpha content")
-      note2 = ToCry::Note.new(title_param: "Beta Note", tags_param: ["test", "beta"], content_param: "Beta content")
+      note1 = ToCry::Note.new(title: "Alpha Note", tags: ["test", "alpha"], content: "Alpha content")
+      note2 = ToCry::Note.new(title: "Beta Note", tags: ["test", "beta"], content: "Beta content")
       original_lane = ToCry::Lane.new(name: "Lane With Many Notes", notes: [note1, note2])
 
       json_string = original_lane.to_json
@@ -57,7 +57,7 @@ describe ToCry::Lane do
     end
 
     it "produces JSON with expected structure for a lane with one note" do
-      note1 = ToCry::Note.new(title_param: "Structure Test Note", tags_param: ["struct"], content_param: "Structure content")
+      note1 = ToCry::Note.new(title: "Structure Test Note", tags: ["struct"], content: "Structure content")
       original_lane = ToCry::Lane.new(name: "JSON Structure Lane", notes: [note1])
       parsed_json = JSON.parse(original_lane.to_json)
 

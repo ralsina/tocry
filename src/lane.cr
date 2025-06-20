@@ -13,7 +13,7 @@ module ToCry
     end
 
     def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0) : Note
-      new_note = Note.new(title, tags, content)
+      new_note = Note.new(title: title, tags: tags, content: content) # ID will be auto-generated
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
@@ -55,7 +55,7 @@ module ToCry
         source_note_path = File.join("..", ".notes", "#{note.id}.md") # Relative path for symlink
         symlink_target_path = File.join(lane_dir, symlink_filename)
 
-        FileUtils.symlink(source_note_path, symlink_target_path)
+        File.symlink(source_note_path, symlink_target_path)
         Log.info { "Symlink created for note '#{note.title}' (ID: #{note.id}) from #{source_note_path} to #{symlink_target_path}" }
       end
     rescue ex

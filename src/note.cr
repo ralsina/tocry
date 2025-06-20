@@ -4,6 +4,16 @@ require "uuid"       # For generating UUIDs
 require "yaml"       # For generating YAML frontmatter
 
 module ToCry
+  # Represents the YAML frontmatter structure for a Note.
+  struct FrontMatter
+    include YAML::Serializable
+    property title : String
+    property tags : Array(String) = [] of String # Default to empty array
+
+    def initialize(@title : String, @tags : Array(String) = [] of String)
+    end
+  end
+
   class Note
     include JSON::Serializable
 
@@ -45,8 +55,10 @@ module ToCry
 
       file_path = File.join(notes_dir, "#{self.id}.md")
 
-      frontmatter_data = {"title" => self.title} of String => YAML::Any
-      frontmatter_data["tags"] = self.tags if !self.tags.empty?
+      # Use the new FrontMatter struct for serialization
+      frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags)
+      frontmatter_data = frontmatter_struct.to_yaml
+
       frontmatter_section = "---\n#{frontmatter_data.to_yaml}\n---\n"
 
       File.write(file_path, frontmatter_section + self.content)
