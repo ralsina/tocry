@@ -53,3 +53,22 @@ post "/lane" do |env|
     {error: "An unexpected error occurred."}.to_json
   end
 end
+
+# API Endpoint to delete a lane by name
+# Expects the lane name in the URL path, e.g.:
+# DELETE /lane/My%20Lane%20Name
+delete "/lane/:name" do |env|
+  begin
+    lane_name = env.params.url["name"].as(String)
+    ToCry::BOARD.lane_del(lane_name)
+    env.response.status_code = 200
+    env.response.content_type = "application/json"
+    {success: "Lane '#{lane_name}' deleted."}.to_json
+    # Or for 204 No Content:
+    # env.response.status_code = 204 # No Content
+  rescue ex
+    env.response.status_code = 500 # Internal Server Error
+    ToCry::Log.error(exception: ex) { "Error processing DELETE /lane/:name for lane '#{env.params.url["name"]}'" }
+    {error: "An unexpected error occurred."}.to_json
+  end
+end

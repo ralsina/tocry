@@ -31,3 +31,16 @@ export async function addLane(laneName) {
         throw error; // Re-throw the error for the caller to handle
     }
 }
+
+export async function deleteLane(laneName) {
+    try {
+        const encodedLaneName = encodeURIComponent(laneName);
+        const response = await fetch(`${API_BASE_URL}/lane/${encodedLaneName}`, {
+            method: 'DELETE'
+        });
+        return response; // Return the full response object for the caller to handle
+    } catch (error) {
+        console.error(`Error deleting lane "${laneName}":`, error);
+        throw error; // Re-throw the error for the caller to handle
+    }
+}

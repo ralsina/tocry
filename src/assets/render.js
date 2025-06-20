@@ -1,4 +1,4 @@
-export function renderLanes(lanes) {
+export function renderLanes(lanes, onDeleteLaneCallback) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -16,9 +16,27 @@ export function renderLanes(lanes) {
         const laneColumn = document.createElement('div');
         laneColumn.className = 'lane'; // Add the 'lane' class for styling
 
+        const laneHeader = document.createElement('div');
+        laneHeader.className = 'lane-header';
+
         const laneTitle = document.createElement('h2');
         laneTitle.textContent = lane.name;
-        laneColumn.appendChild(laneTitle);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-lane-btn';
+        deleteButton.textContent = '✕'; // Using a multiplication X symbol
+        deleteButton.setAttribute('aria-label', `Delete lane ${lane.name}`);
+        deleteButton.dataset.laneName = lane.name; // Store lane name, though direct param is used
+
+        deleteButton.addEventListener('click', () => {
+            if (onDeleteLaneCallback) {
+                onDeleteLaneCallback(lane.name);
+            }
+        });
+
+        laneHeader.appendChild(laneTitle);
+        laneHeader.appendChild(deleteButton);
+        laneColumn.appendChild(laneHeader);
 
         const notesList = document.createElement('div');
         notesList.className = 'notes-list';

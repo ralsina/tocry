@@ -68,11 +68,25 @@ module ToCry
       FileUtils.mkdir_p(base_data_dir)
       Log.info { "Base data directory '#{base_data_dir}' ensured." }
 
+      Log.info { "Saving board with #{lanes.size} lanes." }
+
       # Save each lane
-      self.lanes.each_with_index do |lane, index|
-        lane.save(index + 1) # Pass 1-based position
+      @lanes.each_with_index do |lane, index|
+        lane.save(index + 1) # Position is 1-based
       end
       Log.info { "All lanes in the board have been processed for saving." }
+
+      # Remove directories not matching the current lanes
+      all_lane_dirs = Dir.glob(File.join(base_data_dir, "[0-9][0-9][0-9][0-9]_*/")).map { |lane| lane.strip("/") }.to_set
+      saved_lane_names = @lanes.map_with_index(offset: 1) { |lane, index|
+        File.join(base_data_dir, "#{index.to_s.rjust(4, '0')}_#{lane.name}")
+      }.to_set
+
+      (all_lane_dirs - saved_lane_names).each do |dir_path|
+        dir_name = File.basename(dir_path)
+        Log.warn { "Orphaned lane directory found: '#{dir_name}' (path: #{dir_path}). It will be removed." }
+        FileUtils.rm_rf(dir_path) # Remove directory and contents
+      end
     rescue ex
       Log.error(exception: ex) { "Error saving board" }
       raise ex # Re-raise the exception after logging
@@ -83,6 +97,27 @@ module ToCry
       self.lanes << new_lane
       Log.info { "Lane '#{name}' added to the board." }
       new_lane
+    end
+
+    # Removes a lane from the board by its name.
+    # Returns true if the lane was found and removed, false otherwise.
+    def lane_del(name : String) : Bool
+      # Find the index of the lane by name
+      lane_to_delete = @lanes.find { |lane| lane.name == name }
+
+      if lane_to_delete
+        # Remove the lane from the array
+        @lanes.delete(lane_to_delete)
+        Log.info { "Lane '#{lane_to_delete.name}' removed from the board." }
+        # Save the board to persist the change (this will renumber directories)
+        save
+      end
+      true # Indicate success
+
+
+    rescue ex
+      Log.error(exception: ex) { "Error deleting lane with name '#{name}'" }
+      raise ex # Re-raise the exception after logging
     end
   end
 end

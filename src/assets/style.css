@@ -55,6 +55,34 @@ html, body {
     background-color: var(--card-background-color); /* Add a background color to make the lane visible */
 }
 
+.lane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px; /* Adjust as needed */
+}
+
+.lane-header h2 {
+    margin: 0; /* Remove default h2 margin to align better */
+}
+
+.delete-lane-btn {
+    background: none;
+    border: none;
+    color: var(--muted-color, #6c757d); /* Pico's muted color or a fallback */
+    font-size: 1.5em; /* Make X a bit larger and more clickable */
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.1em 0.3em; /* Small padding to make it easier to click */
+    line-height: 1; /* Ensure tight fit */
+}
+
+.delete-lane-btn:hover,
+.delete-lane-btn:focus {
+    color: var(--primary-hover, #c82333); /* Or use Pico's danger color on hover */
+    outline: none; /* Optional: remove focus outline if not desired */
+}
+
 .note-card {
     margin-bottom: var(--spacing);
     /* Pico's <article> styling will apply, you can override here */
