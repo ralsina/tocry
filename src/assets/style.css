@@ -332,30 +332,33 @@ body {
 }
 
 /* EasyMDE overrides to better fit Pico.css */
-.editor-toolbar a {
-    color: var(--muted-color) !important;
-    text-decoration: none;
-    border: 1px solid transparent;
+.EasyMDEContainer .CodeMirror {
+    color: #ccc;
+    border-color: #333;
+    background-color: #000;
 }
-
-.editor-toolbar a.active, .editor-toolbar a:hover {
-    background: var(--muted-border-color);
-    border-color: var(--muted-border-color);
-    color: var(--contrast) !important;
+.EasyMDEContainer .cm-s-easymde .CodeMirror-cursor {
+    border-color: #ccc;
 }
-
-.editor-preview, .editor-preview-side {
-    background: var(--card-background-color) !important;
+.EasyMDEContainer .editor-toolbar > * {
+    color: #ccc;
 }
-
-.cm-s-easymde .CodeMirror {
-    border-color: var(--form-element-border-color);
-    background-color: var(--form-element-background-color);
-    color: var(--color);
+.EasyMDEContainer .editor-toolbar > .active, .editor-toolbar > button:hover, .editor-preview pre, .cm-s-easymde .cm-comment {
+    background-color: #444;
 }
-
-.cm-s-easymde .CodeMirror-cursor {
-    border-left-color: var(--color);
+.EasyMDEContainer .CodeMirror-fullscreen {
+    background: #000;
+}
+.editor-toolbar {
+    border-top: 1px solid #333;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+}
+.editor-toolbar.fullscreen {
+    background: #000;
+}
+.editor-preview {
+    background: #000;
 }
 
 /* Custom Horizontal Scroll Buttons */

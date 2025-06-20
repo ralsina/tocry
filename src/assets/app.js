@@ -458,6 +458,33 @@ function handleSearchInput(event) {
     });
 }
 
+// --- Theme Switcher ---
+
+/**
+ * Applies the given theme to the document and updates the switcher button.
+ * @param {string} theme The theme to apply ('light' or 'dark').
+ */
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const themeSwitcher = document.getElementById('theme-switcher');
+    if (themeSwitcher) {
+        if (theme === 'dark') {
+            themeSwitcher.textContent = '☀️'; // Sun icon for switching to light
+            themeSwitcher.setAttribute('aria-label', 'Switch to light theme');
+        } else {
+            themeSwitcher.textContent = '🌙'; // Moon icon for switching to dark
+            themeSwitcher.setAttribute('aria-label', 'Switch to dark theme');
+        }
+    }
+}
+
+function handleThemeSwitch() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+}
+
 // --- Horizontal Scroll Buttons ---
 
 function updateScrollButtonsVisibility() {
@@ -499,6 +526,15 @@ function handleScrollButtonClick(direction) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Theme Switcher Setup ---
+    // Checks for saved theme in localStorage, falls back to system preference, then defaults to light.
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyTheme(savedTheme);
+    const themeSwitcher = document.getElementById('theme-switcher');
+    if (themeSwitcher) {
+        themeSwitcher.addEventListener('click', handleThemeSwitch);
+    }
+
     initializeLanes();
     const addLaneButton = document.querySelector('button[aria-label="Add new item"]');
     if (addLaneButton) {

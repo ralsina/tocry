@@ -13,12 +13,12 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
     />
-    <!-- Custom styles, loaded after Pico to allow overrides -->
-    <link rel="stylesheet" href="style.css" />
     <!-- EasyMDE for a better markdown editor -->
     <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Custom styles, loaded last to allow overrides of all libraries -->
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <header class="page-header">
@@ -36,6 +36,7 @@
                 placeholder="Search..."
               />
             </li>
+            <li><button id="theme-switcher" class="secondary" aria-label="Switch to dark theme">🌙</button></li>
             <li><button aria-label="Add new item">+</button></li>
           </ul>
         </nav>
