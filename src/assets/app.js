@@ -110,22 +110,37 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
 
 // --- Note Editing Modal Handlers ---
 
+let easyMDE = null; // To hold the editor instance
+
 function handleEditNoteRequest(note) {
     const modal = document.getElementById('modal-edit-note');
     if (!modal) return;
 
     const form = document.getElementById('edit-note-form');
     form.dataset.noteId = note.id; // Store the ID for submission
-
     document.getElementById('edit-note-title').value = note.title;
     document.getElementById('edit-note-tags').value = note.tags.join(', ');
-    document.getElementById('edit-note-content').value = note.content;
+
+    const contentTextarea = document.getElementById('edit-note-content');
+    contentTextarea.value = note.content;
+
+    // Instantiate the editor
+    easyMDE = new EasyMDE({
+        element: contentTextarea,
+        spellChecker: false,
+        status: false,
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview", "side-by-side", "fullscreen", "|", "guide"]
+    });
 
     modal.showModal(); // Use the native <dialog> method to open
 }
 
 function closeEditModal() {
     const modal = document.getElementById('modal-edit-note');
+    if (easyMDE) {
+        easyMDE.toTextArea(); // Clean up the editor instance
+        easyMDE = null;
+    }
     if (modal) {
         modal.close(); // Use the native <dialog> method to close
     }
@@ -140,11 +155,11 @@ async function handleEditNoteSubmit(event) {
         id: noteId, // Not strictly needed by backend, but good practice
         title: document.getElementById('edit-note-title').value,
         tags: document.getElementById('edit-note-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-        content: document.getElementById('edit-note-content').value
+        content: easyMDE.value() // Get content from the editor instance
     };
 
     try {
-        const response = await updateNote(noteId, { note: updatedNote });
+        const response = await updateNote(noteId, { note: updatedNote, lane_name: null, position: null });
         if (response.ok) {
             closeEditModal();
             await initializeLanes();

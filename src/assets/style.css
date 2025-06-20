@@ -270,3 +270,30 @@ body {
     min-height: 200px;
     resize: vertical;
 }
+
+/* EasyMDE overrides to better fit Pico.css */
+.editor-toolbar a {
+    color: var(--muted-color) !important;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.editor-toolbar a.active, .editor-toolbar a:hover {
+    background: var(--muted-border-color);
+    border-color: var(--muted-border-color);
+    color: var(--contrast) !important;
+}
+
+.editor-preview, .editor-preview-side {
+    background: var(--card-background-color) !important;
+}
+
+.cm-s-easymde .CodeMirror {
+    border-color: var(--form-element-border-color);
+    background-color: var(--form-element-background-color);
+    color: var(--color);
+}
+
+.cm-s-easymde .CodeMirror-cursor {
+    border-left-color: var(--color);
+}
