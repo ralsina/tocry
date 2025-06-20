@@ -1,15 +1,12 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition } from './api.js';
+import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote } from './api.js';
 import { renderLanes } from './render.js';
-
-// Global variable to store the name of the lane being dragged
-let draggedLaneName = null;
 
 async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
         if (lanes) {
-            renderLanes(lanes, handleDeleteLaneRequest, laneDragAndDropCallbacks); // Pass delete and drag/drop handlers
+            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, laneDragAndDropCallbacks);
         } else {
             if (lanesContainer) lanesContainer.innerHTML = '<p>Error loading lanes. Could not fetch data.</p>';
         }
@@ -63,23 +60,44 @@ async function handleDeleteLaneRequest(laneName) {
     }
 }
 
+// Handler for adding a new note to a lane
+async function handleAddNoteRequest(laneName) {
+    const noteTitle = prompt(`Enter title for new note in "${laneName}":`);
+    if (noteTitle !== null && noteTitle.trim() !== "") {
+        try {
+            const response = await addNote(laneName, noteTitle.trim(), "", []); // Placeholder content and tags
+            if (response.ok) {
+                console.log(`Note "${noteTitle}" added successfully to lane "${laneName}".`);
+                await initializeLanes(); // Re-fetch and render all lanes
+            } else {
+                const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
+                console.error(`Failed to add note to lane "${laneName}":`, response.status, response.statusText, errorData.error);
+                alert(`Failed to add note: ${errorData.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error during add note operation:', error);
+            alert("An error occurred while trying to add the note.");
+        }
+    } else if (noteTitle !== null) {
+        alert("Note title cannot be empty.");
+    }
+}
+
 // --- Drag and Drop Handlers for Lanes ---
 
 function handleLaneDragStart(event) {
-    // Store the name of the lane being dragged
-    draggedLaneName = event.currentTarget.dataset.laneName;
-    // Set data for the drag operation (optional, but good practice)
-    event.dataTransfer.setData('text/plain', draggedLaneName);
+    // Set data for the drag operation
+    event.dataTransfer.setData('text/plain', event.currentTarget.dataset.laneName);
+    event.dataTransfer.effectAllowed = 'move';
     // Add a class to the dragged element for visual feedback
     event.currentTarget.classList.add('lane--dragging');
-    console.log(`Started dragging lane: ${draggedLaneName}`);
 }
 
 function handleLaneDragOver(event) {
     // Prevent default to allow dropping
     event.preventDefault();
     // Add visual feedback to the potential drop target
-    if (event.currentTarget.dataset.laneName !== draggedLaneName) {
+    if (event.currentTarget.dataset.laneName !== event.dataTransfer.getData('text/plain')) {
         event.currentTarget.classList.add('lane--drag-over');
     }
 }
@@ -90,23 +108,18 @@ function handleLaneDragLeave(event) {
 }
 
 async function handleLaneDrop(event) {
-    event.preventDefault(); // Prevent default browser behavior (e.g., opening as link)
-    event.currentTarget.classList.remove('lane--drag-over'); // Remove visual feedback
+    event.preventDefault();
+    event.currentTarget.classList.remove('lane--drag-over');
 
-    const draggedLaneNameFromData = event.dataTransfer.getData('text/plain');
+    const draggedLaneName = event.dataTransfer.getData('text/plain');
     const targetLaneName = event.currentTarget.dataset.laneName;
 
-    // It's possible draggedLaneNameFromData is empty if the drag originated from outside the browser.
-    if (!draggedLaneNameFromData || draggedLaneNameFromData === targetLaneName) {
-        console.log('Dropped on the same lane or invalid drag data. No change.');
-        return; // No change needed if dropped on itself
+    if (!draggedLaneName || draggedLaneName === targetLaneName) {
+        return; // No change needed if dropped on itself or invalid drag data
     }
 
-    console.log(`Dropped lane "${draggedLaneNameFromData}" onto "${targetLaneName}"`);
-
     try {
-        // Get the current order of lanes to determine the new index
-        const currentLanes = await fetchLanes(); // Re-fetch to get the latest order
+        const currentLanes = await fetchLanes();
         if (!currentLanes) {
             alert('Could not get current lane order to perform move.');
             return;
@@ -118,26 +131,20 @@ async function handleLaneDrop(event) {
             return;
         }
 
-        // Call the API to update the lane's position
-        const response = await updateLanePosition(draggedLaneNameFromData, targetIndex);
-
+        const response = await updateLanePosition(draggedLaneName, targetIndex);
         if (response.ok) {
-            console.log(`Lane "${draggedLaneNameFromData}" moved successfully to position ${targetIndex}.`);
-            await initializeLanes(); // Re-render the board to reflect the new order
+            await initializeLanes(); // Re-render the board
         } else {
-            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
-            console.error(`Failed to move lane "${draggedLaneNameFromData}":`, response.status, response.statusText, errorData.error);
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
             alert(`Failed to move lane: ${errorData.error || response.statusText}`);
         }
     } catch (error) {
-        console.error('Error during lane move operation:', error);
         alert("An error occurred while trying to move the lane.");
     }
 }
 
 function handleLaneDragEnd(event) {
-    event.currentTarget.classList.remove('lane--dragging'); // Clean up dragging style
-    draggedLaneName = null; // Reset dragged lane state
+    event.currentTarget.classList.remove('lane--dragging');
 }
 
 // Object containing all drag and drop callbacks to pass to renderLanes

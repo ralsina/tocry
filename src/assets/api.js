@@ -62,3 +62,22 @@ export async function updateLanePosition(laneName, newPosition) {
         throw error; // Re-throw the error for the caller to handle
     }
 }
+
+export async function addNote(laneName, title, content = "", tags = []) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/note`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lane_name: laneName,
+                note: { title, content, tags } // id is omitted, backend generates it
+            })
+        });
+        return response; // Return the full response object for the caller to handle
+    } catch (error) {
+        console.error(`Error adding note to lane "${laneName}":`, error);
+        throw error; // Re-throw the error for the caller to handle
+    }
+}

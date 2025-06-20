@@ -20,6 +20,13 @@ struct UpdateLanePayload
   property position : UInt64  # The desired 0-based index in the board's lanes array
 end
 
+# Helper struct for parsing the POST /note request payload
+struct NewNotePayload
+  include JSON::Serializable
+  property note : ToCry::Note # The note data (id will be ignored/overwritten as a new one is generated)
+  property lane_name : String
+end
+
 # API Endpoint to add a new lane
 # Expects a JSON body with a lane name, e.g.:
 # { "name": "New Lane Name" }
@@ -86,7 +93,6 @@ put "/lane/:name" do |env|
       next {error: "Lane with name '#{current_lane_name}' not found."}.to_json
     end
 
-
     # Update the lane's name if it has changed
     existing_lane.name = new_lane_data.name
 
@@ -108,6 +114,53 @@ put "/lane/:name" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing PUT /lane/:name for lane '#{env.params.url["name"]}'" }
+    {error: "An unexpected error occurred."}.to_json
+  end
+end
+
+# API Endpoint to add a new note to a lane
+# Expects a JSON body like:
+# {
+#   "note": {
+#     "title": "My new task",
+#     "tags": ["todo", "urgent"],
+#     "content": "Details of the task"
+#   },
+#   "lane_name": "Todo"
+# }
+post "/note" do |env|
+  begin
+    json_body = env.request.body.not_nil!.gets_to_end
+    payload = NewNotePayload.from_json(json_body)
+
+    target_lane_name = payload.lane_name
+    note_data = payload.note
+
+    # Find the target lane
+    target_lane = ToCry::BOARD.lanes.find { |lane| lane.name == target_lane_name }
+
+    unless target_lane
+      env.response.status_code = 404 # Not Found
+      env.response.content_type = "application/json"
+      next {error: "Lane with name '#{target_lane_name}' not found."}.to_json
+    end
+
+    # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
+    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content)
+
+    # Save the board to persist the new note (this will save the note file and create symlink)
+    ToCry::BOARD.save
+
+    env.response.status_code = 201 # Created
+    env.response.content_type = "application/json"
+    new_note.to_json # Return the newly created note with its generated ID
+  rescue ex : JSON::ParseException
+    env.response.status_code = 400 # Bad Request
+    env.response.content_type = "application/json"
+    {error: "Invalid JSON format: #{ex.message}"}.to_json
+  rescue ex
+    env.response.status_code = 500 # Internal Server Error
+    ToCry::Log.error(exception: ex) { "Error processing POST /note: #{ex.message}" }
     {error: "An unexpected error occurred."}.to_json
   end
 end

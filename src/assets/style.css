@@ -95,6 +95,25 @@ html, body {
     outline: none; /* Optional: remove focus outline if not desired */
 }
 
+.add-note-btn {
+    background: none;
+    border: none;
+    color: var(--primary, #007bff); /* Use Pico's primary color or a fallback */
+    font-size: 1.5em; /* Make it a bit larger */
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.1em 0.3em;
+    line-height: 1;
+    margin-left: auto; /* Push it to the left of the delete button */
+    margin-right: 5px; /* Small margin to separate from delete button */
+}
+
+.add-note-btn:hover,
+.add-note-btn:focus {
+    color: var(--primary-hover, #0056b3);
+    outline: none;
+}
+
 .note-card {
     margin-bottom: var(--spacing);
     /* Pico's <article> styling will apply, you can override here */

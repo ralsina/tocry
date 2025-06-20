@@ -42,6 +42,16 @@ describe ToCry::Note do
       note.content.should eq "JSON content"
     end
 
+    it "deserializes a JSON without id" do
+      json_string = %({"title":"No ID Note","tags":["tag1"],"content":"Content without ID"})
+      note = ToCry::Note.from_json(json_string)
+
+      note.id.should_not be_nil # Should generate a new UUID
+      note.title.should eq "No ID Note"
+      note.tags.should eq ["tag1"]
+      note.content.should eq "Content without ID"
+    end
+
     it "deserializes and slug normalizes title with leading/trailing spaces" do
       json_string = %({"id":"test-uuid-456","title":"  Spaced Title  ","tags":[],"content":""})
       note = ToCry::Note.from_json(json_string)

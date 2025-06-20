@@ -26,7 +26,12 @@ module ToCry
       sanitized.empty? ? "untitled" : sanitized # Provide a fallback if title becomes empty after cleaning
     end
 
-    property id : String
+    property id : String?
+
+    def id
+      @id = UUID.random.to_s if @id.nil?
+      @id
+    end
 
     def title=(value : String)
       stripped_value = value.strip
@@ -39,14 +44,12 @@ module ToCry
 
     # Initialize a new Note with a generated UUID
     def initialize(
-      title_param : String,
-      tags_param : Array(String) = [] of String, # Default empty array for tags
-      content_param : String = "",               # Default empty string for content
+      @title : String,
+      @tags : Array(String) = [] of String, # Default empty array for tags
+      @content : String = "",               # Default empty string for content
     )
-      @id = UUID.random.to_s   # Assign a random UUID as the ID (UUIDs are strings)
-      self.title = title_param # Use the setter to apply normalization
-      @tags = tags_param
-      @content = content_param
+      @id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
+      self.title = @title
     end
 
     def save
@@ -57,9 +60,8 @@ module ToCry
 
       # Use the new FrontMatter struct for serialization
       frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags)
-      frontmatter_data = frontmatter_struct.to_yaml
 
-      frontmatter_section = "---\n#{frontmatter_data.to_yaml}\n---\n"
+      frontmatter_section = "---\n#{frontmatter_struct.to_yaml}\n---\n"
 
       File.write(file_path, frontmatter_section + self.content)
       Log.info { "Note '#{self.title}' (ID: #{self.id}) saved to #{file_path}" }

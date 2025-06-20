@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -30,6 +30,17 @@ export function renderLanes(lanes, onDeleteLaneCallback, dragAndDropCallbacks) {
         const laneTitle = document.createElement('h2');
         laneTitle.textContent = lane.name;
 
+        const addNoteButton = document.createElement('button');
+        addNoteButton.className = 'add-note-btn';
+        addNoteButton.textContent = '+';
+        addNoteButton.setAttribute('aria-label', `Add new note to ${lane.name}`);
+        addNoteButton.dataset.laneName = lane.name;
+
+        addNoteButton.addEventListener('click', () => {
+            if (onAddNoteCallback) {
+                onAddNoteCallback(lane.name);
+            }
+        });
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-lane-btn';
         deleteButton.textContent = '✕'; // Using a multiplication X symbol
@@ -43,6 +54,7 @@ export function renderLanes(lanes, onDeleteLaneCallback, dragAndDropCallbacks) {
         });
 
         laneHeader.appendChild(laneTitle);
+        laneHeader.appendChild(addNoteButton); // Add the new button
         laneHeader.appendChild(deleteButton);
         laneColumn.appendChild(laneHeader);
 

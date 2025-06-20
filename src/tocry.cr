@@ -35,23 +35,28 @@ module ToCry
 
       @lanes.clear # Clear any default or existing lanes before loading
 
-      lane_dirs.each_with_index do |current_dir_path_from_glob, index|
-        # If we have holes or repeated numeric prefixes, we normalize them
-        # by renaming directories to match their sorted order.
-        # Example: If we have "data/0001_Todo/" and "data/0003_Other/", we rename
-        # "data/0003_Other/" to "data/0002_Other/" to maintain a consistent order.
+      lane_dirs.each_with_index do |dir_path, index|
+        dir_basename = File.basename(dir_path)
 
-        title = current_dir_path_from_glob.split("_", 2)[1] # Get the part after the first underscore
-        canonical_path = File.join(base_data_dir, "#{index.to_s.rjust(4, '0')}_#{title}")
-
-        if current_dir_path_from_glob != canonical_path
-          Log.warn { "Directory '#{current_dir_path_from_glob}' does not match expected canonical path '#{canonical_path}'. Renaming." }
-          FileUtils.mv(current_dir_path_from_glob, canonical_path)
+        parts = dir_basename.split('_', 2)
+        unless parts.size == 2 && parts[0].size == 4 && parts[0].to_i?
+          Log.warn { "Skipping directory '#{dir_basename}' as it does not match the NNNN_name pattern." }
+          next
         end
 
-        new_lane = Lane.new(name: title)
+        lane_name_from_dir = parts[1]
+        correct_prefix = (index + 1).to_s.rjust(4, '0')
+        canonical_basename = "#{correct_prefix}_#{lane_name_from_dir}"
+        canonical_path = File.join(base_data_dir, canonical_basename)
+
+        if dir_basename != canonical_basename
+          Log.warn { "Normalizing lane directory: renaming '#{dir_path}' to '#{canonical_path}'." }
+          FileUtils.mv(dir_path, canonical_path)
+        end
+
+        new_lane = Lane.new(name: lane_name_from_dir)
         @lanes << new_lane
-        Log.info { "Loaded lane '#{title}' from directory '#{canonical_path}'" }
+        Log.info { "Loaded lane '#{lane_name_from_dir}' from directory '#{canonical_path}'" }
         # TODO: Implement new_lane.load_notes(final_dir_path) to load notes for this lane
       end
     rescue ex
@@ -77,7 +82,7 @@ module ToCry
       Log.info { "All lanes in the board have been processed for saving." }
 
       # Remove directories not matching the current lanes
-      all_lane_dirs = Dir.glob(File.join(base_data_dir, "[0-9][0-9][0-9][0-9]_*/")).map { |lane| lane.strip("/") }.to_set
+      all_lane_dirs = Dir.glob(File.join(base_data_dir, "[0-9][0-9][0-9][0-9]_*/")).map(&.strip("/")).to_set
       saved_lane_names = @lanes.map_with_index(offset: 1) { |lane, index|
         File.join(base_data_dir, "#{index.to_s.rjust(4, '0')}_#{lane.name}")
       }.to_set
