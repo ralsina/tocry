@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -85,6 +85,12 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 deleteNoteButton.addEventListener('click', () => {
                     if (onDeleteNoteCallback) {
                         onDeleteNoteCallback(note.id, note.title);
+                    }
+                });
+                // Add double-click listener to open the edit modal
+                noteCard.addEventListener('dblclick', () => {
+                    if (onEditNoteCallback) {
+                        onEditNoteCallback(note);
                     }
                 });
                 noteCard.addEventListener('dragstart', dragAndDropCallbacks.note.dragstart);

@@ -45,6 +45,30 @@
         <small>TODO-more to write later</small>
       </div>
     </footer>
+
+    <!-- Modal for Editing a Note -->
+    <dialog id="modal-edit-note">
+      <article>
+        <header>
+          <a href="#close" aria-label="Close" class="close" id="edit-note-close-btn"></a>
+          <strong>Edit Note</strong>
+        </header>
+        <form id="edit-note-form">
+          <label for="edit-note-title">Title</label>
+          <input type="text" id="edit-note-title" name="title" required />
+
+          <label for="edit-note-tags">Tags (comma-separated)</label>
+          <input type="text" id="edit-note-tags" name="tags" />
+
+          <label for="edit-note-content">Content (Markdown)</label>
+          <textarea id="edit-note-content" name="content" rows="10"></textarea>
+        </form>
+        <footer>
+          <button type="button" class="secondary" id="edit-note-cancel-btn">Cancel</button>
+          <button type="submit" form="edit-note-form" id="edit-note-save-btn">Save</button>
+        </footer>
+      </article>
+    </dialog>
     <script type="module" src="app.js" defer></script>
   </body>
 </html>

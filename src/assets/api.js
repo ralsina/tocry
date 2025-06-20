@@ -4,15 +4,16 @@ export async function fetchLanes() {
     try {
         const response = await fetch(`${API_BASE_URL}/lanes`);
         if (!response.ok) {
-            console.error('Failed to fetch lanes:', response.status, response.statusText);
-            // Consider throwing an error or returning a specific error object
-            return null;
+            const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+            const error = new Error(`Failed to fetch lanes: ${response.status} ${response.statusText} - ${errorBody.error || errorBody.message}`);
+            error.status = response.status; // Attach status for easier handling
+            error.body = errorBody; // Attach full body for more details
+            throw error;
         }
         return await response.json();
     } catch (error) {
         console.error('Error fetching lanes:', error);
-        // Consider throwing an error or returning a specific error object
-        return null;
+        throw error; // Re-throw to be caught by initializeLanes
     }
 }
 

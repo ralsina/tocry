@@ -5,14 +5,19 @@ async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        if (lanes) {
-            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
-        } else {
-            if (lanesContainer) lanesContainer.innerHTML = '<p>Error loading lanes. Could not fetch data.</p>';
-        }
+        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
     } catch (error) {
-        // Error already logged in fetchLanes, display message to user
-        if (lanesContainer) lanesContainer.innerHTML = '<p>Error loading lanes. An exception occurred.</p>';
+        console.error('Error initializing lanes:', error);
+        if (lanesContainer) {
+            let errorMessage = 'Error loading lanes.';
+            if (error.status) { // If it's an HTTP error
+                errorMessage += ` Server responded with ${error.status} ${error.message}.`;
+                if (error.body && error.body.error) errorMessage += ` Details: ${error.body.error}`;
+            } else { // Generic network error
+                errorMessage += ` A network or unexpected error occurred: ${error.message}.`;
+            }
+            lanesContainer.innerHTML = `<p>${errorMessage}</p>`;
+        }
     }
 }
 
@@ -100,6 +105,54 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
             console.error('Error during delete note operation:', error);
             alert("An error occurred while trying to delete the note.");
         }
+    }
+}
+
+// --- Note Editing Modal Handlers ---
+
+function handleEditNoteRequest(note) {
+    const modal = document.getElementById('modal-edit-note');
+    if (!modal) return;
+
+    const form = document.getElementById('edit-note-form');
+    form.dataset.noteId = note.id; // Store the ID for submission
+
+    document.getElementById('edit-note-title').value = note.title;
+    document.getElementById('edit-note-tags').value = note.tags.join(', ');
+    document.getElementById('edit-note-content').value = note.content;
+
+    modal.showModal(); // Use the native <dialog> method to open
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('modal-edit-note');
+    if (modal) {
+        modal.close(); // Use the native <dialog> method to close
+    }
+}
+
+async function handleEditNoteSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const noteId = form.dataset.noteId;
+
+    const updatedNote = {
+        id: noteId, // Not strictly needed by backend, but good practice
+        title: document.getElementById('edit-note-title').value,
+        tags: document.getElementById('edit-note-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        content: document.getElementById('edit-note-content').value
+    };
+
+    try {
+        const response = await updateNote(noteId, { note: updatedNote });
+        if (response.ok) {
+            closeEditModal();
+            await initializeLanes();
+        } else {
+            alert('Failed to save note. Please try again.');
+        }
+    } catch (error) {
+        alert('An error occurred while saving the note.');
     }
 }
 
@@ -306,4 +359,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addLaneButton) {
         addLaneButton.addEventListener('click', handleAddLaneButtonClick);
     }
+
+    // Wire up the edit modal's form and buttons
+    const editNoteForm = document.getElementById('edit-note-form');
+    const cancelEditBtn = document.getElementById('edit-note-cancel-btn');
+    const closeEditBtn = document.getElementById('edit-note-close-btn');
+
+    editNoteForm.addEventListener('submit', handleEditNoteSubmit);
+    cancelEditBtn.addEventListener('click', closeEditModal);
+    closeEditBtn.addEventListener('click', closeEditModal);
 });

@@ -263,3 +263,10 @@ body {
     margin-right: 0.5em;
     margin-bottom: 0.25em;
 }
+
+/* Styles for the Edit Note Modal */
+#edit-note-content {
+    font-family: var(--font-mono);
+    min-height: 200px;
+    resize: vertical;
+}
