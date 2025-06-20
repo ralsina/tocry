@@ -54,10 +54,13 @@ module ToCry
           FileUtils.mv(dir_path, canonical_path)
         end
 
-        new_lane = Lane.new(name: lane_name_from_dir)
-        @lanes << new_lane
-        Log.info { "Loaded lane '#{lane_name_from_dir}' from directory '#{canonical_path}'" }
-        # TODO: Implement new_lane.load_notes(final_dir_path) to load notes for this lane
+        begin
+          loaded_lane = Lane.load(canonical_path)
+          @lanes << loaded_lane
+          Log.info { "Loaded lane '#{loaded_lane.name}' with #{loaded_lane.notes.size} notes from '#{canonical_path}'" }
+        rescue ex
+          Log.error(exception: ex) { "Skipping lane: Failed to load from directory '#{canonical_path}'" }
+        end
       end
     rescue ex
       Log.error(exception: ex) { "Error loading board from file system" }
