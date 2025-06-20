@@ -181,6 +181,7 @@ body {
     cursor: pointer;
     padding: 0.1em 0.2em;
     line-height: 1;
+    margin-left: 0.5em; /* Add space between tags and delete button */
 }
 
 .delete-note-btn:hover,
@@ -258,15 +259,24 @@ body {
     color: var(--muted-color);
 }
 
+/* Container for tags, now inside the note header */
+.note-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.4em; /* Space between pills */
+    margin-left: 1em; /* Space between title and tags */
+    flex-shrink: 0; /* Prevent tags from shrinking on long titles */
+}
+
 .note-tags .tag {
-    display: inline-block;
-    background-color: var(--muted-border-color);
-    /* Example color */
-    padding: 0.25em 0.5em;
-    border-radius: var(--border-radius);
-    font-size: 0.8em;
-    margin-right: 0.5em;
-    margin-bottom: 0.25em;
+    /* Use a semi-transparent version of the primary color for a subtle tint */
+    /* This ensures it's distinct from the card background but still very light */
+    background-color: rgba(55, 125, 255, 0.1);
+    color: var(--primary);
+    padding: 0.2em 0.7em;
+    border-radius: 9999px; /* Pill shape */
+    font-size: 0.75em;
+    font-weight: 600;
 }
 
 /* Styles for the Edit Note Modal */

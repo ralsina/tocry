@@ -75,6 +75,14 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteCard.dataset.noteId = note.id;
                 noteCard.dataset.laneName = lane.name;
 
+                // Create the <details> element to make the note collapsable
+                const detailsElement = document.createElement('details');
+                // By default, notes are collapsed. If you want them open, add detailsElement.open = true;
+
+                // Create the <summary> element, which will contain the note header (title, tags, delete button)
+                const summaryElement = document.createElement('summary');
+                summaryElement.className = 'note-card-summary'; // Add a class for potential styling
+
                 const noteHeader = document.createElement('div');
                 noteHeader.className = 'note-card-header';
 
@@ -82,13 +90,21 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 deleteNoteButton.className = 'delete-note-btn';
                 deleteNoteButton.textContent = '✕';
                 deleteNoteButton.setAttribute('aria-label', `Delete note ${note.title}`);
+                // Stop propagation for the delete button click to prevent the details from toggling
+                deleteNoteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (onDeleteNoteCallback) {
+                        onDeleteNoteCallback(note.id, note.title);
+                    }
+                });
                 deleteNoteButton.addEventListener('click', () => {
                     if (onDeleteNoteCallback) {
                         onDeleteNoteCallback(note.id, note.title);
                     }
                 });
                 // Add double-click listener to open the edit modal
-                noteCard.addEventListener('dblclick', () => {
+                detailsElement.addEventListener('dblclick', (e) => {
+                    e.stopPropagation(); // Prevent default details toggle on dblclick
                     if (onEditNoteCallback) {
                         onEditNoteCallback(note);
                     }
@@ -97,6 +113,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
+
+                noteHeader.appendChild(noteTitle);
 
                 if (note.tags && note.tags.length > 0) {
                     const tagsContainer = document.createElement('div');
@@ -107,17 +125,25 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                         tagSpan.textContent = tag;
                         tagsContainer.appendChild(tagSpan);
                     });
-                    noteCard.appendChild(tagsContainer);
+                    noteHeader.appendChild(tagsContainer);
                 }
-                noteHeader.appendChild(noteTitle);
                 noteHeader.appendChild(deleteNoteButton);
-                noteCard.appendChild(noteHeader);
+
+                // Append the noteHeader to the summary
+                summaryElement.appendChild(noteHeader);
+
                 const noteContent = document.createElement('div');
                 noteContent.className = 'note-content';
                 // Use the 'marked' library to parse markdown content to HTML.
                 // Fallback to textContent if the library isn't loaded.
                 noteContent.innerHTML = window.marked ? window.marked.parse(note.content || '') : note.content;
-                noteCard.appendChild(noteContent);
+
+                // Append summary and content to the details element
+                detailsElement.appendChild(summaryElement);
+                detailsElement.appendChild(noteContent);
+
+                // Append the details element to the noteCard
+                noteCard.appendChild(detailsElement);
 
                 notesList.appendChild(noteCard);
             });
