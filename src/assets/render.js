@@ -19,11 +19,11 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, drag
         laneColumn.dataset.laneName = lane.name; // Store the lane name for drag/drop operations
 
         // Attach drag and drop event listeners
-        laneColumn.addEventListener('dragstart', dragAndDropCallbacks.dragstart);
-        laneColumn.addEventListener('dragover', dragAndDropCallbacks.dragover);
-        laneColumn.addEventListener('dragleave', dragAndDropCallbacks.dragleave);
-        laneColumn.addEventListener('drop', dragAndDropCallbacks.drop);
-        laneColumn.addEventListener('dragend', dragAndDropCallbacks.dragend);
+        laneColumn.addEventListener('dragstart', dragAndDropCallbacks.lane.dragstart);
+        laneColumn.addEventListener('dragover', dragAndDropCallbacks.lane.dragover);
+        laneColumn.addEventListener('dragleave', dragAndDropCallbacks.lane.dragleave);
+        laneColumn.addEventListener('drop', dragAndDropCallbacks.lane.drop);
+        laneColumn.addEventListener('dragend', dragAndDropCallbacks.lane.dragend);
         const laneHeader = document.createElement('div');
         laneHeader.className = 'lane-header';
 
@@ -60,12 +60,23 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, drag
 
         const notesList = document.createElement('div');
         notesList.className = 'notes-list';
+        notesList.dataset.laneName = lane.name;
+
+        // Attach drop listeners to the list itself for notes
+        notesList.addEventListener('dragover', dragAndDropCallbacks.note.dragover);
+        notesList.addEventListener('dragleave', dragAndDropCallbacks.note.dragleave);
+        notesList.addEventListener('drop', dragAndDropCallbacks.note.drop);
 
         if (lane.notes && lane.notes.length > 0) {
             lane.notes.forEach(note => {
                 const noteCard = document.createElement('article');
                 noteCard.className = 'note-card'; // For styling individual notes
+                noteCard.draggable = true;
+                noteCard.dataset.noteId = note.id;
+                noteCard.dataset.laneName = lane.name;
 
+                noteCard.addEventListener('dragstart', dragAndDropCallbacks.note.dragstart);
+                noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
                 noteCard.appendChild(noteTitle);

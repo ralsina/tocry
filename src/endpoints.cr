@@ -20,6 +20,14 @@ struct UpdateLanePayload
   property position : UInt64  # The desired 0-based index in the board's lanes array
 end
 
+# Helper struct for parsing the PUT /note/:id request payload
+struct UpdateNotePayload
+  include JSON::Serializable
+  property note : ToCry::Note
+  property lane_name : String?
+  property position : UInt64?
+end
+
 # Helper struct for parsing the POST /note request payload
 struct NewNotePayload
   include JSON::Serializable
@@ -64,6 +72,7 @@ post "/lane" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing POST /lane: #{ex.message}" }
+    env.response.content_type = "application/json"
     {error: "An unexpected error occurred."}.to_json
   end
 end
@@ -85,7 +94,7 @@ put "/lane/:name" do |env|
     new_position = payload.position
 
     # Find the existing lane by its current name
-    existing_lane = ToCry::BOARD.lanes.find { |lane| lane.name == current_lane_name }
+    existing_lane = ToCry::BOARD.lane(current_lane_name)
 
     unless existing_lane
       env.response.status_code = 404 # Not Found
@@ -114,6 +123,7 @@ put "/lane/:name" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing PUT /lane/:name for lane '#{env.params.url["name"]}'" }
+    env.response.content_type = "application/json"
     {error: "An unexpected error occurred."}.to_json
   end
 end
@@ -139,7 +149,7 @@ post "/note" do |env|
     note_data = payload.note
 
     # Find the target lane
-    target_lane = ToCry::BOARD.lanes.find { |lane| lane.name == target_lane_name }
+    target_lane = ToCry::BOARD.lane(target_lane_name)
 
     unless target_lane
       env.response.status_code = 404 # Not Found
@@ -163,6 +173,95 @@ post "/note" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing POST /note: #{ex.message}" }
+    env.response.content_type = "application/json"
+    {error: "An unexpected error occurred."}.to_json
+  end
+end
+
+# API Endpoint to update a note's content and/or move it.
+# Expects the note ID in the URL path, e.g.:
+# PUT /note/some-uuid-123
+# Expects a JSON body like:
+# {
+#   "note": { "title": "Updated Title", "tags": ["new"], "content": "Updated content." },
+#   "lane_name": "In Progress", // Optional: to move the note
+#   "position": 0             // Optional: new position in lane
+# }
+put "/note/:id" do |env|
+  begin
+    note_id = env.params.url["id"].as(String)
+    json_body = env.request.body.not_nil!.gets_to_end
+    payload = UpdateNotePayload.from_json(json_body)
+    new_note_data = payload.note
+
+    # Find the note and its current lane on the board
+    find_result = ToCry::BOARD.note(note_id)
+    unless find_result
+      env.response.status_code = 404
+      env.response.content_type = "application/json"
+      next {error: "Note with ID '#{note_id}' not found on the board."}.to_json
+    end
+    existing_note, current_lane = find_result
+
+    # Update note content if it has changed
+    content_changed = (existing_note.title != new_note_data.title) ||
+                      (existing_note.tags != new_note_data.tags) ||
+                      (existing_note.content != new_note_data.content)
+
+    if content_changed
+      existing_note.title = new_note_data.title
+      existing_note.tags = new_note_data.tags
+      existing_note.content = new_note_data.content
+      existing_note.save
+      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) content updated." }
+    end
+
+    # Handle moving the note if lane_name or position is provided
+    structure_changed = false
+    target_lane_name = payload.lane_name
+    new_position = payload.position
+
+    # Case 1: Moving to a different lane
+    if target_lane_name && target_lane_name != current_lane.name
+      target_lane = ToCry::BOARD.lane(target_lane_name)
+      unless target_lane
+        env.response.status_code = 404
+        env.response.content_type = "application/json"
+        next {error: "Target lane '#{target_lane_name}' not found."}.to_json
+      end
+
+      current_lane.notes.delete(existing_note)
+      insert_pos = (new_position || 0).to_i.clamp(0, target_lane.notes.size)
+      target_lane.notes.insert(insert_pos, existing_note)
+      structure_changed = true
+      ToCry::Log.info { "Note '#{existing_note.title}' moved from '#{current_lane.name}' to '#{target_lane.name}' at position #{insert_pos}." }
+
+    # Case 2: Re-ordering within the same lane
+    elsif new_position
+      current_position = current_lane.notes.index(existing_note)
+      if current_position && current_position != new_position
+        current_lane.notes.delete(existing_note)
+        insert_pos = new_position.to_i.clamp(0, current_lane.notes.size)
+        current_lane.notes.insert(insert_pos, existing_note)
+        structure_changed = true
+        ToCry::Log.info { "Note '#{existing_note.title}' moved within lane '#{current_lane.name}' to position #{insert_pos}." }
+      end
+    end
+
+    # Save the entire board if the structure was modified
+    ToCry::BOARD.save if structure_changed
+
+    env.response.status_code = 200
+    env.response.content_type = "application/json"
+    existing_note.to_json
+  rescue ex : JSON::ParseException
+    env.response.status_code = 400 # Bad Request
+    env.response.content_type = "application/json"
+    {error: "Invalid JSON format: #{ex.message}"}.to_json
+  rescue ex
+    env.response.status_code = 500 # Internal Server Error
+    ToCry::Log.error(exception: ex) { "Error processing PUT /note/:id for ID '#{env.params.url["id"]?}'" }
+    env.response.content_type = "application/json"
     {error: "An unexpected error occurred."}.to_json
   end
 end
@@ -182,6 +281,7 @@ delete "/lane/:name" do |env|
   rescue ex
     env.response.status_code = 500 # Internal Server Error
     ToCry::Log.error(exception: ex) { "Error processing DELETE /lane/:name for lane '#{env.params.url["name"]}'" }
+    env.response.content_type = "application/json"
     {error: "An unexpected error occurred."}.to_json
   end
 end

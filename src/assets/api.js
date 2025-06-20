@@ -81,3 +81,19 @@ export async function addNote(laneName, title, content = "", tags = []) {
         throw error; // Re-throw the error for the caller to handle
     }
 }
+
+export async function updateNote(noteId, { note, lane_name, position }) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/note/${noteId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ note, lane_name, position })
+        });
+        return response;
+    } catch (error) {
+        console.error(`Error updating note "${noteId}":`, error);
+        throw error;
+    }
+}

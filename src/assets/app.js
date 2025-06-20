@@ -1,4 +1,4 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote } from './api.js';
+import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote, updateNote } from './api.js';
 import { renderLanes } from './render.js';
 
 async function initializeLanes() {
@@ -6,7 +6,7 @@ async function initializeLanes() {
     try {
         const lanes = await fetchLanes();
         if (lanes) {
-            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, laneDragAndDropCallbacks);
+            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         } else {
             if (lanesContainer) lanesContainer.innerHTML = '<p>Error loading lanes. Could not fetch data.</p>';
         }
@@ -154,6 +154,130 @@ const laneDragAndDropCallbacks = {
     dragleave: handleLaneDragLeave,
     drop: handleLaneDrop,
     dragend: handleLaneDragEnd,
+};
+
+// --- Drag and Drop Handlers for Notes ---
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.note-card:not(.note-card--dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function handleNoteDragStart(event) {
+    event.stopPropagation(); // Prevent the lane's drag handler from firing
+    const noteCard = event.currentTarget;
+    // Set the primary data for our application
+    event.dataTransfer.setData('application/json', JSON.stringify({
+        noteId: noteCard.dataset.noteId,
+        originalLane: noteCard.dataset.laneName
+    }));
+    // Also set a text/plain fallback for better browser compatibility.
+    // The value can be simple, like the note ID.
+    event.dataTransfer.setData('text/plain', noteCard.dataset.noteId);
+    event.dataTransfer.effectAllowed = 'move';
+
+    setTimeout(() => {
+        noteCard.classList.add('note-card--dragging');
+    }, 0);
+}
+
+function handleNoteDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation(); // Prevent the lane's dragover handler from firing
+    const container = event.currentTarget.closest('.notes-list');
+    if (container) {
+        container.classList.add('notes-list--drag-over');
+    }
+}
+
+function handleNoteDragLeave(event) {
+    const container = event.currentTarget.closest('.notes-list');
+    if (container) {
+        container.classList.remove('notes-list--drag-over');
+    }
+}
+
+async function handleNoteDrop(event) {
+    event.preventDefault();
+
+    // Check if the dragged data is for a note. The note drag handler sets
+    // 'application/json', while the lane handler only sets 'text/plain'.
+    const jsonData = event.dataTransfer.getData('application/json');
+    if (!jsonData) {
+        // This is not a note drop. Do nothing and let the event bubble up
+        // to the lane's drop handler.
+        return;
+    }
+
+    // This is a note drop, so we handle it and stop it from bubbling.
+    event.stopPropagation();
+
+    const notesListContainer = event.currentTarget.closest('.notes-list');
+    if (!notesListContainer) return;
+
+    notesListContainer.classList.remove('notes-list--drag-over');
+
+    const dragData = JSON.parse(jsonData);
+    const { noteId, originalLane } = dragData;
+    const targetLaneName = notesListContainer.dataset.laneName;
+
+    const afterElement = getDragAfterElement(notesListContainer, event.clientY);
+    const allNotesInTarget = [...notesListContainer.querySelectorAll('.note-card')];
+    let newPosition = (afterElement == null) ? allNotesInTarget.length : allNotesInTarget.indexOf(afterElement);
+
+    const draggedElement = document.querySelector(`.note-card[data-note-id='${noteId}']`);
+    if (targetLaneName === originalLane && draggedElement) {
+        const originalDOMPosition = allNotesInTarget.indexOf(draggedElement);
+        if (originalDOMPosition !== -1 && originalDOMPosition < newPosition) {
+            newPosition--;
+        }
+    }
+
+    const allLanes = await fetchLanes();
+    if (!allLanes) { return alert('Could not fetch board data to complete the move.'); }
+
+    const originalLaneObject = allLanes.find(lane => lane.name === originalLane);
+    const originalNoteObject = originalLaneObject?.notes.find(note => note.id === noteId);
+    if (!originalNoteObject) { return alert('Could not find the original note data.'); }
+
+    const originalPositionInModel = originalLaneObject.notes.findIndex(note => note.id === noteId);
+    if (targetLaneName === originalLane && newPosition === originalPositionInModel) { return; }
+
+    try {
+        const response = await updateNote(noteId, { note: originalNoteObject, lane_name: targetLaneName, position: newPosition });
+        if (response.ok) {
+            await initializeLanes();
+        } else {
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to move note: ${errorData.error || response.statusText}`);
+            await initializeLanes();
+        }
+    } catch (error) {
+        alert("An error occurred while trying to move the note.");
+        await initializeLanes();
+    }
+}
+
+function handleNoteDragEnd(event) {
+    event.currentTarget.classList.remove('note-card--dragging');
+    document.querySelectorAll('.notes-list--drag-over').forEach(el => el.classList.remove('notes-list--drag-over'));
+}
+
+const noteDragAndDropCallbacks = {
+    dragstart: handleNoteDragStart,
+    dragover: handleNoteDragOver,
+    dragleave: handleNoteDragLeave,
+    drop: handleNoteDrop,
+    dragend: handleNoteDragEnd,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

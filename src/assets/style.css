@@ -55,6 +55,8 @@ html, body {
     flex-grow: 1; /* Allow lanes to grow and fill available space */
     flex-shrink: 0; /* Prevent lanes from shrinking below their min-width */
     background-color: var(--card-background-color); /* Add a background color to make the lane visible */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Drag and Drop styles for lanes */
@@ -116,7 +118,23 @@ html, body {
 
 .note-card {
     margin-bottom: var(--spacing);
+    cursor: grab;
     /* Pico's <article> styling will apply, you can override here */
+}
+
+.notes-list {
+    flex-grow: 1; /* Make the list fill the available space in the lane */
+    min-height: 50px; /* Ensure even an empty list has a drop target area */
+}
+
+.note-card--dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+.notes-list--drag-over {
+    background-color: rgba(0, 123, 255, 0.1); /* A light blueish highlight */
+    border-radius: var(--border-radius);
 }
 
 .note-tags .tag {
