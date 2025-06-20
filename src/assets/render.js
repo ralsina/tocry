@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -75,6 +75,18 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, drag
                 noteCard.dataset.noteId = note.id;
                 noteCard.dataset.laneName = lane.name;
 
+                const noteHeader = document.createElement('div');
+                noteHeader.className = 'note-card-header';
+
+                const deleteNoteButton = document.createElement('button');
+                deleteNoteButton.className = 'delete-note-btn';
+                deleteNoteButton.textContent = '✕';
+                deleteNoteButton.setAttribute('aria-label', `Delete note ${note.title}`);
+                deleteNoteButton.addEventListener('click', () => {
+                    if (onDeleteNoteCallback) {
+                        onDeleteNoteCallback(note.id, note.title);
+                    }
+                });
                 noteCard.addEventListener('dragstart', dragAndDropCallbacks.note.dragstart);
                 noteCard.addEventListener('dragend', dragAndDropCallbacks.note.dragend);
                 const noteTitle = document.createElement('h4');
@@ -92,7 +104,9 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, drag
                     });
                     noteCard.appendChild(tagsContainer);
                 }
-
+                noteHeader.appendChild(noteTitle);
+                noteHeader.appendChild(deleteNoteButton);
+                noteCard.appendChild(noteHeader);
                 const noteContent = document.createElement('p');
                 noteContent.textContent = note.content;
                 noteCard.appendChild(noteContent);

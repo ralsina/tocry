@@ -1,4 +1,4 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote, updateNote } from './api.js';
+import { fetchLanes, addLane, deleteLane, updateLanePosition, addNote, updateNote, deleteNote } from './api.js';
 import { renderLanes } from './render.js';
 
 async function initializeLanes() {
@@ -6,7 +6,7 @@ async function initializeLanes() {
     try {
         const lanes = await fetchLanes();
         if (lanes) {
-            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+            renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         } else {
             if (lanesContainer) lanesContainer.innerHTML = '<p>Error loading lanes. Could not fetch data.</p>';
         }
@@ -80,6 +80,26 @@ async function handleAddNoteRequest(laneName) {
         }
     } else if (noteTitle !== null) {
         alert("Note title cannot be empty.");
+    }
+}
+
+// Handler for delete note requests
+async function handleDeleteNoteRequest(noteId, noteTitle) {
+    if (confirm(`Are you sure you want to delete the note "${noteTitle}"?`)) {
+        try {
+            const response = await deleteNote(noteId);
+            if (response.ok) {
+                console.log(`Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`);
+                await initializeLanes(); // Re-fetch and render all lanes
+            } else {
+                const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
+                console.error(`Failed to delete note "${noteTitle}":`, response.status, response.statusText, errorData.error);
+                alert(`Failed to delete note: ${errorData.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error during delete note operation:', error);
+            alert("An error occurred while trying to delete the note.");
+        }
     }
 }
 

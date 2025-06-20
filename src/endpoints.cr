@@ -285,3 +285,34 @@ delete "/lane/:name" do |env|
     {error: "An unexpected error occurred."}.to_json
   end
 end
+
+# API Endpoint to delete a note by its ID
+# Expects the note ID in the URL path, e.g.:
+# DELETE /note/some-uuid-123
+delete "/note/:id" do |env|
+  begin
+    note_id = env.params.url["id"].as(String)
+
+    # Find the note on the board to get a handle on the object
+    find_result = ToCry::BOARD.note(note_id)
+
+    if find_result
+      note_to_delete, _ = find_result
+      note_to_delete.delete # This method handles file deletion and board saving
+
+      env.response.status_code = 200
+      env.response.content_type = "application/json"
+      note_to_delete.to_json # Return the deleted note's data
+    else
+      # Idempotency: If the note doesn't exist, the desired state is achieved.
+      env.response.status_code = 200
+      env.response.content_type = "application/json"
+      {success: "Note with ID '#{note_id}' not found, desired state achieved."}.to_json
+    end
+  rescue ex
+    env.response.status_code = 500 # Internal Server Error
+    ToCry::Log.error(exception: ex) { "Error processing DELETE /note/:id for ID '#{env.params.url["id"]?}'" }
+    env.response.content_type = "application/json"
+    {error: "An unexpected error occurred."}.to_json
+  end
+end

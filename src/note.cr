@@ -105,5 +105,34 @@ module ToCry
       Log.error(exception: ex) { "Failed to save note '#{self.title}' (ID: #{self.id}) to #{file_path}" }
       raise ex # Re-raise the exception after logging
     end
+
+    # Deletes the note from the system.
+    # This involves:
+    # 1. Removing the note from its parent lane in the in-memory board.
+    # 2. Deleting the note's source markdown file from `data/.notes/`.
+    # 3. Saving the board, which will remove any symlinks pointing to the deleted note.
+    def delete
+      note_id_str = self.id.to_s
+
+      # 1. Find and remove the note from its lane in the in-memory board state.
+      find_result = ToCry::BOARD.note(note_id_str)
+      if find_result
+        note_in_lane, parent_lane = find_result
+        parent_lane.notes.delete(note_in_lane)
+        Log.info { "Removed note '#{self.title}' from in-memory lane '#{parent_lane.name}'." }
+      else
+        Log.warn { "Note '#{self.title}' (ID: #{note_id_str}) not found in any lane on the board during deletion." }
+      end
+
+      # 2. Delete the note's source file.
+      note_file_path = File.join("data", ".notes", "#{note_id_str}.md")
+      File.delete(note_file_path) if File.exists?(note_file_path)
+
+      # 3. Save the board to persist the changes. This will remove the symlink.
+      ToCry::BOARD.save
+    rescue ex
+      Log.error(exception: ex) { "An error occurred while deleting note '#{self.title}' (ID: #{note_id_str})." }
+      raise ex
+    end
   end
 end

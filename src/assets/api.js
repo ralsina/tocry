@@ -97,3 +97,15 @@ export async function updateNote(noteId, { note, lane_name, position }) {
         throw error;
     }
 }
+
+export async function deleteNote(noteId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/note/${noteId}`, {
+            method: 'DELETE'
+        });
+        return response; // Return the full response object for the caller to handle
+    } catch (error) {
+        console.error(`Error deleting note "${noteId}":`, error);
+        throw error; // Re-throw the error for the caller to handle
+    }
+}
