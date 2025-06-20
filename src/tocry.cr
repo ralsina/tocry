@@ -129,5 +129,12 @@ module ToCry
       Log.error(exception: ex) { "Error saving board" }
       raise ex # Re-raise the exception after logging
     end
+
+    def lane_add(name : String) : Lane
+      new_lane = Lane.new(name)
+      self.lanes << new_lane
+      Log.info { "Lane '#{name}' added to the board." }
+      new_lane
+    end
   end
 end
