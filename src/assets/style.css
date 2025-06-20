@@ -1,0 +1,34 @@
+html, body {
+    height: 100vh; /* Use vh for full viewport height */
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Custom class for the header section */
+.page-header {
+    flex-shrink: 0; /* Prevent header from shrinking */
+    /* Pico's <nav> and .container will handle internal padding */
+}
+
+/* Custom class for the main content area */
+.main-content {
+    flex-grow: 1; /* Allow main content to grow and fill available space */
+    overflow-y: auto; /* Add scroll if content overflows */
+    /* Pico's .container class will be applied directly for padding */
+}
+
+/* Custom class for the footer section */
+.page-footer {
+    flex-shrink: 0; /* Prevent footer from shrinking */
+    text-align: center;
+    padding-top: var(--spacing);
+    padding-bottom: var(--spacing);
+}
+
+/* Ensure h1 in nav doesn't have excessive margins */
+.page-header nav h1 {
+    margin: 0;
+    font-size: 1.25rem; /* Adjust size as needed for nav header */
+    line-height: inherit; /* Align with other nav items */
+}
