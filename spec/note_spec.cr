@@ -1,5 +1,6 @@
 require "./spec_helper"
 require "json" # Required for JSON.parse
+require "file_utils"
 
 describe ToCry::Note do
   describe "JSON Serialization" do
@@ -81,6 +82,131 @@ describe ToCry::Note do
       # and no default is specified in `JSON::Field(default: ...)`
       note.tags.should eq [] of String # Default for Array(String) is an empty array
       note.content.should eq ""       # Default for String is an empty string
+    end
+  end
+
+  describe "File Persistence" do
+    notes_dir = File.join("data", ".notes")
+
+    before_each do
+      FileUtils.mkdir_p(notes_dir)
+    end
+
+    after_each do
+      FileUtils.rm_rf("data")
+    end
+
+    it "saves a note and can be loaded back" do
+      # 1. Create a new note
+      original_note = ToCry::Note.new(
+        "Round Trip Test",
+        ["save", "load"],
+        "This note will be saved and then loaded."
+      )
+
+      # 2. Save the note
+      original_note.save
+
+      # 3. Load the note back using its ID
+      loaded_note = ToCry::Note.load(original_note.id.to_s)
+
+      # 4. Assert that the loaded note is identical to the original
+      loaded_note.id.should eq(original_note.id)
+      loaded_note.title.should eq(original_note.title)
+      loaded_note.tags.should eq(original_note.tags)
+      loaded_note.content.should eq(original_note.content)
+    end
+
+    describe ".load" do
+      it "loads a note from a valid markdown file" do
+        note_id = "test-load-id"
+        file_path = File.join(notes_dir, "#{note_id}.md")
+        file_content = <<-MD
+        ---
+        title: Loaded Note
+        tags:
+        - loaded
+        - from_file
+        ---
+        This is the content of the loaded note.
+        MD
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+
+        note.id.should eq(note_id)
+        note.title.should eq("Loaded Note")
+        note.tags.should eq(["loaded", "from_file"])
+        note.content.strip.should eq("This is the content of the loaded note.")
+      end
+
+      it "raises FileNotFoundError if the note file does not exist" do
+        expect_raises(File::NotFoundError) do
+          ToCry::Note.load("non-existent-id")
+        end
+      end
+
+      it "raises an error for a file with invalid format (no frontmatter)" do
+        note_id = "invalid-format-id"
+        file_path = File.join(notes_dir, "#{note_id}.md")
+        File.write(file_path, "Just some text without frontmatter.")
+
+        expect_raises(Exception, "Invalid note format in #{file_path}. Could not parse frontmatter.") do
+          ToCry::Note.load(note_id)
+        end
+      end
+
+      it "raises an error for a file with invalid YAML in frontmatter" do
+        note_id = "invalid-yaml-id"
+        file_path = File.join(notes_dir, "#{note_id}.md")
+        file_content = <<-MD
+        ---
+        title: Bad YAML
+        tags: [a, b # this is a syntax error
+        ---
+        Content.
+        MD
+        File.write(file_path, file_content)
+
+        expect_raises(Exception, /Invalid YAML frontmatter in #{file_path}/) do
+          ToCry::Note.load(note_id)
+        end
+      end
+
+      it "loads a note with no tags correctly" do
+        note_id = "no-tags-id"
+        file_path = File.join(notes_dir, "#{note_id}.md")
+        file_content = <<-MD
+        ---
+        title: Note Without Tags
+        ---
+        Content here.
+        MD
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+        note.title.should eq("Note Without Tags")
+        note.tags.should be_empty
+        note.content.strip.should eq("Content here.")
+      end
+
+      it "loads a note with no content correctly" do
+        note_id = "no-content-id"
+        file_path = File.join(notes_dir, "#{note_id}.md")
+        file_content = <<-MD
+        ---
+        title: Note Without Content
+        tags:
+        - no_content
+        ---
+        MD
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+        note.title.should eq("Note Without Content")
+        note.tags.should eq(["no_content"])
+        note.content.strip.should be_empty
+      end
     end
   end
 end

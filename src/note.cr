@@ -52,6 +52,44 @@ module ToCry
       self.title = @title
     end
 
+    # Loads a Note from its corresponding markdown file.
+    #
+    # The file is expected to be at `data/.notes/{id}.md`.
+    # It should contain YAML frontmatter for metadata (title, tags)
+    # and the rest of the file is the note's content.
+    #
+    # Raises `IO::FileNotFoundError` if the file doesn't exist.
+    # Raises `RuntimeError` if the file format is invalid or has invalid YAML.
+    def self.load(id : String)
+      file_path = File.join("data", ".notes", "#{id}.md")
+      unless File.exists?(file_path)
+        raise File::NotFoundError.new(file: file_path, message: "Note file not found for ID #{id} at #{file_path}")
+      end
+
+      file_content = File.read(file_path)
+
+      # Regex to parse frontmatter and content.
+      # It captures the YAML block and the content block separately.
+      match = file_content.match(/\A---\s*\n(.*?)\n---\s*\n?(.*)\z/m)
+
+      unless match
+        raise "Invalid note format in #{file_path}. Could not parse frontmatter."
+      end
+
+      yaml_content = match[1]
+      note_content = match[2]
+
+      frontmatter = begin
+        FrontMatter.from_yaml(yaml_content)
+      rescue ex : YAML::ParseException
+        raise "Invalid YAML frontmatter in #{file_path}: #{ex.message}"
+      end
+
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content)
+      note.id = id # Set the correct, persistent ID.
+      note
+    end
+
     def save
       notes_dir = File.join("data", ".notes")
       FileUtils.mkdir_p(notes_dir)
