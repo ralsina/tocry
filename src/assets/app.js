@@ -6,6 +6,8 @@ async function initializeLanes() {
     try {
         const lanes = await fetchLanes();
         renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
+        setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
         console.error('Error initializing lanes:', error);
         if (lanesContainer) {
@@ -456,6 +458,46 @@ function handleSearchInput(event) {
     });
 }
 
+// --- Horizontal Scroll Buttons ---
+
+function updateScrollButtonsVisibility() {
+    const mainContent = document.querySelector('.main-content');
+    const scrollLeftBtn = document.querySelector('.scroll-btn--left');
+    const scrollRightBtn = document.querySelector('.scroll-btn--right');
+
+    if (!mainContent || !scrollLeftBtn || !scrollRightBtn) return;
+
+    const scrollLeft = mainContent.scrollLeft;
+    const scrollWidth = mainContent.scrollWidth;
+    const clientWidth = mainContent.clientWidth;
+    const scrollBuffer = 2; // Buffer for floating point inaccuracies
+
+    // Left button visibility
+    if (scrollLeft > scrollBuffer) {
+        scrollLeftBtn.classList.add('scroll-btn--visible');
+    } else {
+        scrollLeftBtn.classList.remove('scroll-btn--visible');
+    }
+
+    // Right button visibility
+    if (scrollLeft < scrollWidth - clientWidth - scrollBuffer) {
+        scrollRightBtn.classList.add('scroll-btn--visible');
+    } else {
+        scrollRightBtn.classList.remove('scroll-btn--visible');
+    }
+}
+
+function handleScrollButtonClick(direction) {
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+
+    const scrollAmount = mainContent.clientWidth * 0.8; // Scroll 80% of the visible width
+    mainContent.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeLanes();
     const addLaneButton = document.querySelector('button[aria-label="Add new item"]');
@@ -466,6 +508,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search');
     if (searchInput) {
         searchInput.addEventListener('input', handleSearchInput);
+    }
+
+    // --- Scroll Button Setup ---
+    const mainContent = document.querySelector('.main-content');
+    const scrollLeftBtn = document.querySelector('.scroll-btn--left');
+    const scrollRightBtn = document.querySelector('.scroll-btn--right');
+
+    if (mainContent) {
+        mainContent.addEventListener('scroll', updateScrollButtonsVisibility);
+        window.addEventListener('resize', updateScrollButtonsVisibility);
+    }
+    if (scrollLeftBtn) {
+        scrollLeftBtn.addEventListener('click', () => handleScrollButtonClick('left'));
+    }
+    if (scrollRightBtn) {
+        scrollRightBtn.addEventListener('click', () => handleScrollButtonClick('right'));
     }
 
     // Wire up the edit modal's form and buttons

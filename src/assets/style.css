@@ -6,6 +6,7 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
+    font-family: 'Chivo', sans-serif;
 }
 
 /* Custom class for the header section */
@@ -22,10 +23,12 @@ body {
     overflow-y: auto;
     /* Add vertical scroll if content overflows */
     overflow-x: auto;
-    /* Add horizontal scroll if content overflows */    
+    /* Add horizontal scroll if content overflows */
     /* Override Pico's .container to use more width */
-    max-width: 95%;
-    padding: var(--spacing);
+    max-width: none;
+    padding: 1em;
+    /* Hide the default scrollbar */
+    scrollbar-width: none; /* For Firefox */
 }
 
 /* Custom class for the footer section */
@@ -38,13 +41,24 @@ body {
     /* padding-bottom: var(--spacing); */
 }
 
+.main-content::-webkit-scrollbar {
+    display: none; /* For Chrome, Safari, Opera */
+}
+
 /* Ensure h1 in nav doesn't have excessive margins */
 .page-header nav h1 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.875rem; /* 50% larger than 1.25rem */
     /* Adjust size as needed for nav header */
     line-height: inherit;
     /* Align with other nav items */
+}
+
+/* Override Pico's container for the header to reduce side margins */
+.page-header .container {
+    max-width: none;
+    padding-right: 5vw;
+    padding-left: 5vw;
 }
 
 /* Lanes container specific styling if needed, Pico's .grid handles columns */
@@ -60,8 +74,8 @@ body {
     /* align-items: stretch; is the default for flex containers, making lanes stretch vertically */
     min-width: max-content;
     /* Ensure the container is wide enough for all lanes */
-    padding-bottom: var(--spacing);
-    /* Add some padding at the bottom if lanes are tall and scroll */
+    /* padding: 0 5em var(--spacing); */
+    /* Add padding to the sides and bottom */
 }
 
 /* Individual lane styling (each column in the grid) */
@@ -108,6 +122,7 @@ body {
 .lane-header h2 {
     margin: 0;
     /* Remove default h2 margin to align better */
+    font-weight: 500;
 }
 
 .delete-lane-btn {
@@ -173,6 +188,7 @@ body {
     margin: 0;
     /* Remove default h4 margin */
     flex-grow: 1;
+    font-weight: 500;
     /* Allow title to take up available space */
 }
 
@@ -196,10 +212,6 @@ body {
 }
 
 .note-card {
-    margin-bottom: 10px;
-    margin-right: 5px;
-    margin-left: 5px;
-    border-radius: 3px;
     cursor: grab;
     /* --- New styles for search animation --- */
     transition: all 0.35s ease-in-out;
@@ -345,3 +357,39 @@ body {
 .cm-s-easymde .CodeMirror-cursor {
     border-left-color: var(--color);
 }
+
+/* Custom Horizontal Scroll Buttons */
+.scroll-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background-color: rgba(29, 35, 42, 0.7); /* A dark, solid background */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s 0.3s, opacity 0.3s ease-in-out;
+}
+
+.scroll-btn--visible {
+    visibility: visible;
+    opacity: 0.2; /* 20% opacity when visible */
+    transition: opacity 0.3s ease-in-out;
+}
+
+.scroll-btn:hover {
+    opacity: 0.8; /* Higher opacity on hover */
+}
+
+.scroll-btn--left { left: 15px; }
+.scroll-btn--right { right: 15px; }
