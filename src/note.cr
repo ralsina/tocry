@@ -98,9 +98,7 @@ module ToCry
 
       # Use the new FrontMatter struct for serialization
       frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags)
-
-      frontmatter_section = "---\n#{frontmatter_struct.to_yaml}\n---\n"
-
+      frontmatter_section = "#{frontmatter_struct.to_yaml}\n---\n"
       File.write(file_path, frontmatter_section + self.content)
       Log.info { "Note '#{self.title}' (ID: #{self.id}) saved to #{file_path}" }
     rescue ex

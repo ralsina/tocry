@@ -133,6 +133,8 @@ post "/note" do |env|
     json_body = env.request.body.not_nil!.gets_to_end
     payload = NewNotePayload.from_json(json_body)
 
+    pp! payload
+
     target_lane_name = payload.lane_name
     note_data = payload.note
 
@@ -147,6 +149,7 @@ post "/note" do |env|
 
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
     new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content)
+    new_note.save
 
     # Save the board to persist the new note (this will save the note file and create symlink)
     ToCry::BOARD.save
