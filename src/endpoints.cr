@@ -26,7 +26,7 @@ post "/lane" do |env|
     counter = 1
 
     # Deduplicate name if a lane with the same name already exists
-    while ToCry::BOARD.lanes.any? { |l| l.name == final_name }
+    while ToCry::BOARD.lanes.any? { |lane| lane.name == final_name }
       final_name = "#{requested_name} (#{counter})"
       counter += 1
     end

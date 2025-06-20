@@ -43,6 +43,10 @@ def main
   Log.setup(:debug) # Or use Log.setup_from_env for more flexibility
   ToCry::Log.info { "Starting ToCry server on #{bind_address}:#{port}" }
   # Start kemal listening on the right address
+
+  # Load the board state from the file system on startup
+  ToCry::BOARD.load
+
   Kemal.config.host_binding = bind_address
 
   # Read credentials and realm from environment variables
