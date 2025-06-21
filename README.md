@@ -68,15 +68,15 @@ As an alternative to building from source, you can run `tocry` using a Docker co
         -v /path/to/your/data:/data ghcr.io/ralsina/tocry:latest
     ```
 
-* `-d`: Runs the container in the background.
-* `--restart unless-stopped`: Ensures the container restarts automatically.
-* `--name tocry`: Gives the container a memorable name.
-* `-p 3000:3000`: Maps port 3000 on your machine to port 3000 in the container.
-* `-v /path/to/your/data:/data`: Mounts your local data directory into the
-   container. **This is crucial for data persistence.**
+   * `-d`: Runs the container in the background.
+   * `--restart unless-stopped`: Ensures the container restarts automatically.
+   * `--name tocry`: Gives the container a memorable name.
+   * `-p 3000:3000`: Maps port 3000 on your machine to port 3000 in the container.
+   * `-v /path/to/your/data:/data`: Mounts your local data directory into the
+      container. **This is crucial for data persistence.**
 
- > **Note:** The image `ghcr.io/ralsina/tocry:latest` is for `amd64` architectures.
- > An `arm64` image is also available at `ghcr.io/ralsina/tocry-arm64:latest`.
+> **Note:** The image `ghcr.io/ralsina/tocry:latest` is for `amd64` architectures.
+> An `arm64` image is also available at `ghcr.io/ralsina/tocry-arm64:latest`.
 
 1. Open your browser and navigate to `http://localhost:3000`.
 
