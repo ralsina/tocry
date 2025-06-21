@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tocry - A simple, self-hosted Kanban board</title>
+    <meta
+      name="description"
+      content="A simple, self-hosted Kanban board for managing your tasks. Are you going ToDo or ToCry?"
+    />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -251,31 +255,74 @@
       </section>
 
       <section id="installation">
-        <h2>Installation</h2>
-        <p>This project is built with the Crystal programming language.</p>
-        <ol>
-          <li>
-            Clone the repository:
-            <pre><code>git clone https://github.com/ralsina/tocry.git
-cd tocry</code></pre>
-          </li>
-          <li>
-            Install Crystal dependencies:
-            <pre><code>shards install</code></pre>
-          </li>
-          <li>
-            Build the application for production:
-            <pre><code>shards build --release</code></pre>
-          </li>
-          <li>
-            Run the server:
-            <pre><code>./bin/tocry</code></pre>
-          </li>
-          <li>
-            Open your browser and navigate to
-            <code>http://localhost:3000</code>.
-          </li>
-        </ol>
+        <h2>Run with Docker</h2>
+        <p>
+          The easiest way to get `tocry` running is with Docker. This avoids
+          having to install Crystal or build from source.
+        </p>
+
+        <article>
+          <header>
+            <h3>Using Docker Run</h3>
+          </header>
+          <ol>
+            <li>
+              Create a directory on your host machine to store persistent data:
+              <pre><code>mkdir -p /path/to/your/data</code></pre>
+            </li>
+            <li>
+              Run the container, replacing
+              <code>/path/to/your/data</code> with the absolute path to the
+              directory you just created:
+              <pre><code>docker run -d --restart unless-stopped --name tocry -p 3000:3000 -v /path/to/your/data:/data ghcr.io/ralsina/tocry:latest</code></pre>
+              <p>
+                <small
+                  ><strong>Note:</strong> The image above is for amd64
+                  architectures. An arm64 image is also available at
+                  <code>ghcr.io/ralsina/tocry-arm64:latest</code>.</small
+                >
+              </p>
+            </li>
+            <li>
+              Open your browser and navigate to
+              <code>http://localhost:3000</code>.
+            </li>
+          </ol>
+        </article>
+
+        <article>
+          <header>
+            <h3>Using Docker Compose</h3>
+          </header>
+          <p>For an even simpler setup, you can use Docker Compose.</p>
+          <ol>
+            <li>
+              Create a <code>docker-compose.yml</code> file with the following
+              content:
+              <pre><code>services:
+  tocry:
+    image: ghcr.io/ralsina/tocry:latest
+    # For arm64, use: ghcr.io/ralsina/tocry-arm64:latest
+    container_name: tocry
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+</code></pre>
+            </li>
+            <li>
+              Run the application from the same directory as your compose file:
+              <pre><code>docker compose up -d</code></pre>
+              <p>
+                <small
+                  >This will automatically create a <code>data</code> directory
+                  in the current folder to store persistent data.</small
+                >
+              </p>
+            </li>
+          </ol>
+        </article>
       </section>
 
       <section id="usage">

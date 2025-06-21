@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  tocry:
+    image: ghcr.io/ralsina/tocry:latest
+    # For arm64 architectures, use the following image instead:
+    # image: ghcr.io/ralsina/tocry-arm64:latest
+    container_name: tocry
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount a local directory for persistent data
+      - ./data:/data

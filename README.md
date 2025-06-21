@@ -16,7 +16,7 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Light & Dark Modes:** Switch between themes for your viewing comfort
 * **Responsive UI:** A clean interface that works on different screen sizes
 
-## Installation
+## Installation From Source
 
 This project is built with the Crystal programming language.
 
@@ -46,6 +46,71 @@ This project is built with the Crystal programming language.
     ```
 
 5. Open your browser and navigate to `http://localhost:3000`.
+
+## Running with Docker
+
+As an alternative to building from source, you can run `tocry` using a Docker container.
+
+1. **Create a data directory:**
+    Create a directory on your host machine to store `tocry`'s data. This is essential
+    to ensure your data persists if the container is removed or updated.
+
+    ```sh
+    mkdir -p /path/to/your/data
+    ```
+
+2. **Run the container:**
+    Run the container, making sure to replace `/path/to/your/data` with the absolute
+    path to the directory you just created.
+
+    ```sh
+    docker run -d --restart unless-stopped --name tocry -p 3000:3000 \
+        -v /path/to/your/data:/data ghcr.io/ralsina/tocry:latest
+    ```
+
+* `-d`: Runs the container in the background.
+* `--restart unless-stopped`: Ensures the container restarts automatically.
+* `--name tocry`: Gives the container a memorable name.
+* `-p 3000:3000`: Maps port 3000 on your machine to port 3000 in the container.
+* `-v /path/to/your/data:/data`: Mounts your local data directory into the
+   container. **This is crucial for data persistence.**
+
+ > **Note:** The image `ghcr.io/ralsina/tocry:latest` is for `amd64` architectures.
+ > An `arm64` image is also available at `ghcr.io/ralsina/tocry-arm64:latest`.
+
+1. Open your browser and navigate to `http://localhost:3000`.
+
+### Using Docker Compose
+
+For an even simpler setup, you can use Docker Compose.
+
+1. Create a `docker-compose.yml` file in your project directory with the following
+   content (or use the one included in this repository):
+
+    ```yaml
+    version: '3.8'
+
+    services:
+      tocry:
+        image: ghcr.io/ralsina/tocry:latest
+        # For arm64 architectures, use the following image instead:
+        # image: ghcr.io/ralsina/tocry-arm64:latest
+        container_name: tocry
+        restart: unless-stopped
+        ports:
+          - "3000:3000"
+        volumes:
+          - ./data:/data
+    ```
+
+3. Run the application from the same directory as your compose file:
+
+    ```sh
+    docker compose up -d
+    ```
+
+    This will automatically create a `data` directory in the current
+    folder to store persistent data.
 
 ## Usage
 
