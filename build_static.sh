@@ -17,4 +17,4 @@ mv bin/tocry bin/tocry-static-linux-amd64
 docker build . -f Dockerfile.static --platform linux/arm64 -t tocry-builder
 docker run -ti --rm -v "$PWD":/app --platform linux/arm64 --user="$UID" tocry-builder \
   /bin/sh -c "cd /app && shards build --static --release && strip bin/tocry"
-v bin/tocry bin/tocry-static-linux-arm64
+mv bin/tocry bin/tocry-static-linux-arm64
