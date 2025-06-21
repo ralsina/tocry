@@ -75,6 +75,12 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         });
 
         laneHeader.appendChild(laneTitle);
+
+        const noteCountPill = document.createElement('span');
+        noteCountPill.className = 'lane-note-count';
+        noteCountPill.textContent = lane.notes ? lane.notes.length : 0;
+        laneHeader.appendChild(noteCountPill);
+
         laneHeader.appendChild(addNoteButton); // Add the new button
         laneHeader.appendChild(deleteButton);
         laneColumn.appendChild(laneHeader);

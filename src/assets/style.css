@@ -134,6 +134,17 @@ body {
     outline: none;
 }
 
+.lane-note-count {
+    background-color: rgba(55, 125, 255, 0.1); /* Match tag background */
+    color: var(--primary); /* Match tag text color */
+    font-size: 0.8em; /* Keep font size consistent */
+    font-weight: 600;
+    padding: 0.4em 0.8em; /* Increased top/bottom padding */
+    border-radius: 9999px; /* pill shape */
+    margin-left: 0.75em;
+    line-height: 1;
+}
+
 .delete-lane-btn {
     background: none;
     border: none;
