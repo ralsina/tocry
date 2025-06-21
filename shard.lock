@@ -6,7 +6,7 @@ shards:
 
   baked_file_handler:
     git: https://github.com/ralsina/baked_file_handler.git
-    version: 0.1.0+git.commit.80c0a25097d4af2f6536d7503e911f8d8dceb14e
+    version: 0.1.1
 
   baked_file_system:
     git: https://github.com/ralsina/baked_file_system.git
