@@ -5,6 +5,10 @@ to be a straightforward tool for managing tasks across different stages or
 categories. The name comes from the eternal question every developer faces
 when looking at their task list: "Are you going ToDo or ToCry?"
 
+![image](https://github.com/user-attachments/assets/239bdc3e-4376-4b96-b193-1960c129f864)
+
+
+
 ## Features
 
 * **Kanban Board:** Organize notes into customizable lanes.
