@@ -53,7 +53,14 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
 
         const addNoteButton = document.createElement('button');
         addNoteButton.className = 'add-note-btn';
-        addNoteButton.textContent = '+';
+        // SVG for plus icon
+        addNoteButton.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+        // The original text content is removed, and the SVG is used instead.
+        // The `stroke` color will be controlled by the CSS `color` property of the button,
+        // so it will automatically adapt to your theme.
+        // The `width` and `height` attributes ensure the icon has a consistent size,
+        // and the `stroke-width` controls the thickness of the lines.
+
         addNoteButton.setAttribute('aria-label', `Add new note to ${lane.name}`);
         addNoteButton.dataset.laneName = lane.name;
 
@@ -64,7 +71,11 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         });
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-lane-btn';
-        deleteButton.textContent = '✕'; // Using a multiplication X symbol
+        // SVG for close icon (simplified "X")
+        deleteButton.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        // Similar to the add button, we replace the text with an SVG icon.
+        // Note that the `width` and `height` are slightly smaller (20x20) to visually balance
+        // with the plus icon, as the "X" tends to appear larger due to its diagonal lines.
         deleteButton.setAttribute('aria-label', `Delete lane ${lane.name}`);
         deleteButton.dataset.laneName = lane.name; // Store lane name, though direct param is used
 
@@ -81,8 +92,12 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         noteCountPill.textContent = lane.notes ? lane.notes.length : 0;
         laneHeader.appendChild(noteCountPill);
 
-        laneHeader.appendChild(addNoteButton); // Add the new button
-        laneHeader.appendChild(deleteButton);
+        const laneActions = document.createElement('div');
+        laneActions.className = 'lane-actions';
+        laneActions.appendChild(addNoteButton);
+        laneActions.appendChild(deleteButton);
+        laneHeader.appendChild(laneActions);
+
         laneColumn.appendChild(laneHeader);
 
         const notesList = document.createElement('div');
@@ -124,7 +139,7 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
 
                 const deleteNoteButton = document.createElement('button');
                 deleteNoteButton.className = 'delete-note-btn';
-                deleteNoteButton.textContent = '✕';
+                deleteNoteButton.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
                 deleteNoteButton.setAttribute('aria-label', `Delete note ${note.title}`);
                 // Stop propagation for the delete button click to prevent the details from toggling
                 deleteNoteButton.addEventListener('click', (e) => {

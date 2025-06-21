@@ -146,6 +146,13 @@ body {
     outline: none;
 }
 
+.lane-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto; /* Push the actions group to the right */
+}
+
 .lane-note-count {
     background-color: rgba(55, 125, 255, 0.1); /* Match tag background */
     color: var(--primary); /* Match tag text color */
@@ -157,44 +164,33 @@ body {
     line-height: 1;
 }
 
-.delete-lane-btn {
+.delete-lane-btn,
+.add-note-btn {
     background: none;
     border: none;
-    color: var(--muted-color, #6c757d);
-    /* Pico's muted color or a fallback */
     font-size: 1.5em;
-    /* Make X a bit larger and more clickable */
     font-weight: bold;
     cursor: pointer;
     padding: 0.1em 0.3em;
-    /* Small padding to make it easier to click */
     line-height: 1;
-    /* Ensure tight fit */
+    /* Use flexbox to perfectly center the glyphs inside the buttons */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-lane-btn {
+    color: var(--muted-color, #6c757d);
 }
 
 .delete-lane-btn:hover,
 .delete-lane-btn:focus {
     color: var(--primary-hover, #c82333);
-    /* Or use Pico's danger color on hover */
     outline: none;
-    /* Optional: remove focus outline if not desired */
 }
 
 .add-note-btn {
-    background: none;
-    border: none;
-    color: var(--primary, #007bff);
-    /* Use Pico's primary color or a fallback */
-    font-size: 1.5em;
-    /* Make it a bit larger */
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0.1em 0.3em;
-    line-height: 1;
-    margin-left: auto;
-    /* Push it to the left of the delete button */
-    margin-right: 5px;
-    /* Small margin to separate from delete button */
+    color: var(--muted-color, #6c757d);
 }
 
 .add-note-btn:hover,
@@ -228,13 +224,14 @@ body {
     background: none;
     border: none;
     color: var(--muted-color, #6c757d);
-    font-size: 1.2em;
-    /* Slightly smaller than lane delete button */
-    font-weight: bold;
     cursor: pointer;
     padding: 0.1em 0.2em;
     line-height: 1;
     margin-left: 0.5em; /* Add space between tags and delete button */
+    /* Use flexbox to perfectly center the SVG icon */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .delete-note-btn:hover,
@@ -344,13 +341,6 @@ body {
     font-weight: 600;
 }
 
-/* Styles for the Edit Note Modal */
-#edit-note-content {
-    font-family: var(--font-mono);
-    min-height: 200px;
-    resize: vertical;
-}
-
 /* The footer of the modal should have buttons side-by-side on the right */
 #modal-edit-note footer {
     display: flex;
@@ -368,6 +358,7 @@ body {
     color: #ccc;
     border-color: #333;
     background-color: #000;
+    height: 300px; /* Fixed height for the editor */
 }
 .EasyMDEContainer .cm-s-easymde .CodeMirror-cursor {
     border-color: #ccc;
