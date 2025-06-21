@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initializeLanes();
-    const addLaneButton = document.querySelector('button[aria-label="Add new item"]');
+    const addLaneButton = document.getElementById('add-lane-btn');
     if (addLaneButton) {
         addLaneButton.addEventListener('click', handleAddLaneButtonClick);
     }
