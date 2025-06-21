@@ -152,6 +152,12 @@ function handleEditNoteRequest(note) {
     const modal = document.getElementById('modal-edit-note');
     if (!modal) return;
 
+    // IMPORTANT FIX: Destroy existing editor instance if it exists
+    if (easyMDE) {
+        easyMDE.toTextArea(); // Revert the textarea to its original state
+        easyMDE = null; // Clear the reference
+    }
+
     const form = document.getElementById('edit-note-form');
     form.dataset.noteId = note.id; // Store the ID for submission
     document.getElementById('edit-note-title').value = note.title;

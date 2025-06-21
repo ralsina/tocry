@@ -1,323 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tocry - A simple, self-hosted Kanban board</title>
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Pico.css for styling -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
+    />
 
     <style>
-        /* Base styles to match the app */
-        :root {
-            --font-family: 'Chivo', sans-serif;
-        }
-        body {
-            font-family: var(--font-family);
-        }
-        h1, h2, h3 {
-            font-weight: 500;
-        }
-        .page-header h1 {
-            font-size: 1.875rem;
-            font-weight: 500;
-            margin: 0;
-        }
-        .page-footer {
-            text-align: center;
-            padding: var(--spacing);
-        }
-        main.container {
-            padding-top: calc(var(--spacing) * 2);
-            padding-bottom: calc(var(--spacing) * 2);
-        }
-        /* Style for code blocks */
-        pre {
-            background-color: var(--code-background-color);
-            color: var(--code-color);
-            padding: var(--spacing);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--code-border-color);
-            overflow-x: auto;
-            white-space: pre-wrap;
-        }
-        code {
-            font-family: var(--font-mono);
-        }
-        /* Grid for features */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: var(--spacing);
-        }
-        .features-grid article {
-            padding: var(--spacing);
-        }
-        /* --- New styles for feature "lanes" --- */
-        .features-lanes-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px; /* Match app's lane gap */
-            margin-top: var(--spacing);
-        }
-        .feature-lane {
-            border: 2px solid #add8e6; /* Light blue border to match the app */
-            border-radius: 6px; /* Match app's lane style */
-            padding: 15px; /* Match app's lane style */
-            background-color: var(--card-background-color);
-            display: flex; /* Make it a flex container like app lanes */
-            flex-direction: column; /* Stack content vertically */
-        }
-        .feature-lane h3 {
-            margin-top: 0;
-            padding-bottom: calc(var(--spacing) / 2);
-            border-bottom: 1px solid var(--muted-border-color);
-        }
-        .feature-lane h3 { /* Match app's lane title font size and weight */
-            font-size: 1.5rem; /* Default h2 size in Pico */
-            font-weight: 500;
-            cursor: text;
-            padding: 0.1em 0.3em;
-            border-radius: var(--border-radius);
-            transition: background-color 0.2s ease-in-out;
-        }
-        .feature-lane h3:hover, .feature-lane h3:focus {
-            background-color: var(--form-element-background-color);
-            outline: none;
-        }
-        .feature-lane article {
-            margin-bottom: var(--spacing);
-            cursor: grab;
-        }
-        /* --- Styles for collapsible feature cards --- */
-        .feature-lane article {
-            padding: 0; /* Remove padding from article, it's handled by summary/content */
-        }
-        /* Style for dragged elements */
-        .dragging {
-            opacity: 0.4;
-            cursor: grabbing;
-        }
-        .feature-lane article summary {
-            padding: var(--spacing);
-        }
-        .feature-lane article summary h4 {
-            display: inline; /* Keep on same line as the expander icon */
-            margin: 0;
-        }
-        .feature-lane article p {
-            padding: 0 var(--spacing) var(--spacing);
-        }
+      /* Base styles to match the app */
+      :root {
+        --font-family: "Chivo", sans-serif;
+      }
+      body {
+        font-family: var(--font-family);
+      }
+      h1,
+      h2,
+      h3 {
+        font-weight: 500;
+      }
+      .page-header h1 {
+        font-size: 1.875rem;
+        font-weight: 500;
+        font-family: var(--font-family); /* Ensure Chivo font is applied */
+        margin: 0;
+      }
+      .page-footer {
+        text-align: center;
+        padding: var(--spacing);
+      }
+      main.container {
+        padding-top: calc(var(--spacing) * 2);
+        padding-bottom: calc(var(--spacing) * 2);
+      }
+      /* Style for code blocks */
+      pre {
+        background-color: var(--code-background-color);
+        color: var(--code-color);
+        padding: var(--spacing);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--code-border-color);
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      code {
+        font-family: var(--font-mono);
+      }
+      /* Grid for features */
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing);
+      }
+      .features-grid article {
+        padding: var(--spacing);
+      }
+      /* --- New styles for feature "lanes" --- */
+      .features-lanes-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px; /* Match app's lane gap */
+        margin-top: var(--spacing);
+      }
+      .feature-lane {
+        border: 2px solid #add8e6; /* Light blue border to match the app */
+        border-radius: 6px; /* Match app's lane style */
+        padding: 15px; /* Match app's lane style */
+        background-color: var(--card-background-color);
+        display: flex; /* Make it a flex container like app lanes */
+        flex-direction: column; /* Stack content vertically */
+      }
+      .feature-lane-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: calc(var(--spacing) / 2);
+        border-bottom: 1px solid var(--muted-border-color);
+        /* Add left padding to align the lane title with the note titles below it */
+        padding-left: var(--spacing);
+      }
+      .feature-lane h3 {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 1.5rem; /* Default h2 size in Pico */
+        font-weight: 500;
+        cursor: text;
+        padding: 0.1em;
+        border-radius: var(--border-radius);
+        transition: background-color 0.2s ease-in-out;
+      }
+      .lane-note-count {
+        background-color: rgba(55, 125, 255, 0.1); /* Match tag background */
+        color: var(--primary); /* Match tag text color */
+        font-size: 0.8em;
+        font-weight: 600;
+        padding: 0.4em 0.8em;
+        border-radius: 9999px; /* pill shape */
+        margin-left: 0.75em;
+        line-height: 1;
+      }
+      .feature-lane h3:hover,
+      .feature-lane h3:focus {
+        background-color: var(--form-element-background-color);
+        outline: none;
+      }
+      .feature-lane article {
+        margin-bottom: var(--spacing);
+        cursor: grab;
+      }
+      /* --- Styles for collapsible feature cards --- */
+      .feature-lane article {
+        padding: 0; /* Remove padding from article, it's handled by summary/content */
+      }
+      /* Style for dragged elements */
+      .dragging {
+        opacity: 0.4;
+        cursor: grabbing;
+      }
+      .feature-lane article summary {
+        padding: var(--spacing);
+      }
+      .feature-lane article summary h4 {
+        display: inline; /* Keep on same line as the expander icon */
+        margin: 0;
+        font-size: 1.125rem; /* Match app's h4 size (1.25rem * 90%) */
+        font-weight: 500; /* Match app's h4 font-weight */
+      }
+      .feature-lane article p {
+        padding: 0 var(--spacing) var(--spacing);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header class="page-header">
-        <div class="container">
-            <nav>
-                <ul>
-                    <li><h1>ToCry</h1></li>
-                </ul>
-                <ul>
-                    <li><button id="theme-switcher" class="secondary" aria-label="Switch theme">🌙</button></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav>
+          <ul>
+            <li><h1>ToCry</h1></li>
+          </ul>
+          <ul>
+            <li>
+              <button
+                id="theme-switcher"
+                class="secondary"
+                aria-label="Switch theme"
+              >
+                🌙
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="container">
-        <section id="hero" style="text-align: center;">
-            <hgroup>
-                <h2>A simple, self-hosted Kanban board.</h2>
-                <h3>Are you going ToDo or ToCry?</h3>
-            </hgroup>
-        </section>
+      <section id="hero" style="text-align: center">
+        <hgroup>
+          <h2>A simple, self-hosted Kanban board.</h2>
+          <h3>Are you going ToDo or ToCry?</h3>
+        </hgroup>
+      </section>
 
-        <section id="features">
-            <h2>Features</h2>
-            <div class="features-lanes-container">
-                <div class="feature-lane" draggable="true">
-                    <h3>Core Functionality</h3>
-                    <article draggable="true">
-                        <details open>
-                            <summary><h4>Kanban Board</h4></summary>
-                            <p>Organize notes into customizable, re-orderable lanes.</p>
-                        </details>
-                    </article>
-                    <article draggable="true">
-                        <details open>
-                            <summary><h4>Rich Text Notes</h4></summary>
-                            <p>Write notes in Markdown, with a comfortable WYSIWYG editor.</p>
-                        </details>
-                    </article>
-                    <article draggable="true">
-                        <details open>
-                            <summary><h4>Drag & Drop</h4></summary>
-                            <p>Easily move notes between lanes and reorder lanes themselves.</p>
-                        </details>
-                    </article>
-                </div>
-                <div class="feature-lane" draggable="true">
-                    <h3>Advanced Features</h3>
-                    <article draggable="true"><details open><summary><h4>Inline Editing</h4></summary><p>Quickly rename lanes by clicking on their titles.</p></details></article>
-                    <article draggable="true"><details open><summary><h4>Live Search</h4></summary><p>Instantly filter all notes by title, content, or tags.</p></details></article>
-                    <article draggable="true"><details open><summary><h4>Light & Dark Modes</h4></summary><p>Switch between themes for your viewing comfort.</p></details></article>
-                </div>
+      <section id="features">
+        <div class="features-lanes-container">
+          <div class="feature-lane" draggable="true">
+            <div class="feature-lane-header">
+              <h3>Core Functionality</h3>
+              <span class="lane-note-count">4</span>
             </div>
-        </section>
+            <div class="feature-notes-list">
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Kanban Board</h4></summary>
+                  <p>Organize notes into customizable, re-orderable lanes.</p>
+                </details>
+              </article>
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Rich Text Notes</h4></summary>
+                  <p>
+                    Write notes in Markdown, with a comfortable WYSIWYG editor.
+                  </p>
+                </details>
+              </article>
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Drag & Drop</h4></summary>
+                  <p>
+                    Easily move notes between lanes and reorder lanes
+                    themselves.
+                  </p>
+                </details>
+              </article>
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Free and Open Source</h4></summary>
+                  <p>
+                    The full source code is
+                    <a
+                      href="https://github.com/ralsina/tocry"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >available on GitHub</a
+                    >. Feel free to fork, modify, and contribute to the project!
+                  </p>
+                </details>
+              </article>
+            </div>
+          </div>
+          <div class="feature-lane" draggable="true">
+            <div class="feature-lane-header">
+              <h3>Modern UI</h3>
+              <span class="lane-note-count">3</span>
+            </div>
+            <div class="feature-notes-list">
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Inline Editing</h4></summary>
+                  <p>Quickly rename lanes by clicking on their titles.</p>
+                </details>
+              </article>
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Live Search</h4></summary>
+                  <p>Instantly filter all notes by title, content, or tags.</p>
+                </details>
+              </article>
+              <article draggable="true">
+                <details open>
+                  <summary><h4>Light & Dark Modes</h4></summary>
+                  <p>Switch between themes for your viewing comfort.</p>
+                </details>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <section id="installation">
-            <h2>Installation</h2>
-            <p>This project is built with the Crystal programming language.</p>
-            <ol>
-                <li>Clone the repository:<pre><code>git clone https://github.com/ralsina/tocry.git
-cd tocry</code></pre></li>
-                <li>Install Crystal dependencies:<pre><code>shards install</code></pre></li>
-                <li>Build the application for production:<pre><code>shards build --release</code></pre></li>
-                <li>Run the server:<pre><code>./bin/tocry</code></pre></li>
-                <li>Open your browser and navigate to <code>http://localhost:3000</code>.</li>
-            </ol>
-        </section>
+      <section id="installation">
+        <h2>Installation</h2>
+        <p>This project is built with the Crystal programming language.</p>
+        <ol>
+          <li>
+            Clone the repository:
+            <pre><code>git clone https://github.com/ralsina/tocry.git
+cd tocry</code></pre>
+          </li>
+          <li>
+            Install Crystal dependencies:
+            <pre><code>shards install</code></pre>
+          </li>
+          <li>
+            Build the application for production:
+            <pre><code>shards build --release</code></pre>
+          </li>
+          <li>
+            Run the server:
+            <pre><code>./bin/tocry</code></pre>
+          </li>
+          <li>
+            Open your browser and navigate to
+            <code>http://localhost:3000</code>.
+          </li>
+        </ol>
+      </section>
 
-        <section id="usage">
-            <h2>Usage</h2>
-            <ul>
-                <li><strong>Add a Lane:</strong> Click the `+` button in the header to create a new column.</li>
-                <li><strong>Rename a Lane:</strong> Click directly on a lane's title, type the new name, and press `Enter` or click away to save.</li>
-                <li><strong>Add a Note:</strong> Click the `+` button in a lane's header.</li>
-                <li><strong>Edit a Note:</strong> Double-click on a note card to open the full editor.</li>
-                <li><strong>Move Items:</strong> Click and drag lanes or notes to reorder them.</li>
-            </ul>
-        </section>
+      <section id="usage">
+        <h2>Usage</h2>
+        <ul>
+          <li>
+            <strong>Add a Lane:</strong> Click the `+` button in the header to
+            create a new column.
+          </li>
+          <li>
+            <strong>Rename a Lane:</strong> Click directly on a lane's title,
+            type the new name, and press `Enter` or click away to save.
+          </li>
+          <li>
+            <strong>Add a Note:</strong> Click the `+` button in a lane's
+            header.
+          </li>
+          <li>
+            <strong>Edit a Note:</strong> Double-click on a note card to open
+            the full editor.
+          </li>
+          <li>
+            <strong>Move Items:</strong> Click and drag lanes or notes to
+            reorder them.
+          </li>
+        </ul>
+      </section>
     </main>
 
     <footer class="page-footer">
-        <small>
-            Are you going ToDo or ToCry? - <a href="https://github.com/ralsina/tocry" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
-        </small>
+      <small>
+        Are you going ToDo or ToCry? -
+        <a
+          href="https://github.com/ralsina/tocry"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Source on GitHub</a
+        >
+      </small>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            function applyTheme(theme) {
-                document.documentElement.setAttribute('data-theme', theme);
-                const btn = document.getElementById('theme-switcher');
-                if (btn) {
-                    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-                    btn.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+      document.addEventListener("DOMContentLoaded", () => {
+        function applyTheme(theme) {
+          document.documentElement.setAttribute("data-theme", theme);
+          const btn = document.getElementById("theme-switcher");
+          if (btn) {
+            btn.textContent = theme === "dark" ? "☀️" : "🌙";
+            btn.setAttribute(
+              "aria-label",
+              `Switch to ${theme === "dark" ? "light" : "dark"} theme`
+            );
+          }
+        }
+        function handleThemeSwitch() {
+          const current =
+            document.documentElement.getAttribute("data-theme") || "light";
+          const next = current === "dark" ? "light" : "dark";
+          localStorage.setItem("theme", next);
+          applyTheme(next);
+        }
+        const savedTheme =
+          localStorage.getItem("theme") ||
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        applyTheme(savedTheme);
+        document
+          .getElementById("theme-switcher")
+          ?.addEventListener("click", handleThemeSwitch);
+
+        // --- Fun Draggable Elements ---
+        function makeDraggable() {
+          const draggableLanes = document.querySelectorAll(".feature-lane");
+          const draggableNotes = document.querySelectorAll(
+            ".feature-lane article"
+          );
+          const laneContainer = document.querySelector(
+            ".features-lanes-container"
+          );
+
+          function onDragStart(e) {
+            e.target.classList.add("dragging");
+          }
+
+          function onDragEnd(e) {
+            e.target.classList.remove("dragging");
+          }
+
+          function getDragAfterElement(container, xOrY, selector) {
+            const draggableElements = [
+              ...container.querySelectorAll(`${selector}:not(.dragging)`),
+            ];
+            const isHorizontal = container === laneContainer;
+
+            return draggableElements.reduce(
+              (closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = isHorizontal
+                  ? xOrY - box.left - box.width / 2
+                  : xOrY - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                  return { offset: offset, element: child };
+                } else {
+                  return closest;
                 }
-            }
-            function handleThemeSwitch() {
-                const current = document.documentElement.getAttribute('data-theme') || 'light';
-                const next = current === 'dark' ? 'light' : 'dark';
-                localStorage.setItem('theme', next);
-                applyTheme(next);
-            }
-            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            applyTheme(savedTheme);
-            document.getElementById('theme-switcher')?.addEventListener('click', handleThemeSwitch);
+              },
+              { offset: Number.NEGATIVE_INFINITY }
+            ).element;
+          }
 
-            // --- Fun Draggable Elements ---
-            function makeDraggable() {
-                const draggableLanes = document.querySelectorAll('.feature-lane');
-                const draggableNotes = document.querySelectorAll('.feature-lane article');
-                const laneContainer = document.querySelector('.features-lanes-container');
+          // --- Lane Dragging ---
+          draggableLanes.forEach((lane) => {
+            lane.addEventListener("dragstart", onDragStart);
+            lane.addEventListener("dragend", onDragEnd);
+          });
 
-                function onDragStart(e) {
-                    e.target.classList.add('dragging');
+          laneContainer.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            const dragging = document.querySelector(".dragging");
+            // Only reorder if we are dragging a lane
+            if (dragging && dragging.classList.contains("feature-lane")) {
+              const afterElement = getDragAfterElement(
+                laneContainer,
+                e.clientX,
+                ".feature-lane"
+              );
+              afterElement
+                ? laneContainer.insertBefore(dragging, afterElement)
+                : laneContainer.appendChild(dragging);
+            }
+          });
+
+          // --- Note Dragging ---
+          draggableNotes.forEach((note) => {
+            note.addEventListener("dragstart", (e) => {
+              e.stopPropagation(); // Prevent lane from being dragged
+              onDragStart(e);
+            });
+            note.addEventListener("dragend", onDragEnd);
+          });
+
+          // Note: The dragover for notes is now on the notes list, not the whole lane
+          document
+            .querySelectorAll(".feature-notes-list")
+            .forEach((notesList) => {
+              notesList.addEventListener("dragover", (e) => {
+                e.preventDefault(); // Allow dropping
+                const dragging = document.querySelector(".dragging");
+                // Only handle note dragging here
+                if (dragging && !dragging.classList.contains("feature-lane")) {
+                  e.stopPropagation(); // Stop lane container from handling this
+                  const afterElement = getDragAfterElement(
+                    notesList,
+                    e.clientY,
+                    "article"
+                  );
+                  afterElement
+                    ? notesList.insertBefore(dragging, afterElement)
+                    : notesList.appendChild(dragging);
                 }
+              });
+            });
+        }
+        makeDraggable();
 
-                function onDragEnd(e) {
-                    e.target.classList.remove('dragging');
-                }
+        // --- Fun Editable Lane Headings ---
+        function makeHeadingsEditable() {
+          const editableHeadings =
+            document.querySelectorAll(".feature-lane h3");
+          editableHeadings.forEach((heading) => {
+            heading.contentEditable = true;
+            heading.dataset.originalName = heading.textContent;
 
-                function getDragAfterElement(container, xOrY, selector) {
-                    const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
-                    const isHorizontal = container === laneContainer;
+            heading.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault(); // Prevent creating a new line
+                e.target.blur(); // Trigger blur to "save"
+              } else if (e.key === "Escape") {
+                e.target.textContent = e.target.dataset.originalName; // Revert
+                e.target.blur();
+              }
+            });
 
-                    return draggableElements.reduce((closest, child) => {
-                        const box = child.getBoundingClientRect();
-                        const offset = isHorizontal ? (xOrY - box.left - box.width / 2) : (xOrY - box.top - box.height / 2);
-
-                        if (offset < 0 && offset > closest.offset) {
-                            return { offset: offset, element: child };
-                        } else {
-                            return closest;
-                        }
-                    }, { offset: Number.NEGATIVE_INFINITY }).element;
-                }
-
-                // --- Lane Dragging ---
-                draggableLanes.forEach(lane => {
-                    lane.addEventListener('dragstart', onDragStart);
-                    lane.addEventListener('dragend', onDragEnd);
-                });
-
-                laneContainer.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const dragging = document.querySelector('.dragging');
-                    // Only reorder if we are dragging a lane
-                    if (dragging && dragging.classList.contains('feature-lane')) {
-                        const afterElement = getDragAfterElement(laneContainer, e.clientX, '.feature-lane');
-                        afterElement ? laneContainer.insertBefore(dragging, afterElement) : laneContainer.appendChild(dragging);
-                    }
-                });
-
-                // --- Note Dragging ---
-                draggableNotes.forEach(note => {
-                    note.addEventListener('dragstart', e => {
-                        e.stopPropagation(); // Prevent lane from being dragged
-                        onDragStart(e);
-                    });
-                    note.addEventListener('dragend', onDragEnd);
-                });
-
-                draggableLanes.forEach(lane => {
-                    lane.addEventListener('dragover', e => {
-                        e.preventDefault(); // Allow dropping
-                        const dragging = document.querySelector('.dragging');
-                        // Only handle note dragging here
-                        if (dragging && !dragging.classList.contains('feature-lane')) {
-                            e.stopPropagation(); // Stop lane container from handling this
-                            const afterElement = getDragAfterElement(lane, e.clientY, 'article');
-                            afterElement ? lane.insertBefore(dragging, afterElement) : lane.appendChild(dragging);
-                        }
-                    });
-                });
-            }
-            makeDraggable();
-
-            // --- Fun Editable Lane Headings ---
-            function makeHeadingsEditable() {
-                const editableHeadings = document.querySelectorAll('.feature-lane h3');
-                editableHeadings.forEach(heading => {
-                    heading.contentEditable = true;
-                    heading.dataset.originalName = heading.textContent;
-
-                    heading.addEventListener('keydown', e => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault(); // Prevent creating a new line
-                            e.target.blur();    // Trigger blur to "save"
-                        } else if (e.key === 'Escape') {
-                            e.target.textContent = e.target.dataset.originalName; // Revert
-                            e.target.blur();
-                        }
-                    });
-
-                    heading.addEventListener('blur', e => {
-                        if (e.target.textContent.trim() === '') {
-                            e.target.textContent = e.target.dataset.originalName;
-                        }
-                    });
-                });
-            }
-            makeHeadingsEditable();
-        });
+            heading.addEventListener("blur", (e) => {
+              if (e.target.textContent.trim() === "") {
+                e.target.textContent = e.target.dataset.originalName;
+              }
+            });
+          });
+        }
+        makeHeadingsEditable();
+      });
     </script>
-</body>
+  </body>
 </html>
