@@ -1,6 +1,9 @@
-# tocry
+# ToCry
 
-`tocry` is a simple, self-hosted Kanban-style TODO application. It's designed to be a straightforward tool for managing tasks across different stages or categories. The name comes from the eternal question every developer faces when looking at their task list: "Are you going ToDo or ToCry?"
+`tocry` is a simple, self-hosted Kanban-style TODO application. It's designed
+to be a straightforward tool for managing tasks across different stages or
+categories. The name comes from the eternal question every developer faces
+when looking at their task list: "Are you going ToDo or ToCry?"
 
 ## Features
 
@@ -49,7 +52,8 @@ This project is built with the Crystal programming language.
 Once the application is running, you can manage your tasks through the web interface:
 
 * **Add a Lane:** Click the `+` button in the header to create a new column
-* **Rename a Lane:** Click directly on a lane's title, type the new name, and press `Enter` or click away to save
+* **Rename a Lane:** Click directly on a lane's title, type the new name,
+  and press `Enter` or click away to save
 * **Add a Note:** Click the `+` button in a lane's header
 * **Edit a Note:** Double-click on a note card to open the full editor
 * **Move Items:** Click and drag lanes or notes to reorder them

@@ -72,7 +72,7 @@ describe ToCry::Lane do
   end
 
   describe "File Persistence" do
-    data_dir = "data" 
+    data_dir = "data"
     notes_dir = File.join(data_dir, ".notes")
 
     before_each do
