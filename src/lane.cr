@@ -95,6 +95,7 @@ module ToCry
           next nil unless File.symlink?(symlink_path)
           target_path = File.readlink(symlink_path)
           note_id = File.basename(target_path, ".md")
+          Log.info { "Loading note from symlink: #{symlink_path} -> #{target_path} (ID: #{note_id})" }
           Note.load(note_id)
         rescue ex
           Log.warn(exception: ex) { "Skipping note: Failed to load from symlink '#{symlink_path}'" }

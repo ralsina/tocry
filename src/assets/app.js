@@ -565,6 +565,34 @@ function handleScrollButtonClick(direction) {
     });
 }
 
+// --- Keyboard Shortcuts ---
+
+/**
+ * Handles global keydown events for application-wide shortcuts.
+ * @param {KeyboardEvent} event The keydown event.
+ */
+function handleKeyDown(event) {
+    // Ignore key presses if the user is typing in an input, textarea, or contentEditable element.
+    // This prevents the page from scrolling when the user is editing text.
+    const activeElement = document.activeElement;
+    const isTyping = activeElement.tagName === 'INPUT' ||
+                     activeElement.tagName === 'TEXTAREA' ||
+                     activeElement.isContentEditable;
+
+    if (isTyping) return;
+
+    switch (event.key) {
+        case 'ArrowLeft':
+            event.preventDefault(); // Prevent default browser action (e.g., scrolling the whole window)
+            handleScrollButtonClick('left');
+            break;
+        case 'ArrowRight':
+            event.preventDefault();
+            handleScrollButtonClick('right');
+            break;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Theme Switcher Setup ---
     // Checks for saved theme in localStorage, falls back to system preference, then defaults to light.
@@ -585,6 +613,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
         searchInput.addEventListener('input', handleSearchInput);
     }
+
+    // Wire up keyboard shortcuts for scrolling
+    document.addEventListener('keydown', handleKeyDown);
 
     // --- Scroll Button Setup ---
     const mainContent = document.querySelector('.main-content');
