@@ -213,20 +213,53 @@ body {
     outline: none;
 }
 
-.note-card-header {
+/* --- Custom Collapsible Note Indicator --- */
+
+/* 1. Turn the summary into a flex container. This is the key to removing the default marker
+      and gaining full control over the layout of its children. */
+summary.note-card-summary {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
-    /* Space between header and content */
+    gap: 0.75em; /* Space between our custom marker and the note header */
+    padding: var(--spacing); /* Use standard Pico padding */
+    flex-wrap: nowrap; /* Prevent items from wrapping */
+    list-style: none; /* Hide default marker in Firefox */
+    cursor: pointer;
 }
 
-/* A placeholder for the summary element on non-collapsable notes to maintain consistent padding. */
-.note-card-summary-placeholder {
-    padding: var(--spacing);
+/* 2. Explicitly hide the marker for WebKit browsers. */
+summary.note-card-summary::-webkit-details-marker {
+    display: none;
 }
 
-.note-card-header h4 {
+/* 3. Create our custom marker as a pseudo-element. It will be the first flex item. */
+summary.note-card-summary::before {
+    content: '';
+    flex-shrink: 0; /* Prevent the icon from shrinking */
+    width: 1.2em;
+    height: 1.2em;
+    background-color: var(--muted-color);
+    mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='9 18 15 12 9 6'%3e%3c/polyline%3e%3c/svg%3e");
+    mask-size: contain;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* 4. Rotate our custom marker when the note is expanded. */
+details[open] > summary.note-card-summary::before {
+    transform: rotate(90deg);
+}
+
+/* Styles for notes without content to disable the collapsible behavior */
+details.note-card--no-content > summary.note-card-summary {
+    cursor: default;
+}
+
+details.note-card--no-content > summary.note-card-summary::before {
+    visibility: hidden;
+}
+
+/* Style the title inside both collapsible and non-collapsible headers */
+summary.note-card-summary > h4 {
     margin: 0;
     /* Remove default h4 margin */
     flex-grow: 1;
@@ -244,13 +277,13 @@ body {
     min-width: 0; /* Required for text-overflow to work on a flex item */
 }
 
-.note-card-header h4:hover,
-.note-card-header h4:focus {
+summary.note-card-summary > h4:hover,
+summary.note-card-summary > h4:focus {
     background-color: var(--form-element-background-color);
     outline: none;
 }
 
-.note-card-header h4:focus {
+summary.note-card-summary > h4:focus {
     /* When editing, show the full title instead of the ellipsis */
     white-space: normal;
     overflow: visible;
@@ -265,6 +298,8 @@ body {
     padding: 0.1em 0.2em;
     line-height: 1;
     margin-left: 0.5em; /* Add space between tags and delete button */
+    margin-left: auto; /* Always push the delete button to the far right */
+    flex-shrink: 0; /* Prevent the button from shrinking */
     /* Use flexbox to perfectly center the SVG icon */
     display: inline-flex;
     align-items: center;
@@ -278,6 +313,8 @@ body {
 }
 
 .note-card {
+    /* Restore top padding, but keep horizontal/bottom padding at 0 to prevent "double padding" */
+    padding: 10px;
     cursor: grab;
     /* --- New styles for search animation --- */
     transition: all 0.35s ease-in-out;
@@ -319,6 +356,8 @@ body {
     /* Basic styling for rendered markdown */
     font-size: 0.9em;
     line-height: 1.6;
+    /* Add padding to align with the summary element's content */
+    padding: 0 var(--spacing) var(--spacing) var(--spacing);
 }
 
 .note-content p:last-child {
@@ -361,7 +400,7 @@ body {
 .note-tags {
     display: flex;
     align-items: center;
-    gap: 0.4em; /* Space between pills */
+    gap: 0.4em; /* Space between tag pills */
     margin-left: 1em; /* Space between title and tags */
     flex-shrink: 0; /* Prevent tags from shrinking on long titles */
 }

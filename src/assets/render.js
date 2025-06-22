@@ -20,10 +20,8 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
         laneColumn.tabIndex = 0; // Make the lane focusable to receive paste events
 
         // Attach drag and drop event listeners
-        laneColumn.addEventListener('dragstart', dragAndDropCallbacks.lane.dragstart);
-        laneColumn.addEventListener('dragover', dragAndDropCallbacks.lane.dragover);
-        laneColumn.addEventListener('dragleave', dragAndDropCallbacks.lane.dragleave);
-        laneColumn.addEventListener('drop', dragAndDropCallbacks.lane.drop);
+        laneColumn.addEventListener('dragstart', dragAndDropCallbacks.lane.dragstart); // Still needed for individual lane
+        laneColumn.addEventListener('dragleave', dragAndDropCallbacks.lane.dragleave); // Still needed for individual lane
         laneColumn.addEventListener('dragend', dragAndDropCallbacks.lane.dragend);
 
         // Add paste listener to the entire lane column
@@ -170,9 +168,6 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     }
                 });
 
-                const noteHeader = document.createElement('div');
-                noteHeader.className = 'note-card-header';
-
                 const deleteNoteButton = document.createElement('button');
                 deleteNoteButton.className = 'delete-note-btn';
                 deleteNoteButton.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -209,10 +204,9 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     }
                 });
 
-                noteHeader.appendChild(noteTitle);
-
+                let tagsContainer = null;
                 if (note.tags && note.tags.length > 0) {
-                    const tagsContainer = document.createElement('div');
+                    tagsContainer = document.createElement('div');
                     tagsContainer.className = 'note-tags';
                     note.tags.forEach(tag => {
                         const tagSpan = document.createElement('span');
@@ -220,42 +214,43 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                         tagSpan.textContent = tag;
                         tagsContainer.appendChild(tagSpan);
                     });
-                    noteHeader.appendChild(tagsContainer);
                 }
-                noteHeader.appendChild(deleteNoteButton);
+
+                const detailsElement = document.createElement('details');
+                const summaryElement = document.createElement('summary');
+                summaryElement.className = 'note-card-summary';
+
+                summaryElement.appendChild(noteTitle);
+                if (tagsContainer) summaryElement.appendChild(tagsContainer);
+                summaryElement.appendChild(deleteNoteButton);
 
                 const hasContent = note.content && note.content.trim() !== '';
 
                 if (hasContent) {
-                    const detailsElement = document.createElement('details');
-                    const summaryElement = document.createElement('summary');
-                    summaryElement.className = 'note-card-summary';
-                    summaryElement.appendChild(noteHeader);
-
                     const noteContent = document.createElement('div');
                     noteContent.className = 'note-content';
                     // Use the 'marked' library to parse markdown content to HTML.
                     noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content;
 
-                    // After setting the HTML, find and highlight all code blocks.
-                    // This is more reliable than configuring marked directly.
                     if (window.hljs) {
                         noteContent.querySelectorAll('pre code').forEach((block) => {
                             window.hljs.highlightElement(block);
                         });
                     }
-
-                    detailsElement.appendChild(summaryElement);
                     detailsElement.appendChild(noteContent);
-                    noteCard.appendChild(detailsElement);
                 } else {
-                    // No content, not collapsable. Wrap the header in a div to provide consistent padding.
-                    const headerWrapper = document.createElement('div');
-                    headerWrapper.className = 'note-card-summary-placeholder';
-                    headerWrapper.appendChild(noteHeader);
-                    noteCard.appendChild(headerWrapper);
+                    detailsElement.classList.add('note-card--no-content');
                 }
 
+                // Prevent toggling for notes without content
+                summaryElement.addEventListener('click', (e) => {
+                    if (detailsElement.classList.contains('note-card--no-content')) {
+                        e.preventDefault();
+                    }
+                });
+
+                detailsElement.appendChild(summaryElement);
+                noteCard.appendChild(detailsElement);
                 notesList.appendChild(noteCard);
             });
         } else {
