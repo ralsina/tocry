@@ -355,6 +355,7 @@ body {
     cursor: grab;
     /* --- New styles for search animation --- */
     transition: all 0.35s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for normal state */
     max-height: 1000px; /* Generous max-height for transition */
     overflow: hidden; /* Crucial for the max-height animation */
 }
@@ -382,6 +383,7 @@ body {
 .note-card--dragging {
     opacity: 0.4;
     cursor: grabbing;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* More pronounced shadow when dragging */
 }
 
 .notes-list--drag-over {
