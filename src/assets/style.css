@@ -216,8 +216,19 @@ body {
     margin: 0;
     /* Remove default h4 margin */
     flex-grow: 1;
-    font-weight: 500;
     /* Allow title to take up available space */
+    font-weight: 500;
+    cursor: text;
+    padding: 0.1em 0.3em;
+    margin: -0.1em -0.3em; /* Negative margin to counteract padding and prevent layout shift */
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease-in-out;
+}
+
+.note-card-header h4:hover,
+.note-card-header h4:focus {
+    background-color: var(--form-element-background-color);
+    outline: none;
 }
 
 .delete-note-btn {
