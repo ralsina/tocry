@@ -1167,6 +1167,24 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelEditBtn.addEventListener('click', closeEditModal);
     closeEditBtn.addEventListener('click', closeEditModal);
 
+    // --- Click-to-show for color scheme selector ---
+    const themeSwitcherContainer = document.querySelector('.theme-and-color-switcher');
+    const colorSwatch = document.getElementById('current-color-swatch');
+
+    if (themeSwitcherContainer && colorSwatch) {
+        colorSwatch.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the document click listener from firing immediately
+            themeSwitcherContainer.classList.toggle('is-open');
+        });
+
+        // Add a listener to the whole document to close the selector if the user clicks away
+        document.addEventListener('click', (e) => {
+            if (!themeSwitcherContainer.contains(e.target) && themeSwitcherContainer.classList.contains('is-open')) {
+                themeSwitcherContainer.classList.remove('is-open');
+            }
+        });
+    }
+
     // --- Auto-hide footer ---
     const footer = document.querySelector(".page-footer");
     if (footer) {
