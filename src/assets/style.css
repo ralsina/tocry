@@ -620,6 +620,16 @@ body {
     gap: var(--pico-spacing);
 }
 
+/* --- Custom Prompt Dialog --- */
+#custom-prompt-dialog footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pico-spacing);
+}
+#custom-prompt-dialog form {
+    margin-bottom: 0;
+}
+
 /* --- Notification Toasts --- */
 #notification-container {
     position: fixed;
