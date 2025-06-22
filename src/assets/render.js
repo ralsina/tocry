@@ -63,6 +63,7 @@ function createNoteCardElement(note, laneName, callbacks, dragAndDropCallbacks) 
 
     const noteTitle = document.createElement('h4');
     noteTitle.textContent = note.title;
+    noteTitle.setAttribute('title', note.title); // Add title attribute for tooltip
     makeTitleEditable(noteTitle, note.title, (newTitle) => {
         if (callbacks.onUpdateNoteTitle) callbacks.onUpdateNoteTitle(note, newTitle);
     });
