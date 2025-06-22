@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tocry - A simple, self-hosted Kanban board</title>
+    <meta
+      name="description"
+      content="A simple, self-hosted Kanban board for managing your tasks. Are you going ToDo or ToCry?"
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=Chivo+Mono:ital,wght@0,400;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Pico.css for styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="style.css" />
+
+    <style>
+      /* Base styles to match the app */
+      html {
+        /* Override 90% from style.css for better readability on the static page */
+        font-size: 100%;
+      }
+      h1,
+      h2,
+      h3 {
+        font-weight: 500;
+      }
+      .page-header h1 {
+        font-size: 1.875rem;
+        font-weight: 500;
+        margin: 0;
+      }
+      .page-footer {
+        text-align: center;
+        padding: var(--spacing);
+      }
+      main.container {
+        padding-top: calc(var(--spacing) * 2);
+        padding-bottom: calc(var(--spacing) * 2);
+      }
+      #hero {
+        padding: calc(var(--spacing) * 4) var(--spacing); /* More vertical padding */
+        border-radius: var(--border-radius);
+        text-align: center;
+        margin-bottom: calc(var(--spacing) * 2);
+        background-color: var(--card-background-color); /* Add a background color to the hero section */
+      }
+      #hero h2,
+      #hero h3 {
+        /* Revert to default text color, Pico.css handles this */
+      }
+      /* Style for code blocks */
+      pre {
+        background-color: var(--code-background-color);
+        color: var(--code-color);
+        padding: var(--spacing);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--code-border-color);
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      /* Grid for features */
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing);
+      }
+
+      /* Wrapper for the features section */
+      .features-wrapper {
+        /* No longer needs horizontal scroll */
+        padding: 1em 0;
+      }
+
+      /* Center the lanes on the website page and allow wrapping */
+      #lanes-container {
+        justify-content: center;
+        flex-wrap: wrap; /* Allow lanes to wrap on smaller screens */
+        min-width: 100%; /* Override style.css to allow centering */
+      }
+
+      /* Style for the merged theme and color scheme switcher */
+      .theme-and-color-switcher {
+          display: flex;
+          align-items: center; /* Vertically center all items */
+          /* Use Pico's border color for consistency */
+          border: 1px solid var(--pico-form-element-border-color);
+          border-radius: var(--pico-border-radius);
+          overflow: hidden; /* Ensures children's corners are clipped */
+          margin-bottom: 0; /* Override Pico's default form element margin */
+          /* Use Pico's form element background color for the merged unit */
+          background-color: var(--pico-form-element-background-color);
+      }
+
+      .theme-and-color-switcher #color-scheme-switcher {
+          border: none; /* Remove individual border */
+          border-radius: 0; /* Remove individual border-radius */
+          background-color: var(--pico-form-element-background-color); /* Ensure it respects theme */
+          flex-grow: 0; /* Do not allow select to take available space when hidden */
+          padding-right: 0; /* Remove padding when hidden */
+          padding-left: 0; /* Remove padding when hidden */
+          background-position: right 0.5rem center; /* Keep arrow position */
+          color: var(--pico-color); /* Ensure text color respects theme */
+          opacity: 0; /* Hide by default */
+          pointer-events: none; /* Disable interaction when hidden */
+          width: 0; /* Collapse width when hidden */
+          transition: opacity 0.3s ease-in-out, width 0.3s ease-in-out, padding-right 0.3s ease-in-out; /* Smooth transition */
+      }
+
+      .theme-and-color-switcher.is-open #color-scheme-switcher {
+          opacity: 1; /* Show when open */
+          pointer-events: auto; /* Enable interaction when open */
+          width: auto; /* Expand to natural width */
+          flex-grow: 1; /* Allow select to take available space when visible */
+          padding-right: 2.5rem; /* Restore padding when open */
+      }
+
+      .theme-and-color-switcher #theme-switcher {
+          border: none; /* Remove individual border */
+          border-radius: 0; /* Remove individual border-radius */
+          background-color: transparent; /* Let parent's background show through */
+          flex-shrink: 0; /* Prevent button from shrinking */
+          padding: 0 var(--pico-spacing); /* Adjust padding for better visual balance */
+          /* Add a subtle separator */
+          border-right: 1px solid var(--pico-form-element-border-color);
+          /* Pico adds a margin-bottom to buttons, which we don't want here */
+          margin-bottom: 0;
+      }
+
+      .color-swatch {
+          width: 1.2em; /* Smaller square */
+          height: 1.2em;
+          border-radius: var(--pico-border-radius); /* Keep rounded corners for the swatch itself */
+          border: 1px solid var(--pico-form-element-border-color); /* Subtle border */
+          background-color: var(--pico-primary); /* Will be set by JS */
+          flex-shrink: 0;
+          margin: 0 var(--pico-spacing); /* Space from button and select */
+          transition: background-color 0.3s ease-in-out;
+          cursor: pointer;
+      }
+    </style>
+    <style>
+      /* Style for the screenshot image */
+      #screenshot-section img {
+        max-width: 100%;
+        height: auto;
+        display: block; /* Remove extra space below image */
+        margin: var(--spacing) auto; /* Center the image and add vertical spacing */
+        border-radius: var(--border-radius); /* Match other elements */
+        box-shadow: var(--card-box-shadow); /* Optional: add a subtle shadow */
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container">
+        <nav>
+          <ul>
+            <li><h1>ToCry</h1></li>
+          </ul>
+          <ul>
+            <li>
+              <div class="theme-and-color-switcher">
+                <button id="theme-switcher" aria-label="Switch theme">🌙</button>
+                <div id="current-color-swatch" class="color-swatch" title="Change color scheme"></div>
+                <select id="color-scheme-switcher" aria-label="Color scheme"></select>
+              </div>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section id="hero">
+        <hgroup>
+          <h2>A simple, self-hosted Kanban board.</h2>
+          <h3>Are you going ToDo or ToCry?</h3>
+        </hgroup>
+      </section>
+
+      <div class="features-wrapper">
+        <section id="features">
+          <div id="lanes-container">
+            <div class="lane" draggable="true">
+              <div class="lane-header">
+                <h2 class="lane-title">Core Functionality</h2>
+                <span class="lane-note-count">5</span>
+                <div class="lane-actions">
+                  <button class="add-note-btn" aria-label="Add new note"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                  <button class="delete-lane-btn" aria-label="Delete lane"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+              </div>
+              <div class="notes-list">
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Kanban Board</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Organize notes into customizable, re-orderable lanes.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Rich Text Notes</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Write notes in Markdown, with a comfortable WYSIWYG editor.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Drag & Drop</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Easily move notes between lanes and reorder lanes themselves.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Image Uploads</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Drag and drop images directly into the editor to upload and embed them in your notes.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Free and Open Source</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>The full source code is <a href="https://github.com/ralsina/tocry" target="_blank" rel="noopener noreferrer">available on GitHub</a>. Feel free to fork, modify, and contribute to the project!</p></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <div class="lane" draggable="true">
+              <div class="lane-header">
+                <h2 class="lane-title">Modern UI</h2>
+                <span class="lane-note-count">4</span>
+                <div class="lane-actions">
+                  <button class="add-note-btn" aria-label="Add new note"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                  <button class="delete-lane-btn" aria-label="Delete lane"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+              </div>
+              <div class="notes-list">
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Inline Editing</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Quickly rename lanes by clicking on their titles.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Live Search</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Instantly filter all notes by title, content, or tags.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Light & Dark Modes</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Switch between themes for your viewing comfort.</p></div>
+                  </div>
+                </article>
+                <article class="note-card" draggable="true">
+                  <div class="note-collapsible is-open">
+                    <div class="note-summary">
+                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                      <h4>Syntax Highlighting</h4>
+                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                    <div class="note-content"><p>Code blocks are automatically highlighted based on the language, making them easy to read.</p></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section id="screenshot-section" class="container">
+        <figure>
+          <img src="screenshot.png" alt="Screenshot of the ToCry Kanban board application" />
+        </figure>
+      </section>
+
+      <section id="installation">
+        <h2>Run with Docker</h2>
+        <p>
+          The easiest way to get `tocry` running is with Docker. This avoids
+          having to install Crystal or build from source.
+        </p>
+
+        <article>
+          <header>
+            <h3>Using Docker Run</h3>
+          </header>
+          <ol>
+            <li>
+              Create a directory on your host machine to store persistent data:
+              <pre><code>mkdir -p /path/to/your/data</code></pre>
+            </li>
+            <li>
+              Run the container, replacing
+              <code>/path/to/your/data</code> with the absolute path to the
+              directory you just created:
+              <pre><code>docker run -d --restart unless-stopped --name tocry -p 3000:3000 -v /path/to/your/data:/data ghcr.io/ralsina/tocry:latest</code></pre>
+              <p>
+                <small
+                  ><strong>Note:</strong> The image above is for amd64
+                  architectures. An arm64 image is also available at
+                  <code>ghcr.io/ralsina/tocry-arm64:latest</code>.</small
+                >
+              </p>
+            </li>
+            <li>
+              Open your browser and navigate to
+              <code>http://localhost:3000</code>.
+            </li>
+          </ol>
+        </article>
+
+        <article>
+          <header>
+            <h3>Using Docker Compose</h3>
+          </header>
+          <p>For an even simpler setup, you can use Docker Compose.</p>
+          <ol>
+            <li>
+              Create a <code>docker-compose.yml</code> file with the following
+              content:
+              <pre><code>services:
+  tocry:
+    image: ghcr.io/ralsina/tocry:latest
+    # For arm64, use: ghcr.io/ralsina/tocry-arm64:latest
+    container_name: tocry
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+</code></pre>
+            </li>
+            <li>
+              Run the application from the same directory as your compose file:
+              <pre><code>docker compose up -d</code></pre>
+              <p>
+                <small
+                  >This will automatically create a <code>data</code> directory
+                  in the current folder to store persistent data.</small
+                >
+              </p>
+            </li>
+          </ol>
+        </article>
+      </section>
+
+      <section id="usage">
+        <h2>Usage</h2>
+        <ul>
+          <li>
+            <strong>Add a Lane:</strong> Click the `+` button in the header to
+            create a new column.
+          </li>
+          <li>
+            <strong>Rename a Lane:</strong> Click directly on a lane's title,
+            type the new name, and press `Enter` or click away to save.
+          </li>
+          <li>
+            <strong>Add a Note:</strong> Click the `+` button in a lane's
+            header.
+          </li>
+          <li>
+            <strong>Edit a Note:</strong> Double-click on a note card to open
+            the full editor.
+          </li>
+          <li>
+            <strong>Move Items:</strong> Click and drag lanes or notes to
+            reorder them.
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <small>
+        Are you going ToDo or
+        <a
+          href="https://tocry.ralsina.me"
+          target="_blank"
+          rel="noopener noreferrer"
+          >ToCry</a
+        >? -
+        <a
+          href="https://github.com/ralsina/tocry"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Source on GitHub</a
+        >
+      </small>
+    </footer>
+
+    <script>
+      const colorSchemes = {
+          'Amber': { light: { 'primary-rgb': '255, 193, 7' }, dark: { 'primary-rgb': '255, 202, 44' } },
+          'Blue': { light: { 'primary-rgb': '0, 123, 255' }, dark: { 'primary-rgb': '55, 125, 255' } },
+          'Cyan': { light: { 'primary-rgb': '23, 162, 184' }, dark: { 'primary-rgb': '79, 195, 214' } },
+          'Default': { light: { 'primary-rgb': '29, 136, 254' }, dark: { 'primary-rgb': '82, 157, 255' } },
+          'Fuchsia': { light: { 'primary-rgb': '255, 0, 255' }, dark: { 'primary-rgb': '255, 102, 255' } },
+          'Grey': { light: { 'primary-rgb': '115, 130, 144' }, dark: { 'primary-rgb': '161, 172, 184' } },
+          'Green': { light: { 'primary-rgb': '56, 142, 60' }, dark: { 'primary-rgb': '102, 187, 106' } },
+          'Indigo': { light: { 'primary-rgb': '102, 16, 242' }, dark: { 'primary-rgb': '154, 104, 247' } },
+          'Jade': { light: { 'primary-rgb': '0, 168, 107' }, dark: { 'primary-rgb': '0, 200, 130' } },
+          'Lime': { light: { 'primary-rgb': '205, 220, 57' }, dark: { 'primary-rgb': '220, 231, 117' } },
+          'Orange': { light: { 'primary-rgb': '255, 152, 0' }, dark: { 'primary-rgb': '255, 183, 77' } },
+          'Pink': { light: { 'primary-rgb': '233, 30, 99' }, dark: { 'primary-rgb': '244, 143, 177' } },
+          'Pumpkin': { light: { 'primary-rgb': '255, 112, 0' }, dark: { 'primary-rgb': '255, 144, 51' } },
+          'Purple': { light: { 'primary-rgb': '156, 39, 176' }, dark: { 'primary-rgb': '186, 104, 200' } },
+          'Red': { light: { 'primary-rgb': '211, 47, 47' }, dark: { 'primary-rgb': '255, 82, 82' } },
+          'Sand': { light: { 'primary-rgb': '215, 194, 169' }, dark: { 'primary-rgb': '227, 211, 189' } },
+          'Slate': { light: { 'primary-rgb': '82, 105, 129' }, dark: { 'primary-rgb': '132, 151, 171' } },
+          'Violet': { light: { 'primary-rgb': '126, 87, 194' }, dark: { 'primary-rgb': '179, 157, 219' } },
+          'Yellow': { light: { 'primary-rgb': '255, 235, 59' }, dark: { 'primary-rgb': '255, 241, 118' } },
+          'Zinc': { light: { 'primary-rgb': '112, 112, 112' }, dark: { 'primary-rgb': '144, 144, 144' } }
+      };
+
+      function applyColorScheme(schemeName) {
+        const scheme = colorSchemes[schemeName] || colorSchemes['Default'];
+        if (!scheme) {
+            console.warn(`Color scheme "${schemeName}" not found.`);
+            return;
+        }
+
+        const picoThemeLink = document.querySelector('link[href*="pico.min.css"], link[href*="pico."][href*=".min.css"]');
+        if (!picoThemeLink) {
+            console.error('Pico.css link element not found!');
+            return;
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const colors = scheme[currentTheme];
+
+        const picoCssFileName = schemeName === 'Default' ? 'pico.min.css' : `pico.${schemeName.toLowerCase()}.min.css`;
+        picoThemeLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${picoCssFileName}`;
+
+        document.documentElement.style.setProperty('--primary-rgb', colors['primary-rgb']);
+
+        const currentColorSwatch = document.getElementById('current-color-swatch');
+        if (currentColorSwatch) {
+            const lightThemePrimaryRgb = colorSchemes[schemeName].light['primary-rgb'];
+            currentColorSwatch.style.backgroundColor = `rgb(${lightThemePrimaryRgb})`;
+        }
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        const btn = document.getElementById("theme-switcher");
+        if (btn) {
+          btn.textContent = theme === "dark" ? "☀️" : "🌙";
+          btn.setAttribute(
+            "aria-label",
+            `Switch to ${theme === "dark" ? "light" : "dark"} theme`
+          );
+        }
+        const colorSchemeSwitcher = document.getElementById('color-scheme-switcher');
+        if (colorSchemeSwitcher && colorSchemeSwitcher.value) {
+            applyColorScheme(colorSchemeSwitcher.value);
+        }
+      }
+
+      function handleThemeSwitch() {
+        const current =
+          document.documentElement.getAttribute("data-theme") || "light";
+        const next = current === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", next);
+        applyTheme(next);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Theme & Color Scheme Setup ---
+        const themeSwitcher = document.getElementById('theme-switcher');
+        const colorSchemeSwitcher = document.getElementById('color-scheme-switcher');
+
+        if (colorSchemeSwitcher) {
+            for (const schemeName in colorSchemes) {
+                const option = document.createElement('option');
+                option.value = schemeName;
+                option.textContent = schemeName;
+                colorSchemeSwitcher.appendChild(option);
+            }
+            const savedScheme = localStorage.getItem('colorScheme') || 'Default';
+            colorSchemeSwitcher.value = savedScheme;
+            colorSchemeSwitcher.addEventListener('change', (event) => {
+                const newScheme = event.target.value;
+                localStorage.setItem('colorScheme', newScheme);
+                applyColorScheme(newScheme);
+            });
+        }
+
+        const savedTheme =
+          localStorage.getItem("theme") ||
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        applyTheme(savedTheme);
+        themeSwitcher?.addEventListener("click", handleThemeSwitch);
+
+        const themeSwitcherContainer = document.querySelector('.theme-and-color-switcher');
+        const colorSwatch = document.getElementById('current-color-swatch');
+        if (themeSwitcherContainer && colorSwatch) {
+            colorSwatch.addEventListener('click', (e) => {
+                e.stopPropagation();
+                themeSwitcherContainer.classList.toggle('is-open');
+            });
+            document.addEventListener('click', (e) => {
+                if (!themeSwitcherContainer.contains(e.target) && themeSwitcherContainer.classList.contains('is-open')) {
+                    themeSwitcherContainer.classList.remove('is-open');
+                }
+            });
+        }
+
+        // --- Fun Draggable Elements ---
+        function makeDraggable() {
+          const draggableLanes = document.querySelectorAll(".lane");
+          const draggableNotes = document.querySelectorAll(".note-card");
+          const laneContainer = document.querySelector("#lanes-container");
+
+          function onDragStart(e) {
+            e.target.classList.add("dragging"); // Common class for logic
+            // App-specific classes for styling from style.css
+            if (e.target.matches('.lane')) {
+              e.target.classList.add('lane--dragging');
+            } else if (e.target.matches('.note-card')) {
+              e.target.classList.add('note-card--dragging');
+            }
+          }
+
+          function onDragEnd(e) {
+            e.target.classList.remove("dragging", "lane--dragging", "note-card--dragging");
+            // Clean up any lingering drag-over styles
+            document.querySelectorAll('.notes-list--drag-over').forEach(el => el.classList.remove('notes-list--drag-over'));
+            document.querySelectorAll('.lane--drag-over').forEach(el => el.classList.remove('lane--drag-over'));
+          }
+
+          function getDragAfterElement(container, xOrY, selector) {
+            // The '.dragging' class is used to identify the element being dragged
+            // so it can be excluded from the list of potential drop targets.
+            const draggableElements = [
+              ...container.querySelectorAll(`${selector}:not(.dragging)`),
+            ];
+            const isHorizontal = container === laneContainer;
+
+            return draggableElements.reduce(
+              (closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = isHorizontal
+                  ? xOrY - box.left - box.width / 2
+                  : xOrY - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                  return { offset: offset, element: child };
+                } else {
+                  return closest;
+                }
+              },
+              { offset: Number.NEGATIVE_INFINITY }
+            ).element;
+          }
+
+          // --- Lane Dragging ---
+          draggableLanes.forEach((lane) => {
+            lane.addEventListener("dragstart", onDragStart);
+            lane.addEventListener("dragend", onDragEnd);
+          });
+
+          laneContainer.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            const dragging = document.querySelector(".dragging");
+            laneContainer.querySelectorAll('.lane').forEach(l => l.classList.remove('lane--drag-over'));
+            // Only reorder if we are dragging a lane
+            if (dragging && dragging.classList.contains("lane")) {
+              const afterElement = getDragAfterElement(
+                laneContainer,
+                e.clientX,
+                ".lane"
+              );
+              afterElement
+                ? laneContainer.insertBefore(dragging, afterElement)
+                : laneContainer.appendChild(dragging);
+            }
+          });
+
+          // --- Note Dragging ---
+          draggableNotes.forEach((note) => {
+            note.addEventListener("dragstart", (e) => {
+              e.stopPropagation(); // Prevent lane from being dragged
+              onDragStart(e);
+            });
+            note.addEventListener("dragend", onDragEnd);
+          });
+
+          // Note: The dragover for notes is now on the notes list, not the whole lane
+          document.querySelectorAll(".notes-list")
+            .forEach((notesList) => {
+              notesList.addEventListener("dragover", (e) => {
+                e.preventDefault(); // Allow dropping
+                const dragging = document.querySelector(".dragging");
+                notesList.classList.add('notes-list--drag-over');
+
+                // Only handle note dragging here
+                if (dragging && dragging.classList.contains("note-card")) {
+                  e.stopPropagation(); // Stop lane container from handling this
+                  const afterElement = getDragAfterElement(
+                    notesList,
+                    e.clientY,
+                    ".note-card"
+                  );
+
+                  afterElement
+                    ? notesList.insertBefore(dragging, afterElement)
+                    : notesList.appendChild(dragging);
+                }
+              });
+            });
+        }
+        makeDraggable();
+
+        // --- Fun Editable Lane Headings ---
+        function makeHeadingsEditable() {
+          const editableHeadings = document.querySelectorAll(".lane-header .lane-title");
+          editableHeadings.forEach((heading) => {
+            heading.contentEditable = true;
+            heading.dataset.originalName = heading.textContent;
+
+            heading.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault(); // Prevent creating a new line
+                e.target.blur(); // Trigger blur to "save"
+              } else if (e.key === "Escape") {
+                e.target.textContent = e.target.dataset.originalName; // Revert
+                e.target.blur();
+              }
+            });
+
+            heading.addEventListener("blur", (e) => {
+              if (e.target.textContent.trim() === "") {
+                e.target.textContent = e.target.dataset.originalName;
+              }
+            });
+          });
+        }
+        makeHeadingsEditable();
+      });
+    </script>
+  </body>
+</html>
