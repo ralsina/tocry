@@ -1,14 +1,20 @@
 @import url("colors.css");
 
-html,
-body {
+:root {
+    --pico-font-family: 'Chivo', sans-serif;
+    --pico-font-mono: 'Chivo Mono', monospace;
+}
+
+html {
     font-size: 90%;
+}
+
+body {
     height: 100vh;
     /* Use vh for full viewport height */
     margin: 0;
     display: flex;
     flex-direction: column;
-    font-family: 'Chivo', sans-serif;
 }
 
 /* Custom class for the header section */
@@ -63,7 +69,6 @@ body {
     font-size: 2.25rem; /* 20% larger */
     /* Adjust size as needed for nav header */
     font-weight: 400; /* Lighter than default bold */
-    font-family: 'Chivo', sans-serif;
     line-height: inherit;
     /* Align with other nav items */
 }
