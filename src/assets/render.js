@@ -213,8 +213,13 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     });
                 }
 
+                const hasContent = note.content && note.content.trim() !== '';
+
                 const collapsibleContainer = document.createElement('div');
                 collapsibleContainer.className = 'note-collapsible';
+                if (note.expanded && hasContent) {
+                    collapsibleContainer.classList.add('is-open');
+                }
 
                 // Create the note summary container (no longer directly clickable for toggle)
                 const summaryDiv = document.createElement('div');
@@ -231,6 +236,10 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     e.stopPropagation(); // Prevent dblclick on noteCard from firing immediately
                     if (hasContent) {
                         collapsibleContainer.classList.toggle('is-open');
+                        const isExpanded = collapsibleContainer.classList.contains('is-open');
+                        if (callbacks.onToggleNote) {
+                            callbacks.onToggleNote(note, isExpanded);
+                        }
                     }
                 });
 
@@ -241,7 +250,6 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
 
                 collapsibleContainer.appendChild(summaryDiv);
 
-                const hasContent = note.content && note.content.trim() !== '';
                 let noteContent = null;
 
                 if (hasContent) {
