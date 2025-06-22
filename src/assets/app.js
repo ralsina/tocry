@@ -910,4 +910,48 @@ document.addEventListener('DOMContentLoaded', () => {
     editNoteForm.addEventListener('submit', handleEditNoteSubmit);
     cancelEditBtn.addEventListener('click', closeEditModal);
     closeEditBtn.addEventListener('click', closeEditModal);
+
+    // --- Auto-hide footer ---
+    const footer = document.querySelector(".page-footer");
+    if (footer) {
+        // Wait 10 seconds before enabling the auto-hide feature
+        setTimeout(() => {
+            // Hide the footer to start
+            footer.classList.add("page-footer--hidden");
+
+            let isFooterVisible = false;
+
+            // Listen for mouse movement on the whole document
+            document.addEventListener("mousemove", (e) => {
+                // Define a trigger zone at the bottom of the viewport.
+                // The footer's own height is a good trigger size.
+                const triggerZoneHeight =
+                    footer.offsetHeight > 0 ? footer.offsetHeight : 50;
+                const isMouseNearBottom =
+                    e.clientY > window.innerHeight - triggerZoneHeight;
+
+                if (isMouseNearBottom) {
+                    // If mouse is in the zone, show the footer
+                    if (!isFooterVisible) {
+                        footer.classList.remove("page-footer--hidden");
+                        isFooterVisible = true;
+                    }
+                } else {
+                    // If mouse is outside the zone, hide the footer
+                    if (isFooterVisible) {
+                        footer.classList.add("page-footer--hidden");
+                        isFooterVisible = false;
+                    }
+                }
+            });
+
+            // A fallback for when the mouse leaves the window entirely
+            document.documentElement.addEventListener("mouseleave", () => {
+                if (isFooterVisible) {
+                    footer.classList.add("page-footer--hidden");
+                    isFooterVisible = false;
+                }
+            });
+        }, 10000); // 10 seconds
+    }
 });

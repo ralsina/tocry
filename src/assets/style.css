@@ -38,9 +38,19 @@ body {
     flex-shrink: 0;
     /* Prevent footer from shrinking */
     text-align: center;
-    /* Use Pico's container class on the div inside the footer for consistent padding */
-    /* padding-top: var(--spacing); */
-    /* padding-bottom: var(--spacing); */
+    /* Add transition for smooth animation */
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, padding 0.4s ease-in-out;
+    overflow: hidden;
+    max-height: 10em; /* Generous height for content */
+}
+
+/* New class to hide the footer */
+.page-footer--hidden {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .main-content::-webkit-scrollbar {
