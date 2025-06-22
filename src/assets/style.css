@@ -421,9 +421,15 @@ body {
     font-size: 0.9em;
     line-height: 1.6;
     /* Add padding to align with the summary element's content */
-    padding: 0 var(--pico-spacing) var(--pico-spacing) var(--pico-spacing);
+    /* Horizontal padding is always present to align with the summary */
+    padding-left: var(--pico-spacing);
+    padding-right: var(--pico-spacing);
+    /* Vertical padding is applied only when the note is open, via the class below */
 }
 
+.note-collapsible.is-open .note-content {
+    padding-bottom: var(--pico-spacing);
+}
 .note-content p:last-child {
     margin-bottom: 0;
 }
