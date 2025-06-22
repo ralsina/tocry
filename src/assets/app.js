@@ -1,5 +1,5 @@
 import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote, uploadImage } from './api.js';
-import { renderLanes } from './render.js';
+import { renderLanes, createNoteCardElement } from './render.js';
 
 const colorSchemes = {
     'Amber': { // This will load pico.amber.min.css
@@ -566,53 +566,43 @@ async function handleEditNoteSubmit(event) {
     const form = event.currentTarget;
     const noteId = form.dataset.noteId;
 
-    const updatedNote = {
-        id: noteId, // Not strictly needed by backend, but good practice
+    const updatedNoteData = {
         title: document.getElementById('edit-note-title').value,
         tags: document.getElementById('edit-note-tags').value.split(',').map(t => t.trim()).filter(Boolean),
         content: toastuiEditor.getMarkdown() // Get markdown content from Toast UI Editor
     };
 
-    // OPTIMISTIC UI UPDATE: Update the note in the local cache immediately.
+    // Find the note in the cache and its lane
     let noteInCache = null;
+    let laneOfNote = null;
     for (const lane of currentLanes) {
         noteInCache = lane.notes.find(n => n.id === noteId);
         if (noteInCache) {
-            noteInCache.title = updatedNote.title;
-            noteInCache.tags = updatedNote.tags;
-            noteInCache.content = updatedNote.content;
+            laneOfNote = lane;
             break;
         }
     }
 
-    // Also update the DOM for the specific note card
-    const noteCardElement = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
-    if (noteCardElement) {
-        // Update title in DOM (already handled by makeTitleEditable, but ensure consistency)
-        const titleElement = noteCardElement.querySelector('.note-summary h4');
-        if (titleElement) titleElement.textContent = updatedNote.title;
+    if (!noteInCache || !laneOfNote) {
+        showNotification("Error: Could not find the note to update. Refreshing.");
+        return initializeLanes();
+    }
 
-        // Update tags in DOM
-        const tagsContainer = noteCardElement.querySelector('.note-tags');
-        if (tagsContainer) {
-            tagsContainer.innerHTML = ''; // Clear existing tags
-            updatedNote.tags.forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'tag';
-                tagSpan.textContent = tag;
-                tagsContainer.appendChild(tagSpan);
-            });
-        }
-        // Update content in DOM (re-parse markdown and highlight)
-        const noteContentDiv = noteCardElement.querySelector('.note-content');
-        if (noteContentDiv) {
-            noteContentDiv.innerHTML = window.marked ? window.marked.parse(updatedNote.content) : updatedNote.content;
-            if (window.hljs) noteContentDiv.querySelectorAll('pre code').forEach((block) => window.hljs.highlightElement(block));
-        }
+    // Update the note object in the cache with all new data
+    Object.assign(noteInCache, updatedNoteData);
+
+    // OPTIMISTIC UI UPDATE: Re-render the card to reflect all changes.
+    // This is more robust than trying to patch the DOM manually.
+    const oldNoteCardElement = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
+    if (oldNoteCardElement) {
+        const callbacks = { onDeleteNote: handleDeleteNoteRequest, onEditNote: handleEditNoteRequest, onUpdateNoteTitle: handleUpdateNoteTitleRequest, onToggleNote: handleToggleNoteRequest };
+        const newNoteCardElement = createNoteCardElement(noteInCache, laneOfNote.name, callbacks, { note: noteDragAndDropCallbacks });
+        oldNoteCardElement.replaceWith(newNoteCardElement);
     }
 
     try {
-        const response = await updateNote(noteId, { note: updatedNote, lane_name: null, position: null });
+        const { id, ...notePayload } = noteInCache;
+        const response = await updateNote(noteId, { note: notePayload, lane_name: null, position: null });
         if (response.ok) {
             closeEditModal();
             console.log(`Note "${noteId}" updated successfully.`);
@@ -622,6 +612,7 @@ async function handleEditNoteSubmit(event) {
         }
     } catch (error) {
         showNotification('An error occurred while saving the note.');
+        await initializeLanes(); // Revert UI on failure
     }
 }
 
