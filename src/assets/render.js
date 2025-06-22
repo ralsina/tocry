@@ -145,7 +145,9 @@ function createLaneElement(lane, callbacks, dragAndDropCallbacks) {
     laneColumn.tabIndex = 0;
 
     laneColumn.addEventListener('dragstart', dragAndDropCallbacks.lane.dragstart);
+    laneColumn.addEventListener('dragover', dragAndDropCallbacks.lane.dragover);
     laneColumn.addEventListener('dragleave', dragAndDropCallbacks.lane.dragleave);
+    laneColumn.addEventListener('drop', dragAndDropCallbacks.lane.drop);
     laneColumn.addEventListener('dragend', dragAndDropCallbacks.lane.dragend);
 
     laneColumn.addEventListener('paste', (e) => {

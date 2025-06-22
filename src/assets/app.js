@@ -716,40 +716,56 @@ async function handleLaneDrop(event) {
         return; // No change needed if dropped on itself or invalid drag data
     }
 
+    // Use the cache to determine positions
+    const draggedLaneIndex = currentLanes.findIndex(lane => lane.name === draggedLaneName);
+    const targetLaneIndex = currentLanes.findIndex(lane => lane.name === targetLaneName);
+
+    if (draggedLaneIndex === -1 || targetLaneIndex === -1) {
+        showNotification('Error finding lanes to move. Refreshing.');
+        return initializeLanes();
+    }
+
+    const isMovingRight = draggedLaneIndex < targetLaneIndex;
+
+    // OPTIMISTIC UI UPDATE: Reorder in the DOM
+    const draggedLaneElement = document.querySelector(`.lane[data-lane-name="${draggedLaneName}"]`);
+    const targetLaneElement = document.querySelector(`.lane[data-lane-name="${targetLaneName}"]`);
+
+    if (draggedLaneElement && targetLaneElement) {
+        if (isMovingRight) {
+            // When moving right, insert *after* the target.
+            targetLaneElement.after(draggedLaneElement);
+        } else {
+            // When moving left, insert *before* the target.
+            targetLaneElement.before(draggedLaneElement);
+        }
+    } else {
+        // If something is wrong with the DOM, fall back to full re-render
+        return initializeLanes();
+    }
+
+    // Calculate the new position for the API call.
+    // The backend expects the position in the list *after* the dragged item is removed.
+    const tempLanes = currentLanes.filter(lane => lane.name !== draggedLaneName);
+    const targetIndexInTemp = tempLanes.findIndex(lane => lane.name === targetLaneName);
+    const newPosition = isMovingRight ? targetIndexInTemp + 1 : targetIndexInTemp;
+
     try {
-        const currentLanes = await fetchLanes();
-        if (!currentLanes) {
-            showNotification('Could not get current lane order to perform move.');
-            return;
-        }
-
-        const targetIndex = currentLanes.findIndex(lane => lane.name === targetLaneName);
-        if (targetIndex === -1) {
-            showNotification(`Target lane "${targetLaneName}" not found.`);
-            return;
-        }
-
-        // OPTIMISTIC UI UPDATE: Perform the reordering in the cache
-        const draggedLaneIndex = currentLanes.findIndex(lane => lane.name === draggedLaneName);
-        const targetIndexInCache = currentLanes.findIndex(lane => lane.name === targetLaneName);
-
-        if (draggedLaneIndex === -1 || targetIndexInCache === -1) {
-            showNotification('Error: Could not find dragged or target lane in cache. Refreshing.');
-            return initializeLanes(); // Revert UI
-        }
-
-        const [draggedLane] = currentLanes.splice(draggedLaneIndex, 1);
-        currentLanes.splice(targetIndexInCache, 0, draggedLane);
-
-        const response = await updateLanePosition(draggedLaneName, targetIndexInCache);
+        const response = await updateLanePosition(draggedLaneName, newPosition);
         if (response.ok) {
-            await initializeLanes(); // Re-render the board
+            // The API call was successful. The UI is already updated optimistically.
+            // We'll call initializeLanes to sync the cache and ensure consistency.
+            await initializeLanes();
         } else {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
             showNotification(`Failed to move lane: ${errorData.error || response.statusText}`);
+            // Revert UI on failure
+            await initializeLanes();
         }
     } catch (error) {
         showNotification("An error occurred while trying to move the lane.");
+        // Revert UI on failure
+        await initializeLanes();
     }
 }
 
@@ -804,6 +820,16 @@ function handleNoteDragStart(event) {
 }
 
 function handleNoteDragOver(event) {
+    // Check if we are dragging a note by looking for our specific data type.
+    // The note drag handler sets 'application/json', but the lane handler does not.
+    const isNoteDrag = event.dataTransfer.types.includes('application/json');
+
+    // If we are NOT dragging a note, do not handle the event here.
+    // Let it bubble up to the parent lane's dragover handler.
+    if (!isNoteDrag) {
+        return;
+    }
+
     event.preventDefault();
     event.stopPropagation(); // Prevent the lane's dragover handler from firing
     const container = event.currentTarget.closest('.notes-list');
