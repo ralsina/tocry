@@ -18,9 +18,13 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
     />
-    <!-- EasyMDE for a better markdown editor -->
-    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
-    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <!-- Toast UI Editor for a better markdown editor -->
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <!-- highlight.js for syntax highlighting in rendered notes -->
+    <link id="hljs-dark-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link id="hljs-light-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" disabled>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Custom styles, loaded last to allow overrides of all libraries -->
     <link rel="stylesheet" href="style.css" />
@@ -80,7 +84,8 @@
           <input type="text" id="edit-note-tags" name="tags" />
 
           <label for="edit-note-content">Content (Markdown)</label>
-          <textarea id="edit-note-content" name="content" rows="10"></textarea>
+          <!-- Toast UI Editor needs a div to render into, not a textarea -->
+          <div id="edit-note-content"></div>
         </form>
         <footer>
           <button type="button" class="secondary" id="edit-note-cancel-btn">Cancel</button>

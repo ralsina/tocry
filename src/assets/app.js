@@ -148,14 +148,17 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
 
 let easyMDE = null; // To hold the editor instance
 
+// Change to toastuiEditor
+let toastuiEditor = null;
+
 function handleEditNoteRequest(note) {
     const modal = document.getElementById('modal-edit-note');
     if (!modal) return;
 
     // IMPORTANT FIX: Destroy existing editor instance if it exists
-    if (easyMDE) {
-        easyMDE.toTextArea(); // Revert the textarea to its original state
-        easyMDE = null; // Clear the reference
+    if (toastuiEditor) {
+        toastuiEditor.destroy(); // Destroy the Toast UI Editor instance
+        toastuiEditor = null; // Clear the reference
     }
 
     const form = document.getElementById('edit-note-form');
@@ -164,14 +167,19 @@ function handleEditNoteRequest(note) {
     document.getElementById('edit-note-tags').value = note.tags.join(', ');
 
     const contentTextarea = document.getElementById('edit-note-content');
-    contentTextarea.value = note.content;
-
-    // Instantiate the editor
-    easyMDE = new EasyMDE({
-        element: contentTextarea,
-        spellChecker: false,
-        status: false,
-        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview", "side-by-side", "fullscreen", "|", "guide"]
+    // Toast UI Editor takes the element directly and initialValue in options
+    toastuiEditor = new toastui.Editor({
+        el: contentTextarea,
+        initialValue: note.content, // Pass the note content directly
+        height: '300px', // Set fixed height here
+        previewStyle: 'vertical', // Or 'tab'
+        toolbarItems: [
+            ['heading', 'bold', 'italic', 'strike'],
+            ['hr', 'quote'],
+            ['ul', 'ol', 'task'],
+            ['table', 'image', 'link'],
+            ['code', 'codeblock']
+        ]
     });
 
     modal.showModal(); // Use the native <dialog> method to open
@@ -179,9 +187,9 @@ function handleEditNoteRequest(note) {
 
 function closeEditModal() {
     const modal = document.getElementById('modal-edit-note');
-    if (easyMDE) {
-        easyMDE.toTextArea(); // Clean up the editor instance
-        easyMDE = null;
+    if (toastuiEditor) {
+        toastuiEditor.destroy(); // Clean up the Toast UI Editor instance
+        toastuiEditor = null;
     }
     if (modal) {
         modal.close(); // Use the native <dialog> method to close
@@ -197,7 +205,7 @@ async function handleEditNoteSubmit(event) {
         id: noteId, // Not strictly needed by backend, but good practice
         title: document.getElementById('edit-note-title').value,
         tags: document.getElementById('edit-note-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-        content: easyMDE.value() // Get content from the editor instance
+        content: toastuiEditor.getMarkdown() // Get markdown content from Toast UI Editor
     };
 
     try {
@@ -514,6 +522,19 @@ function applyTheme(theme) {
         } else {
             themeSwitcher.textContent = '🌙'; // Moon icon for switching to dark
             themeSwitcher.setAttribute('aria-label', 'Switch to dark theme');
+        }
+    }
+
+    // Toggle highlight.js theme stylesheets for rendered notes
+    const darkHljsTheme = document.getElementById('hljs-dark-theme');
+    const lightHljsTheme = document.getElementById('hljs-light-theme');
+    if (darkHljsTheme && lightHljsTheme) {
+        if (theme === 'dark') {
+            darkHljsTheme.disabled = false;
+            lightHljsTheme.disabled = true;
+        } else {
+            darkHljsTheme.disabled = true;
+            lightHljsTheme.disabled = false;
         }
     }
 }
