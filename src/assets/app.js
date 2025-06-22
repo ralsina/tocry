@@ -84,6 +84,66 @@ const colorSchemes = {
     }
 };
 
+/**
+ * Displays a custom confirmation dialog.
+ * @param {string} message The message to display in the dialog.
+ * @param {string} title The title of the dialog. Defaults to 'Confirm Action'.
+ * @returns {Promise<boolean>} A promise that resolves to true if confirmed, false if canceled.
+ */
+function showConfirmation(message, title = 'Confirm Action') {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById('custom-confirm-dialog');
+        const titleElement = document.getElementById('confirm-dialog-title');
+        const messageElement = document.getElementById('confirm-dialog-message');
+        const okButton = document.getElementById('confirm-dialog-ok-btn');
+        const cancelButton = document.getElementById('confirm-dialog-cancel-btn');
+
+        if (!dialog || !titleElement || !messageElement || !okButton || !cancelButton) {
+            console.error('Confirmation dialog elements not found.');
+            return resolve(window.confirm(message)); // Fallback to native confirm
+        }
+
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+
+        // Clear previous listeners to prevent multiple calls
+        okButton.onclick = null;
+        cancelButton.onclick = null;
+
+        okButton.onclick = () => { dialog.close(); resolve(true); };
+        cancelButton.onclick = () => { dialog.close(); resolve(false); };
+
+        dialog.showModal();
+    });
+}
+
+/**
+ * Displays a toast notification.
+ * @param {string} message The message to display.
+ * @param {string} type The type of notification ('info' or 'error'). Defaults to 'error'.
+ */
+function showNotification(message, type = 'error') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `notification-toast ${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // Trigger the animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10); // Small delay to allow the element to be added to the DOM first
+
+    // Remove the toast after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, 5000);
+}
+
 let currentLanes = []; // Cache for the current state of lanes
 
 async function initializeLanes() {
@@ -132,20 +192,20 @@ async function handleAddLaneButtonClick() {
             } else {
                 const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
                 console.error('Failed to create lane:', response.status, response.statusText, errorData.error);
-                alert(`Failed to create lane: ${errorData.error || response.statusText}`);
+                showNotification(`Failed to create lane: ${errorData.error || response.statusText}`);
             }
         } catch (error) {
             console.error('Error creating lane:', error);
-            alert("An error occurred while trying to create the lane.");
+            showNotification("An error occurred while trying to create the lane.");
         }
     } else if (laneName !== null) {
-        alert("Lane name cannot be empty.");
+        showNotification("Lane name cannot be empty.");
     }
 }
 
 // Handler for delete lane requests, passed as a callback to renderLanes
 async function handleDeleteLaneRequest(laneName) {
-    if (confirm(`Are you sure you want to delete the lane "${laneName}"?`)) {
+    if (await showConfirmation(`Are you sure you want to delete the lane "${laneName}"?`, 'Delete Lane')) {
         try {
             // OPTIMISTIC UI UPDATE: Remove the lane from the DOM and cache immediately.
             const laneElement = document.querySelector(`.lane[data-lane-name="${laneName}"]`);
@@ -164,12 +224,12 @@ async function handleDeleteLaneRequest(laneName) {
             } else {
                 const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
                 console.error(`Failed to delete lane "${laneName}":`, response.status, response.statusText, errorData.error);
-                alert(`Failed to delete lane: ${errorData.error || response.statusText}`);
+                showNotification(`Failed to delete lane: ${errorData.error || response.statusText}`);
             }
         } catch (error) {
             // This catch is for network errors or if deleteLane itself throws
             console.error('Error during delete lane operation:', error);
-            alert("An error occurred while trying to delete the lane.");
+            showNotification("An error occurred while trying to delete the lane.");
         }
     }
 }
@@ -189,7 +249,7 @@ async function handleUpdateLaneNameRequest(laneToUpdate, newName) {
         const currentPosition = currentLanes.findIndex(lane => lane.name === oldName);
 
         if (currentPosition === -1) {
-            alert(`Error: Could not find lane "${oldName}" to determine its position. Refreshing.`);
+            showNotification(`Error: Could not find lane "${oldName}" to determine its position. Refreshing.`);
             return initializeLanes(); // Refresh to be safe
         }
 
@@ -206,11 +266,11 @@ async function handleUpdateLaneNameRequest(laneToUpdate, newName) {
         } else {
             // On failure, alert the user and re-render to revert the optimistic UI change.
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to rename lane: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to rename lane: ${errorData.error || response.statusText}`);
             await initializeLanes(); // Revert UI on failure
         }
     } catch (error) {
-        alert("An error occurred while trying to rename the lane.");
+        showNotification("An error occurred while trying to rename the lane.");
         await initializeLanes(); // Revert UI
     }
 }
@@ -233,14 +293,14 @@ async function handleUpdateNoteTitleRequest(noteToUpdate, newTitle) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to rename note: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to rename note: ${errorData.error || response.statusText}`);
             await initializeLanes(); // Revert UI on failure
         } else {
             console.log(`Note "${noteToUpdate.id}" title updated successfully.`);
             // UI is already updated, no full re-render needed.
         }
     } catch (error) {
-        alert("An error occurred while trying to rename the note. Reverting changes.");
+        showNotification("An error occurred while trying to rename the note. Reverting changes.");
         await initializeLanes(); // Revert UI on failure
     }
 }
@@ -266,11 +326,11 @@ async function handleToggleNoteRequest(noteToUpdate, isExpanded) {
         } else {
             // If the update fails, alert the user and revert the UI by re-rendering.
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to save note state: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to save note state: ${errorData.error || response.statusText}`);
             await initializeLanes();
         }
     } catch (error) {
-        alert('An error occurred while saving the note state. Reverting changes.');
+        showNotification('An error occurred while saving the note state. Reverting changes.');
         await initializeLanes(); // Revert UI on failure
     }
 }
@@ -287,20 +347,20 @@ async function handleAddNoteRequest(laneName) {
             } else {
                 const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
                 console.error(`Failed to add note to lane "${laneName}":`, response.status, response.statusText, errorData.error);
-                alert(`Failed to add note: ${errorData.error || response.statusText}`);
+                showNotification(`Failed to add note: ${errorData.error || response.statusText}`);
             }
         } catch (error) {
             console.error('Error during add note operation:', error);
-            alert("An error occurred while trying to add the note.");
+            showNotification("An error occurred while trying to add the note.");
         }
     } else if (noteTitle !== null) {
-        alert("Note title cannot be empty.");
+        showNotification("Note title cannot be empty.");
     }
 }
 
 // Handler for delete note requests
 async function handleDeleteNoteRequest(noteId, noteTitle) {
-    if (confirm(`Are you sure you want to delete the note "${noteTitle}"?`)) {
+    if (await showConfirmation(`Are you sure you want to delete the note "${noteTitle}"?`, 'Delete Note')) {
         try {
             // OPTIMISTIC UI UPDATE: Remove the note from the DOM and cache immediately.
             const noteCard = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
@@ -323,12 +383,12 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
             } else {
                 const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
                 console.error(`Failed to delete note "${noteTitle}":`, response.status, response.statusText, errorData.error);
-                alert(`Failed to delete note: ${errorData.error || response.statusText}`);
+                showNotification(`Failed to delete note: ${errorData.error || response.statusText}`);
                 await initializeLanes(); // Revert UI on failure
             }
         } catch (error) {
             console.error('Error during delete note operation:', error);
-            alert("An error occurred while trying to delete the note.");
+            showNotification("An error occurred while trying to delete the note.");
         }
     }
 }
@@ -344,7 +404,7 @@ async function handlePasteAsNoteRequest(laneName, pastedText) {
     const content = lines.slice(1).join('\n').trim();
 
     if (!title) {
-        alert("Pasted text must have at least one line to be used as a title.");
+        showNotification("Pasted text must have at least one line to be used as a title.");
         return;
     }
 
@@ -355,11 +415,11 @@ async function handlePasteAsNoteRequest(laneName, pastedText) {
             await initializeLanes();
         } else {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to create note from paste: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to create note from paste: ${errorData.error || response.statusText}`);
         }
     } catch (error) {
         console.error('Error creating note from paste:', error);
-        alert("An error occurred while trying to create the note from paste.");
+        showNotification("An error occurred while trying to create the note from paste.");
     }
 }
 
@@ -381,11 +441,11 @@ async function handlePasteAsImageNoteRequest(laneName, imageBlob) {
             await initializeLanes();
         } else {
             const errorData = await addNoteResponse.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to create note from pasted image: ${errorData.error || addNoteResponse.statusText}`);
+            showNotification(`Failed to create note from pasted image: ${errorData.error || addNoteResponse.statusText}`);
         }
     } catch (error) {
         console.error('Error creating note from pasted image:', error);
-        alert("An error occurred while trying to create the note from the pasted image.");
+        showNotification("An error occurred while trying to create the note from the pasted image.");
     }
 }
 
@@ -439,7 +499,7 @@ function handleEditNoteRequest(note) {
                     callback(imageUrl, 'alt text');
                 } catch (error) {
                     console.error('Image upload failed:', error);
-                    alert(`Image upload failed: ${error.message}`);
+                    showNotification(`Image upload failed: ${error.message}`);
                 }
             }
         }
@@ -515,11 +575,11 @@ async function handleEditNoteSubmit(event) {
             closeEditModal();
             console.log(`Note "${noteId}" updated successfully.`);
         } else {
-            alert('Failed to save note. Please try again.');
+            showNotification('Failed to save note. Please try again.');
             await initializeLanes(); // Revert UI on failure
         }
     } catch (error) {
-        alert('An error occurred while saving the note.');
+        showNotification('An error occurred while saving the note.');
     }
 }
 
@@ -617,13 +677,13 @@ async function handleLaneDrop(event) {
     try {
         const currentLanes = await fetchLanes();
         if (!currentLanes) {
-            alert('Could not get current lane order to perform move.');
+            showNotification('Could not get current lane order to perform move.');
             return;
         }
 
         const targetIndex = currentLanes.findIndex(lane => lane.name === targetLaneName);
         if (targetIndex === -1) {
-            alert(`Target lane "${targetLaneName}" not found.`);
+            showNotification(`Target lane "${targetLaneName}" not found.`);
             return;
         }
 
@@ -632,7 +692,7 @@ async function handleLaneDrop(event) {
         const targetIndexInCache = currentLanes.findIndex(lane => lane.name === targetLaneName);
 
         if (draggedLaneIndex === -1 || targetIndexInCache === -1) {
-            alert('Error: Could not find dragged or target lane in cache. Refreshing.');
+            showNotification('Error: Could not find dragged or target lane in cache. Refreshing.');
             return initializeLanes(); // Revert UI
         }
 
@@ -644,10 +704,10 @@ async function handleLaneDrop(event) {
             await initializeLanes(); // Re-render the board
         } else {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to move lane: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to move lane: ${errorData.error || response.statusText}`);
         }
     } catch (error) {
-        alert("An error occurred while trying to move the lane.");
+        showNotification("An error occurred while trying to move the lane.");
     }
 }
 
@@ -754,11 +814,11 @@ async function handleNoteDrop(event) {
     }
 
     const allLanes = await fetchLanes();
-    if (!allLanes) { return alert('Could not fetch board data to complete the move.'); }
+    if (!allLanes) { return showNotification('Could not fetch board data to complete the move.'); }
 
     const originalLaneObject = allLanes.find(lane => lane.name === originalLane);
     const originalNoteObject = originalLaneObject?.notes.find(note => note.id === noteId);
-    if (!originalNoteObject) { return alert('Could not find the original note data.'); }
+    if (!originalNoteObject) { return showNotification('Could not find the original note data.'); }
 
     const originalPositionInModel = originalLaneObject.notes.findIndex(note => note.id === noteId);
     if (targetLaneName === originalLane && newPosition === originalPositionInModel) { return; }
@@ -769,7 +829,7 @@ async function handleNoteDrop(event) {
         // Move between lanes
         const targetLaneObject = currentLanes.find(lane => lane.name === targetLaneName);
         if (!targetLaneObject) {
-            alert('Error: Target lane not found in cache. Refreshing.');
+            showNotification('Error: Target lane not found in cache. Refreshing.');
             return initializeLanes(); // Revert UI
         }
         originalLaneObject.notes = originalLaneObject.notes.filter(note => note.id !== noteId);
@@ -786,11 +846,11 @@ async function handleNoteDrop(event) {
             await initializeLanes();
         } else {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-            alert(`Failed to move note: ${errorData.error || response.statusText}`);
+            showNotification(`Failed to move note: ${errorData.error || response.statusText}`);
             await initializeLanes();
         }
     } catch (error) {
-        alert("An error occurred while trying to move the note.");
+        showNotification("An error occurred while trying to move the note.");
         await initializeLanes();
     }
 }
