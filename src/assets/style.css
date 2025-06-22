@@ -333,9 +333,7 @@ body {
     border: none;
     color: var(--muted-color, #6c757d);
     cursor: pointer;
-    padding: 0.1em 0.2em;
     line-height: 1;
-    margin-left: 0.5em; /* Add space between tags and delete button */
     margin-left: auto; /* Always push the delete button to the far right */
     flex-shrink: 0; /* Prevent the button from shrinking */
     /* Use flexbox to perfectly center the SVG icon */
@@ -351,8 +349,8 @@ body {
 }
 
 .note-card {
-    /* Restore top padding, but keep horizontal/bottom padding at 0 to prevent "double padding" */
-    padding: 10px;
+    /* Add padding to create vertical space between note cards */
+    padding: 10px 0;
     cursor: grab;
     /* --- New styles for search animation --- */
     transition: all 0.35s ease-in-out;
@@ -507,30 +505,6 @@ body {
     color: #ccc;
 }
 
-/* Ensure text inside the preview and WYSIWYG is readable in dark mode */
-.toastui-editor-md-preview h1,
-.toastui-editor-md-preview h2,
-.toastui-editor-md-preview h3,
-.toastui-editor-md-preview h4,
-.toastui-editor-md-preview h5,
-.toastui-editor-md-preview h6,
-.toastui-editor-md-preview p,
-.toastui-editor-md-preview li,
-.toastui-editor-md-preview table,
-.toastui-editor-md-preview strong,
-.toastui-editor-ww-container h1,
-.toastui-editor-ww-container h2,
-.toastui-editor-ww-container h3,
-.toastui-editor-ww-container h4,
-.toastui-editor-ww-container h5,
-.toastui-editor-ww-container h6,
-.toastui-editor-ww-container p,
-.toastui-editor-ww-container li,
-.toastui-editor-ww-container table,
-.toastui-editor-md-preview strong {
-    color: #ccc;
-}
-
 /* Adjustments for Pico.css theme variables */
 html[data-theme="light"] .toastui-editor-defaultUI {
     border-color: var(--form-element-border-color);
@@ -555,29 +529,6 @@ html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar butto
 html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-md-preview,
 html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-ww-container {
     background-color: var(--form-element-background-color);
-    color: var(--color);
-}
-/* Revert preview and WYSIWYG text colors for light mode */
-html[data-theme="light"] .toastui-editor-md-preview h1,
-html[data-theme="light"] .toastui-editor-md-preview h2,
-html[data-theme="light"] .toastui-editor-md-preview h3,
-html[data-theme="light"] .toastui-editor-md-preview h4,
-html[data-theme="light"] .toastui-editor-md-preview h5,
-html[data-theme="light"] .toastui-editor-md-preview h6,
-html[data-theme="light"] .toastui-editor-md-preview p,
-html[data-theme="light"] .toastui-editor-md-preview li,
-html[data-theme="light"] .toastui-editor-md-preview table,
-html[data-theme="light"] .toastui-editor-md-preview strong,
-html[data-theme="light"] .toastui-editor-ww-container h1,
-html[data-theme="light"] .toastui-editor-ww-container h2,
-html[data-theme="light"] .toastui-editor-ww-container h3,
-html[data-theme="light"] .toastui-editor-ww-container h4,
-html[data-theme="light"] .toastui-editor-ww-container h5,
-html[data-theme="light"] .toastui-editor-ww-container h6,
-html[data-theme="light"] .toastui-editor-ww-container p,
-html[data-theme="light"] .toastui-editor-ww-container li,
-html[data-theme="light"] .toastui-editor-ww-container table,
-html[data-theme="light"] .toastui-editor-md-preview strong {
     color: var(--color);
 }
 
