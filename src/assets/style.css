@@ -295,8 +295,7 @@ body {
 }
 
 .note-content pre {
-    background-color: var(--muted-border-color);
-    padding: 0.75em;
+    /* background-color and padding are now handled by highlight.js themes */
     border-radius: var(--border-radius);
     overflow-x: auto;
     font-size: 0.9em;
@@ -353,35 +352,119 @@ body {
     width: auto;
 }
 
-/* EasyMDE overrides to better fit Pico.css */
-.EasyMDEContainer .CodeMirror {
+/* Toast UI Editor overrides to better fit Pico.css */
+.toastui-editor-defaultUI {
+    border-color: #333; /* Dark border for the editor container */
+    border-radius: var(--border-radius);
+    overflow: hidden; /* Ensures border-radius applies to children */
+}
+
+.toastui-editor-main {
+    /* Main editor area (includes editor and preview) */
+    background-color: #000; /* Dark background for editor area */
+}
+
+.toastui-editor-defaultUI .ProseMirror {
+    /* The actual editable area */
     color: #ccc;
-    border-color: #333;
-    background-color: #000;
-    height: 300px; /* Fixed height for the editor */
 }
-.EasyMDEContainer .cm-s-easymde .CodeMirror-cursor {
-    border-color: #ccc;
+
+.toastui-editor-defaultUI .ProseMirror-focused {
+    outline: none; /* Remove default outline */
 }
-.EasyMDEContainer .editor-toolbar > * {
+
+.toastui-editor-defaultUI .toastui-editor-toolbar {
+    background-color: #000; /* Dark background for toolbar */
+    border-bottom: 1px solid #333; /* Separator */
+}
+
+.toastui-editor-defaultUI .toastui-editor-toolbar button {
     color: #ccc;
 }
-.EasyMDEContainer .editor-toolbar > .active, .editor-toolbar > button:hover, .editor-preview pre, .cm-s-easymde .cm-comment {
+
+.toastui-editor-defaultUI .toastui-editor-toolbar button.active,
+.toastui-editor-defaultUI .toastui-editor-toolbar button:hover {
     background-color: #444;
 }
-.EasyMDEContainer .CodeMirror-fullscreen {
-    background: #000;
+
+.toastui-editor-defaultUI .toastui-editor-md-preview,
+.toastui-editor-defaultUI .toastui-editor-ww-container {
+    background-color: #000; /* Preview and WYSIWYG background */
+    color: #ccc;
 }
-.editor-toolbar {
-    border-top: 1px solid #333;
-    border-left: 1px solid #333;
-    border-right: 1px solid #333;
+
+/* Ensure text inside the preview and WYSIWYG is readable in dark mode */
+.toastui-editor-md-preview h1,
+.toastui-editor-md-preview h2,
+.toastui-editor-md-preview h3,
+.toastui-editor-md-preview h4,
+.toastui-editor-md-preview h5,
+.toastui-editor-md-preview h6,
+.toastui-editor-md-preview p,
+.toastui-editor-md-preview li,
+.toastui-editor-md-preview table,
+.toastui-editor-md-preview strong,
+.toastui-editor-ww-container h1,
+.toastui-editor-ww-container h2,
+.toastui-editor-ww-container h3,
+.toastui-editor-ww-container h4,
+.toastui-editor-ww-container h5,
+.toastui-editor-ww-container h6,
+.toastui-editor-ww-container p,
+.toastui-editor-ww-container li,
+.toastui-editor-ww-container table,
+.toastui-editor-md-preview strong {
+    color: #ccc;
 }
-.editor-toolbar.fullscreen {
-    background: #000;
+
+/* Adjustments for Pico.css theme variables */
+html[data-theme="light"] .toastui-editor-defaultUI {
+    border-color: var(--form-element-border-color);
 }
-.editor-preview {
-    background: #000;
+html[data-theme="light"] .toastui-editor-main {
+    background-color: var(--form-element-background-color);
+}
+html[data-theme="light"] .toastui-editor-defaultUI .ProseMirror {
+    color: var(--color);
+}
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar {
+    background-color: var(--form-element-background-color);
+    border-bottom: 1px solid var(--form-element-border-color);
+}
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button {
+    color: var(--muted-color);
+}
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button.active,
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button:hover {
+    background-color: var(--muted-border-color);
+}
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-md-preview,
+html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-ww-container {
+    background-color: var(--form-element-background-color);
+    color: var(--color);
+}
+/* Revert preview and WYSIWYG text colors for light mode */
+html[data-theme="light"] .toastui-editor-md-preview h1,
+html[data-theme="light"] .toastui-editor-md-preview h2,
+html[data-theme="light"] .toastui-editor-md-preview h3,
+html[data-theme="light"] .toastui-editor-md-preview h4,
+html[data-theme="light"] .toastui-editor-md-preview h5,
+html[data-theme="light"] .toastui-editor-md-preview h6,
+html[data-theme="light"] .toastui-editor-md-preview p,
+html[data-theme="light"] .toastui-editor-md-preview li,
+html[data-theme="light"] .toastui-editor-md-preview table,
+html[data-theme="light"] .toastui-editor-md-preview strong,
+html[data-theme="light"] .toastui-editor-ww-container h1,
+html[data-theme="light"] .toastui-editor-ww-container h2,
+html[data-theme="light"] .toastui-editor-ww-container h3,
+html[data-theme="light"] .toastui-editor-ww-container h4,
+html[data-theme="light"] .toastui-editor-ww-container h5,
+html[data-theme="light"] .toastui-editor-ww-container h6,
+html[data-theme="light"] .toastui-editor-ww-container p,
+html[data-theme="light"] .toastui-editor-ww-container li,
+html[data-theme="light"] .toastui-editor-ww-container table,
+html[data-theme="light"] .toastui-editor-md-preview strong {
+    color: var(--color);
 }
 
 /* Custom Horizontal Scroll Buttons */

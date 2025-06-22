@@ -179,6 +179,14 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                     // Use the 'marked' library to parse markdown content to HTML.
                     noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content;
 
+                    // After setting the HTML, find and highlight all code blocks.
+                    // This is more reliable than configuring marked directly.
+                    if (window.hljs) {
+                        noteContent.querySelectorAll('pre code').forEach((block) => {
+                            window.hljs.highlightElement(block);
+                        });
+                    }
+
                     detailsElement.appendChild(summaryElement);
                     detailsElement.appendChild(noteContent);
                     noteCard.appendChild(detailsElement);
