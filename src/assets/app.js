@@ -967,6 +967,15 @@ function applyColorScheme(schemeName) { // schemeName will be 'Default', 'Amber'
 
     // Set the --primary-rgb variable for custom ToCry styles
     document.documentElement.style.setProperty('--primary-rgb', colors['primary-rgb']);
+
+    // Update the color swatch next to the selector
+    const currentColorSwatch = document.getElementById('current-color-swatch');
+    if (currentColorSwatch) {
+        // Use the primary-rgb from the *light* theme of the selected scheme for the swatch,
+        // as the swatch itself represents the color scheme's primary color, not the current app theme.
+        const lightThemePrimaryRgb = colorSchemes[schemeName].light['primary-rgb'];
+        currentColorSwatch.style.backgroundColor = `rgb(${lightThemePrimaryRgb})`;
+    }
 }
 
 /**
