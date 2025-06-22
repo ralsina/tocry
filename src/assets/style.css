@@ -92,9 +92,8 @@ body {
 
 /* Individual lane styling (each column in the grid) */
 .lane {
-    min-width: 20em;
-    /* Set a max-width to prevent lanes from growing with long content. */
-    max-width: 30em;
+    min-width: 25em; /* Default for larger screens */
+    max-width: 40em; /* Allow lanes to expand more on very wide screens */
     /* Minimum width for the lane */
     border: 2px solid #add8e6;
     /* Light blue border */
@@ -110,6 +109,26 @@ body {
     /* Add a background color to make the lane visible */
     display: flex;
     flex-direction: column;
+}
+
+/* Responsive Lane Widths */
+/* For screens up to 600px wide, make lanes full width */
+@media (max-width: 600px) {
+    .lane {
+        min-width: 100vw;
+        max-width: 100vw;
+        /* Adjust padding to account for main-content padding */
+        padding-left: calc(15px - var(--spacing));
+        padding-right: calc(15px - var(--spacing));
+    }
+}
+
+/* For screens between 601px and 1000px, make lanes half width */
+@media (min-width: 601px) and (max-width: 1000px) {
+    .lane {
+        min-width: 50vw;
+        max-width: 50vw;
+    }
 }
 
 /* Drag and Drop styles for lanes */
