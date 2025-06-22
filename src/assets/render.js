@@ -159,10 +159,8 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     if (e.target.closest('button')) {
                         return;
                     }
-                    // Prevent the default dblclick action on a summary (which is to toggle)
-                    if (e.target.closest('summary')) {
-                        e.preventDefault();
-                    }
+                    // No need to prevent default here, as the summary div no longer toggles content.
+                    // Dblclick on title/tags will now correctly open the edit modal.
                     if (callbacks.onEditNote) {
                         callbacks.onEditNote(note);
                     }
@@ -216,18 +214,39 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                     });
                 }
 
-                const detailsElement = document.createElement('details');
-                const summaryElement = document.createElement('summary');
-                summaryElement.className = 'note-card-summary';
+                const collapsibleContainer = document.createElement('div');
+                collapsibleContainer.className = 'note-collapsible';
 
-                summaryElement.appendChild(noteTitle);
-                if (tagsContainer) summaryElement.appendChild(tagsContainer);
-                summaryElement.appendChild(deleteNoteButton);
+                // Create the note summary container (no longer directly clickable for toggle)
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = 'note-summary';
+
+                // NEW: Create the dedicated toggle button for this note
+                const toggleButton = document.createElement('button');
+                toggleButton.className = 'note-toggle-btn';
+                toggleButton.setAttribute('aria-label', 'Toggle note content');
+                // Add the SVG icon for the toggle button directly
+                toggleButton.innerHTML = `<svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+                // Add click listener to the new toggle button
+                toggleButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent dblclick on noteCard from firing immediately
+                    if (hasContent) {
+                        collapsibleContainer.classList.toggle('is-open');
+                    }
+                });
+
+                summaryDiv.appendChild(toggleButton); // Add toggle button first
+                summaryDiv.appendChild(noteTitle);
+                if (tagsContainer) summaryDiv.appendChild(tagsContainer);
+                summaryDiv.appendChild(deleteNoteButton);
+
+                collapsibleContainer.appendChild(summaryDiv);
 
                 const hasContent = note.content && note.content.trim() !== '';
+                let noteContent = null;
 
                 if (hasContent) {
-                    const noteContent = document.createElement('div');
+                    noteContent = document.createElement('div');
                     noteContent.className = 'note-content';
                     // Use the 'marked' library to parse markdown content to HTML.
                     noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content;
@@ -237,20 +256,12 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                             window.hljs.highlightElement(block);
                         });
                     }
-                    detailsElement.appendChild(noteContent);
+                    collapsibleContainer.appendChild(noteContent);
                 } else {
-                    detailsElement.classList.add('note-card--no-content');
+                    collapsibleContainer.classList.add('note-card--no-content');
                 }
 
-                // Prevent toggling for notes without content
-                summaryElement.addEventListener('click', (e) => {
-                    if (detailsElement.classList.contains('note-card--no-content')) {
-                        e.preventDefault();
-                    }
-                });
-
-                detailsElement.appendChild(summaryElement);
-                noteCard.appendChild(detailsElement);
+                noteCard.appendChild(collapsibleContainer);
                 notesList.appendChild(noteCard);
             });
         } else {

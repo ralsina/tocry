@@ -232,81 +232,100 @@ body {
     outline: none;
 }
 
-/* --- Custom Collapsible Note Indicator --- */
+/* --- Custom Collapsible Note --- */
 
-/* 1. Turn the summary into a flex container. This is the key to removing the default marker
-      and gaining full control over the layout of its children. */
-summary.note-card-summary {
+/* 1. Set up the container as a grid for smooth animation.
+      The first row (summary) is auto-sized.
+      The second row (content) starts at 0fr (collapsed). */
+.note-collapsible {
+    display: grid;
+    grid-template-rows: auto 0fr;
+    transition: grid-template-rows 0.3s ease-in-out;
+}
+
+/* 2. When open, transition the second row to 1fr, which will make it
+      take up its natural content size. */
+.note-collapsible.is-open {
+    grid-template-rows: auto 1fr;
+}
+
+/* 3. The content itself needs overflow: hidden so that its contents
+      are clipped as its container row animates. */
+.note-collapsible > .note-content {
+    overflow: hidden;
+}
+/* Style the note summary container */
+.note-summary {
     display: flex;
     align-items: center;
-    gap: 0.75em; /* Space between our custom marker and the note header */
+    gap: 0.75em; /* Space between elements in the summary */
     padding: var(--spacing); /* Use standard Pico padding */
     flex-wrap: nowrap; /* Prevent items from wrapping */
-    list-style: none; /* Hide default marker in Firefox */
+    /* No cursor: pointer here, as the toggle button handles clicks */
+}
+
+/* Style the dedicated toggle button */
+.note-toggle-btn {
+    background: none;
+    border: none;
+    padding: 0; /* Remove default button padding */
     cursor: pointer;
+    flex-shrink: 0; /* Prevent the button from shrinking */
+    display: flex; /* Use flex to center the pseudo-element icon */
+    align-items: center;
+    justify-content: center;
+    /* The button will size to its content (the SVG) */
 }
 
-/* 2. Explicitly hide the marker for WebKit browsers. */
-summary.note-card-summary::-webkit-details-marker {
-    display: none;
-}
-
-/* 3. Create our custom marker as a pseudo-element. It will be the first flex item. */
-summary.note-card-summary::before {
-    content: '';
-    flex-shrink: 0; /* Prevent the icon from shrinking */
-    width: 1.2em;
-    height: 1.2em;
-    background-color: var(--muted-color);
-    mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='9 18 15 12 9 6'%3e%3c/polyline%3e%3c/svg%3e");
-    mask-size: contain;
+/* Style the SVG arrow inside the toggle button */
+.note-toggle-btn .toggle-arrow {
+    /* Size is now set via width/height attributes in the SVG HTML */
+    color: var(--muted-color); /* Use color for the SVG stroke */
     transition: transform 0.2s ease-in-out;
 }
 
-/* 4. Rotate our custom marker when the note is expanded. */
-details[open] > summary.note-card-summary::before {
+/* Rotate the arrow when the note is expanded. */
+.note-collapsible.is-open .note-toggle-btn .toggle-arrow {
     transform: rotate(90deg);
 }
 
 /* Styles for notes without content to disable the collapsible behavior */
-details.note-card--no-content > summary.note-card-summary {
-    cursor: default;
-}
-
-details.note-card--no-content > summary.note-card-summary::before {
-    visibility: hidden;
-}
-
 /* Style the title inside both collapsible and non-collapsible headers */
-summary.note-card-summary > h4 {
+.note-summary > h4 {
     margin: 0;
-    /* Remove default h4 margin */
     flex-grow: 1;
-    /* Allow title to take up available space */
     font-weight: 500;
     cursor: text;
     padding: 0.1em 0.3em;
     margin: -0.1em -0.3em; /* Negative margin to counteract padding and prevent layout shift */
     border-radius: var(--border-radius);
     transition: background-color 0.2s ease-in-out;
-    /* Prevent long titles from expanding the card */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0; /* Required for text-overflow to work on a flex item */
 }
 
-summary.note-card-summary > h4:hover,
-summary.note-card-summary > h4:focus {
+.note-summary > h4:hover,
+.note-summary > h4:focus {
     background-color: var(--form-element-background-color);
     outline: none;
 }
 
-summary.note-card-summary > h4:focus {
+.note-summary > h4:focus {
     /* When editing, show the full title instead of the ellipsis */
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
+}
+
+/* Styles for notes without content to disable the collapsible behavior */
+.note-collapsible.note-card--no-content .note-summary {
+    cursor: default; /* Still useful for the overall summary area */
+}
+
+.note-collapsible.note-card--no-content .note-toggle-btn {
+    display: none; /* Hide the toggle button entirely if no content */
 }
 
 .delete-note-btn {
