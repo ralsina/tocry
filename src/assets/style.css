@@ -92,7 +92,9 @@ body {
 
 /* Individual lane styling (each column in the grid) */
 .lane {
-    min-width: 25em;
+    min-width: 20em;
+    /* Set a max-width to prevent lanes from growing with long content. */
+    max-width: 30em;
     /* Minimum width for the lane */
     border: 2px solid #add8e6;
     /* Light blue border */
@@ -125,7 +127,6 @@ body {
 
 .lane-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
     /* Adjust as needed */
@@ -139,11 +140,24 @@ body {
     padding: 0.1em 0.3em;
     border-radius: var(--border-radius);
     transition: background-color 0.2s ease-in-out;
+    /* Prevent long titles from expanding the lane */
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0; /* Required for text-overflow to work on a flex item */
 }
 
 .lane-header h2:hover, .lane-header h2:focus {
     background-color: var(--form-element-background-color);
     outline: none;
+}
+
+.lane-header h2:focus {
+    /* When editing, show the full title instead of the ellipsis */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .lane-actions {
@@ -223,12 +237,24 @@ body {
     margin: -0.1em -0.3em; /* Negative margin to counteract padding and prevent layout shift */
     border-radius: var(--border-radius);
     transition: background-color 0.2s ease-in-out;
+    /* Prevent long titles from expanding the card */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0; /* Required for text-overflow to work on a flex item */
 }
 
 .note-card-header h4:hover,
 .note-card-header h4:focus {
     background-color: var(--form-element-background-color);
     outline: none;
+}
+
+.note-card-header h4:focus {
+    /* When editing, show the full title instead of the ellipsis */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .delete-note-btn {
