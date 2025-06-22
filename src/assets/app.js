@@ -64,6 +64,16 @@ async function handleAddLaneButtonClick() {
 async function handleDeleteLaneRequest(laneName) {
     if (confirm(`Are you sure you want to delete the lane "${laneName}"?`)) {
         try {
+            // OPTIMISTIC UI UPDATE: Remove the lane from the DOM and cache immediately.
+            const laneElement = document.querySelector(`.lane[data-lane-name="${laneName}"]`);
+            if (laneElement) {
+                laneElement.remove();
+            }
+            // Update cache: Filter out the deleted lane
+            currentLanes = currentLanes.filter(lane => lane.name !== laneName);
+            // Update scroll buttons visibility as lanes might have shifted
+            updateScrollButtonsVisibility();
+
             const response = await deleteLane(laneName);
             if (response.ok) {
                 console.log(`Lane "${laneName}" deleted successfully.`);
@@ -102,12 +112,20 @@ async function handleUpdateLaneNameRequest(laneToUpdate, newName) {
 
         const updatedLaneData = { ...laneToUpdate, name: trimmedNewName };
 
+        // OPTIMISTIC UI UPDATE: Update the name in the local cache immediately.
+        // Since render.js uses currentLanes, this will update the displayed name.
+        laneToUpdate.name = trimmedNewName;
+
         const response = await updateLane(oldName, updatedLaneData, currentPosition);
-        if (!response.ok) {
+        if (response.ok) {
+            // On success, the UI is already updated optimistically, so no full re-render is needed.
+            console.log(`Lane "${oldName}" successfully renamed to "${trimmedNewName}".`);
+        } else {
+            // On failure, alert the user and re-render to revert the optimistic UI change.
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
             alert(`Failed to rename lane: ${errorData.error || response.statusText}`);
+            await initializeLanes(); // Revert UI on failure
         }
-        await initializeLanes(); // Always re-render to show result or revert optimistic UI change
     } catch (error) {
         alert("An error occurred while trying to rename the lane.");
         await initializeLanes(); // Revert UI
@@ -122,17 +140,22 @@ async function handleUpdateNoteTitleRequest(noteToUpdate, newTitle) {
     }
 
     try {
-        // The full note object is now passed directly, no need to fetch or find it.
         const updatedNoteData = { ...noteToUpdate, title: trimmedNewTitle };
+
+        // OPTIMISTIC UI UPDATE: Update the title in the local cache immediately.
+        // The DOM is already updated by makeTitleEditable.
+        noteToUpdate.title = trimmedNewTitle;
+
         const response = await updateNote(noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
             alert(`Failed to rename note: ${errorData.error || response.statusText}`);
+            await initializeLanes(); // Revert UI on failure
+        } else {
+            console.log(`Note "${noteToUpdate.id}" title updated successfully.`);
+            // UI is already updated, no full re-render needed.
         }
-        // To be consistent and ensure the UI is always in sync with the backend,
-        // we'll re-render after a successful update.
-        await initializeLanes();
     } catch (error) {
         alert("An error occurred while trying to rename the note. Reverting changes.");
         await initializeLanes(); // Revert UI on failure
@@ -196,6 +219,20 @@ async function handleAddNoteRequest(laneName) {
 async function handleDeleteNoteRequest(noteId, noteTitle) {
     if (confirm(`Are you sure you want to delete the note "${noteTitle}"?`)) {
         try {
+            // OPTIMISTIC UI UPDATE: Remove the note from the DOM and cache immediately.
+            const noteCard = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
+            if (noteCard) {
+                noteCard.remove();
+            }
+            // Update cache: find the lane and remove the note from its notes array
+            for (const lane of currentLanes) {
+                const initialNoteCount = lane.notes.length;
+                lane.notes = lane.notes.filter(note => note.id !== noteId);
+                if (lane.notes.length < initialNoteCount) {
+                    // Note was found and removed from this lane
+                    break;
+                }
+            }
             const response = await deleteNote(noteId);
             if (response.ok) {
                 console.log(`Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`);
@@ -204,6 +241,7 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
                 const errorData = await response.json().catch(() => ({ error: "Failed to parse error response from server" }));
                 console.error(`Failed to delete note "${noteTitle}":`, response.status, response.statusText, errorData.error);
                 alert(`Failed to delete note: ${errorData.error || response.statusText}`);
+                await initializeLanes(); // Revert UI on failure
             }
         } catch (error) {
             console.error('Error during delete note operation:', error);
@@ -332,7 +370,7 @@ function closeEditModal() {
     if (toastuiEditor) {
         toastuiEditor.destroy(); // Clean up the Toast UI Editor instance
         toastuiEditor = null;
-    }
+    } // <-- This closing brace was missing
     if (modal) {
         modal.close(); // Use the native <dialog> method to close
     }
@@ -350,13 +388,52 @@ async function handleEditNoteSubmit(event) {
         content: toastuiEditor.getMarkdown() // Get markdown content from Toast UI Editor
     };
 
+    // OPTIMISTIC UI UPDATE: Update the note in the local cache immediately.
+    let noteInCache = null;
+    for (const lane of currentLanes) {
+        noteInCache = lane.notes.find(n => n.id === noteId);
+        if (noteInCache) {
+            noteInCache.title = updatedNote.title;
+            noteInCache.tags = updatedNote.tags;
+            noteInCache.content = updatedNote.content;
+            break;
+        }
+    }
+
+    // Also update the DOM for the specific note card
+    const noteCardElement = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
+    if (noteCardElement) {
+        // Update title in DOM (already handled by makeTitleEditable, but ensure consistency)
+        const titleElement = noteCardElement.querySelector('.note-summary h4');
+        if (titleElement) titleElement.textContent = updatedNote.title;
+
+        // Update tags in DOM
+        const tagsContainer = noteCardElement.querySelector('.note-tags');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = ''; // Clear existing tags
+            updatedNote.tags.forEach(tag => {
+                const tagSpan = document.createElement('span');
+                tagSpan.className = 'tag';
+                tagSpan.textContent = tag;
+                tagsContainer.appendChild(tagSpan);
+            });
+        }
+        // Update content in DOM (re-parse markdown and highlight)
+        const noteContentDiv = noteCardElement.querySelector('.note-content');
+        if (noteContentDiv) {
+            noteContentDiv.innerHTML = window.marked ? window.marked.parse(updatedNote.content) : updatedNote.content;
+            if (window.hljs) noteContentDiv.querySelectorAll('pre code').forEach((block) => window.hljs.highlightElement(block));
+        }
+    }
+
     try {
         const response = await updateNote(noteId, { note: updatedNote, lane_name: null, position: null });
         if (response.ok) {
             closeEditModal();
-            await initializeLanes();
+            console.log(`Note "${noteId}" updated successfully.`);
         } else {
             alert('Failed to save note. Please try again.');
+            await initializeLanes(); // Revert UI on failure
         }
     } catch (error) {
         alert('An error occurred while saving the note.');
@@ -467,7 +544,19 @@ async function handleLaneDrop(event) {
             return;
         }
 
-        const response = await updateLanePosition(draggedLaneName, targetIndex);
+        // OPTIMISTIC UI UPDATE: Perform the reordering in the cache
+        const draggedLaneIndex = currentLanes.findIndex(lane => lane.name === draggedLaneName);
+        const targetIndexInCache = currentLanes.findIndex(lane => lane.name === targetLaneName);
+
+        if (draggedLaneIndex === -1 || targetIndexInCache === -1) {
+            alert('Error: Could not find dragged or target lane in cache. Refreshing.');
+            return initializeLanes(); // Revert UI
+        }
+
+        const [draggedLane] = currentLanes.splice(draggedLaneIndex, 1);
+        currentLanes.splice(targetIndexInCache, 0, draggedLane);
+
+        const response = await updateLanePosition(draggedLaneName, targetIndexInCache);
         if (response.ok) {
             await initializeLanes(); // Re-render the board
         } else {
@@ -590,6 +679,23 @@ async function handleNoteDrop(event) {
 
     const originalPositionInModel = originalLaneObject.notes.findIndex(note => note.id === noteId);
     if (targetLaneName === originalLane && newPosition === originalPositionInModel) { return; }
+
+    // OPTIMISTIC UI UPDATE: Update the currentLanes cache to reflect the move.
+    // The DOM is already reordered by the dragover event.
+    if (targetLaneName !== originalLane) {
+        // Move between lanes
+        const targetLaneObject = currentLanes.find(lane => lane.name === targetLaneName);
+        if (!targetLaneObject) {
+            alert('Error: Target lane not found in cache. Refreshing.');
+            return initializeLanes(); // Revert UI
+        }
+        originalLaneObject.notes = originalLaneObject.notes.filter(note => note.id !== noteId);
+        targetLaneObject.notes.splice(newPosition, 0, originalNoteObject);
+    } else {
+        // Reorder within the same lane
+        originalLaneObject.notes = originalLaneObject.notes.filter(note => note.id !== noteId);
+        originalLaneObject.notes.splice(newPosition, 0, originalNoteObject);
+    }
 
     try {
         const response = await updateNote(noteId, { note: originalNoteObject, lane_name: targetLaneName, position: newPosition });
