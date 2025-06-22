@@ -75,7 +75,15 @@ body {
     transition: color 0.2s ease-in-out;
 }
 .page-header nav h1 a:hover {
-    color: var(--primary);
+    color: var(--pico-primary);
+}
+
+/* Style for the color scheme switcher */
+#color-scheme-switcher {
+    margin-bottom: 0; /* Override Pico's default form element margin */
+    width: auto; /* Allow it to size to its content */
+    padding-right: 2.5rem; /* Ensure space for the dropdown arrow */
+    background-position: right 0.5rem center; /* Adjust arrow position */
 }
 
 /* Override Pico's container for the header to reduce side margins */
@@ -96,10 +104,8 @@ body {
     height: 100%;
     /* Make the container of lanes use full available vertical space */
     /* align-items: stretch; is the default for flex containers, making lanes stretch vertically */
-    min-width: max-content;
-    /* Ensure the container is wide enough for all lanes */
-    /* padding: 0 5em var(--spacing); */
-    /* Add padding to the sides and bottom */
+    min-width: max-content; /* Ensure the container is wide enough for all lanes */
+    /* padding: 0 5em var(--pico-spacing); */ /* Add padding to the sides and bottom */
 }
 
 /* Individual lane styling (each column in the grid) */
@@ -146,12 +152,12 @@ body {
 .lane--dragging {
     opacity: 0.5;
     /* Make the dragged lane semi-transparent */
-    border: 2px dashed var(--primary);
+    border: 2px dashed var(--pico-primary);
     /* Add a dashed border */
 }
 
 .lane--drag-over {
-    box-shadow: 0 0 0 3px var(--primary);
+    box-shadow: 0 0 0 3px var(--pico-primary);
     /* Highlight the drop target */
 }
 
@@ -164,13 +170,19 @@ body {
     background-color: var(--tocry-lane-header-bg);
 }
 
+// /* --- DEBUGGING: Force a background color in dark mode --- */
+// [data-theme="dark"] .lane-header {
+//     background-color: #ff69b4 !important; /* A very obvious pink color */
+// }
+// /* --- END DEBUGGING --- */
+
 .lane-header h2 {
     margin: 0;
     /* Remove default h2 margin to align better */
     font-weight: 500;
     cursor: text;
     padding: 0.1em 0.3em;
-    border-radius: var(--border-radius);
+    border-radius: var(--pico-border-radius);
     transition: background-color 0.2s ease-in-out;
     /* Prevent long titles from expanding the lane */
     flex-grow: 1;
@@ -181,7 +193,7 @@ body {
 }
 
 .lane-header h2:hover, .lane-header h2:focus {
-    background-color: var(--form-element-background-color);
+    background-color: var(--pico-form-element-background-color);
     outline: none;
 }
 
@@ -200,7 +212,7 @@ body {
 
 .lane-note-count {
     background-color: var(--tocry-lane-header-bg); /* Match tag background */
-    color: var(--primary); /* Match tag text color */
+    color: var(--pico-primary); /* Match tag text color */
     font-size: 0.8em; /* Keep font size consistent */
     font-weight: 600;
     padding: 0.7em 0.8em; /* Adjust padding to vertically align with action buttons */
@@ -225,7 +237,7 @@ body {
 }
 
 .delete-lane-btn {
-    color: var(--muted-color, #6c757d);
+    color: var(--pico-muted-color, #6c757d);
 }
 
 .delete-lane-btn:hover,
@@ -235,12 +247,12 @@ body {
 }
 
 .add-note-btn {
-    color: var(--muted-color, #6c757d);
+    color: var(--pico-muted-color, #6c757d);
 }
 
 .add-note-btn:hover,
 .add-note-btn:focus {
-    color: var(--primary-hover, #0056b3);
+    color: var(--pico-primary-hover, #0056b3);
     outline: none;
 }
 
@@ -271,7 +283,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5em; /* Space between elements in the summary */
-    padding: var(--spacing); /* Use standard Pico padding */
+    padding: var(--pico-spacing); /* Use standard Pico padding */
     flex-wrap: nowrap; /* Prevent items from wrapping */
     min-width: 0; /* Prevents the container from overflowing its parent grid cell */
     /* No cursor: pointer here, as the toggle button handles clicks */
@@ -293,7 +305,7 @@ body {
 /* Style the SVG arrow inside the toggle button */
 .note-toggle-btn .toggle-arrow {
     /* Size is now set via width/height attributes in the SVG HTML */
-    color: var(--muted-color); /* Use color for the SVG stroke */
+    color: var(--pico-muted-color); /* Use color for the SVG stroke */
     transition: transform 0.2s ease-in-out;
 }
 
@@ -311,7 +323,7 @@ body {
     cursor: text;
     padding: 0.1em 0.3em;
     margin: -0.1em -0.3em; /* Negative margin to counteract padding and prevent layout shift */
-    border-radius: var(--border-radius);
+    border-radius: var(--pico-border-radius);
     transition: background-color 0.2s ease-in-out;
     white-space: nowrap;
     overflow: hidden;
@@ -321,7 +333,7 @@ body {
 
 .note-summary > h4:hover,
 .note-summary > h4:focus {
-    background-color: var(--form-element-background-color);
+    background-color: var(--pico-form-element-background-color);
     outline: none;
 }
 
@@ -345,7 +357,7 @@ body {
 .delete-note-btn {
     background: none;
     border: none;
-    color: var(--muted-color, #6c757d);
+    color: var(--pico-muted-color, #6c757d);
     cursor: pointer;
     line-height: 1;
     flex-shrink: 0; /* Prevent the button from shrinking */
@@ -401,7 +413,7 @@ body {
 .notes-list--drag-over {
     /* A light blueish highlight */
     background-color: var(--tocry-drag-over-bg);
-    border-radius: var(--border-radius);
+    border-radius: var(--pico-border-radius);
 }
 
 .note-content {
@@ -409,7 +421,7 @@ body {
     font-size: 0.9em;
     line-height: 1.6;
     /* Add padding to align with the summary element's content */
-    padding: 0 var(--spacing) var(--spacing) var(--spacing);
+    padding: 0 var(--pico-spacing) var(--pico-spacing) var(--pico-spacing);
 }
 
 .note-content p:last-child {
@@ -424,14 +436,14 @@ body {
 
 .note-content pre {
     /* background-color and padding are now handled by highlight.js themes */
-    border-radius: var(--border-radius);
+    border-radius: var(--pico-border-radius);
     overflow-x: auto;
     font-size: 0.9em;
 }
 
 .note-content code {
-    font-family: var(--font-mono);
-    background-color: var(--muted-border-color);
+    font-family: var(--pico-font-mono);
+    background-color: var(--pico-muted-border-color);
     padding: 0.1em 0.3em;
     border-radius: 3px;
 }
@@ -442,10 +454,10 @@ body {
 }
 
 .note-content blockquote {
-    border-left: 4px solid var(--muted-border-color);
+    border-left: 4px solid var(--pico-muted-border-color);
     padding-left: 1em;
     margin-left: 0;
-    color: var(--muted-color);
+    color: var(--pico-muted-color);
 }
 
 /* Container for tags, now inside the note header */
@@ -464,7 +476,7 @@ body {
     /* Use a semi-transparent version of the primary color for a subtle tint */
     /* This ensures it's distinct from the card background but still very light */
     background-color: var(--tocry-tag-bg);
-    color: var(--primary);
+    color: var(--pico-primary);
     padding: 0.2em 0.7em;
     border-radius: 9999px; /* Pill shape */
     font-size: 0.75em;
@@ -475,7 +487,7 @@ body {
 #modal-edit-note footer {
     display: flex;
     justify-content: flex-end;
-    gap: var(--spacing);
+    gap: var(--pico-spacing);
 }
 
 /* Override Pico's default full-width buttons inside the modal footer */
@@ -486,7 +498,7 @@ body {
 /* Toast UI Editor overrides to better fit Pico.css */
 .toastui-editor-defaultUI {
     border-color: var(--tocry-editor-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--pico-border-radius);
     overflow: hidden; /* Ensures border-radius applies to children */
 }
 
