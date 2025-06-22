@@ -5,7 +5,8 @@ to be a straightforward tool for managing tasks across different stages or
 categories. The name comes from the eternal question every developer faces
 when looking at their task list: "Are you going ToDo or ToCry?"
 
-![image](https://github.com/user-attachments/assets/239bdc3e-4376-4b96-b193-1960c129f864)
+![image](https://github.com/user-attachments/assets/5e727159-4c65-4faf-9fac-5c94c539fb74)
+
 
 
 
@@ -19,6 +20,8 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Collapsible Notes:** Collapse notes with content to keep your board tidy
 * **Light & Dark Modes:** Switch between themes for your viewing comfort
 * **Responsive UI:** A clean interface that works on different screen sizes
+* **Image Uploading:** Just paste an image and it's uploaded and linked
+* **Color Schemes:** Choose between 20 color schemes
 
 ## Installation From Source
 
