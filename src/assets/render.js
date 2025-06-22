@@ -37,7 +37,7 @@ function makeTitleEditable(element, originalValue, onSaveCallback) {
  * @param {object} dragAndDropCallbacks The collection of drag and drop callbacks for notes.
  * @returns {HTMLElement} The fully constructed note card article element.
  */
-function createNoteCardElement(note, laneName, callbacks, dragAndDropCallbacks) {
+export function createNoteCardElement(note, laneName, callbacks, dragAndDropCallbacks) {
     const noteCard = document.createElement('article');
     noteCard.className = 'note-card';
     noteCard.draggable = true;
