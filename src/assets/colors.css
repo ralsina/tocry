@@ -2,112 +2,62 @@
    Color Variables
    ========================================================================== */
 
-/* Pico.css Default Variables (Light Theme) */
+/* Custom Application Variables, defined in function of Pico.css variables */
 :root {
-  /* Typography */
-  --font-family: "Chivo", sans-serif; /* Keep Chivo for general text */
-  --font-mono: "Chivo Mono", monospace; /* Use Chivo Mono for monospace */
-  --font-size: 1rem;
-  --line-height: 1.5;
-  --color: #212529; /* Default text color */
-  --color-inverse: #fff;
-
-  /* Spacing & Borders */
-  --spacing: 1rem;
-  --border-radius: 0.25rem;
-  --border-color: #ced4da;
-  --muted-color: #6c757d;
-  --muted-border-color: #dee2e6;
-
-  /* Backgrounds */
-  --background-color: #fff;
-  --card-background-color: #fff;
-  --form-element-background-color: #fff;
-
-  /* Primary Colors */
-  --primary: #007bff;
-  --primary-rgb: 0, 123, 255;
-  --primary-hover: #0069d9;
-  --primary-focus: rgba(0, 123, 255, 0.25);
-
-  /* Form Elements */
-  --form-element-border-color: #ced4da;
-  --form-element-color: #212529;
-  --form-element-placeholder-color: #6c757d;
-  --form-element-active-background-color: #fff;
-  --form-element-active-border-color: #007bff;
-  --form-element-focus-color: rgba(0, 123, 255, 0.25);
+  /* Helper variables to make Pico's colors available to rgba() */
+  /* Corresponds to Pico v2's light theme --pico-color: #333b45 */
+  --color-rgb: 51, 59, 69;
 
   /* Custom Application Variables */
   /* General & Lane Colors */
-  --tocry-lane-border: #add8e6;
+  --tocry-lane-border: rgba(var(--primary-rgb), 0.25);
   --tocry-lane-header-bg: rgba(var(--primary-rgb), 0.1);
-  --tocry-drag-over-bg: rgba(var(--primary-rgb), 0.1);
+  --tocry-drag-over-bg: rgba(var(--primary-rgb), 0.15);
 
   /* Note Card Colors */
-  --tocry-note-shadow: rgba(0, 0, 0, 0.1);
-  --tocry-note-shadow-dragging: rgba(0, 0, 0, 0.3);
+  /* Shadows derived from Pico's --color (dark in light theme) for better theme integration */
+  --tocry-note-shadow: rgba(var(--color-rgb), 0.1);
+  --tocry-note-shadow-dragging: rgba(var(--color-rgb), 0.3);
   --tocry-tag-bg: rgba(var(--primary-rgb), 0.1);
 
   /* UI Element Colors */
-  --tocry-scroll-btn-bg: rgba(29, 35, 42, 0.7);
-  --tocry-scroll-btn-fg: white;
-  --tocry-danger-hover-color: #c82333;
+  /* Scroll button background derived from Pico's --color (dark in light theme) */
+  --tocry-scroll-btn-bg: rgba(var(--color-rgb), 0.7);
+  /* Scroll button foreground derived from Pico's --color-inverse (white in light theme) */
+  --tocry-scroll-btn-fg: var(--pico-color-inverse);
+  /* Danger hover color uses Pico's built-in red variable */
+  --tocry-danger-hover-color: var(--pico-del-color);
 
   /* ToastUI Editor */
-  --tocry-editor-border: var(--form-element-border-color); /* Uses Pico var */
-  --tocry-editor-bg: var(--form-element-background-color); /* Uses Pico var */
-  --tocry-editor-toolbar-bg: var(--form-element-background-color); /* Uses Pico var */
-  --tocry-editor-toolbar-border: var(--form-element-border-color); /* Uses Pico var */
-  --tocry-editor-text: var(--color); /* Uses Pico var */
-  --tocry-editor-toolbar-button: var(--muted-color); /* Uses Pico var */
-  --tocry-editor-toolbar-button-hover: var(--muted-border-color); /* Uses Pico var */
+  --tocry-editor-border: var(--pico-form-element-border-color);
+  --tocry-editor-bg: var(--pico-form-element-background-color);
+  --tocry-editor-toolbar-bg: var(--pico-form-element-background-color);
+  --tocry-editor-toolbar-border: var(--pico-form-element-border-color);
+  --tocry-editor-text: var(--pico-color);
+  --tocry-editor-toolbar-button: var(--pico-muted-color);
+  --tocry-editor-toolbar-button-hover: var(--pico-muted-border-color);
 }
 
-/* Pico.css Dark Theme Overrides */
+/* Dark Theme Overrides for Custom Application Variables */
 html[data-theme="dark"] {
-  /* Typography */
-  --font-family: "Chivo", sans-serif; /* Ensure Chivo is used for general text in dark mode */
-  --font-mono: "Chivo Mono", monospace; /* Ensure Chivo Mono is used in dark mode too */
-  --color: #adb5bd;
-  --color-inverse: #111;
-
-  /* Spacing & Borders */
-  --border-color: #333;
-  --muted-color: #6c757d; /* Same as light */
-  --muted-border-color: #444;
-
-  /* Backgrounds */
-  --background-color: #111;
-  --card-background-color: #1d1d1d;
-  --form-element-background-color: #1d1d1d;
-
-  /* Primary Colors */
-  --primary: #377dff;
-  --primary-rgb: 55, 125, 255;
-  --primary-hover: #2c64d9;
-  --primary-focus: rgba(55, 125, 255, 0.25);
-
-  /* Form Elements */
-  --form-element-border-color: #333;
-  --form-element-color: #adb5bd;
-  --form-element-placeholder-color: #6c757d;
-  --form-element-active-background-color: #1d1d1d;
-  --form-element-active-border-color: #377dff;
-  --form-element-focus-color: rgba(55, 125, 255, 0.25);
+  /* Corresponds to Pico v2's dark theme --pico-color: #9ba3af */
+  --color-rgb: 155, 163, 175;
 
   /* Custom Application Variables */
-  --tocry-lane-border: #2c3e50; /* A darker, muted blue for dark mode */
-  --tocry-lane-header-bg: rgba(var(--primary-rgb), 0.1); /* Uses Pico var */
-  --tocry-drag-over-bg: rgba(var(--primary-rgb), 0.1); /* Uses Pico var */
-  --tocry-tag-bg: rgba(var(--primary-rgb), 0.1); /* Uses Pico var */
+  --tocry-lane-border: rgba(var(--primary-rgb), 0.3);
+  --tocry-lane-header-bg: rgba(var(--primary-rgb), 0.2);
+  --tocry-drag-over-bg: rgba(var(--primary-rgb), 0.25);
+  --tocry-tag-bg: rgba(var(--primary-rgb), 0.15);
+
+  /* Note Card Colors */
+  --tocry-note-shadow: rgba(var(--color-rgb), 0.1);
+  --tocry-note-shadow-dragging: rgba(var(--color-rgb), 0.2);
+
+  /* UI Element Colors */
+  --tocry-scroll-btn-bg: rgba(var(--color-rgb), 0.5);
+  /* Scroll button foreground derived from Pico's --color (light in dark theme) */
+  --tocry-scroll-btn-fg: var(--pico-color);
 
   /* ToastUI Editor */
-  --tocry-editor-border: var(--form-element-border-color); /* Uses Pico var */
-  --tocry-editor-bg: var(--form-element-background-color); /* Uses Pico var */
-  --tocry-editor-toolbar-bg: var(--form-element-background-color); /* Uses Pico var */
-  --tocry-editor-toolbar-border: var(--form-element-border-color); /* Uses Pico var */
-  --tocry-editor-text: var(--color); /* Uses Pico var */
-  --tocry-editor-toolbar-button: var(--muted-color); /* Uses Pico var */
-  --tocry-editor-toolbar-button-hover: var(--muted-border-color); /* Uses Pico var */
+  /* These variables inherit the correctly prefixed Pico variables from the :root scope */
 }
