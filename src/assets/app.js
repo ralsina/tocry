@@ -5,7 +5,17 @@ async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, handlePasteAsNoteRequest, handlePasteAsImageNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        const callbacks = {
+            onDeleteLane: handleDeleteLaneRequest,
+            onAddNote: handleAddNoteRequest,
+            onDeleteNote: handleDeleteNoteRequest,
+            onEditNote: handleEditNoteRequest,
+            onUpdateLaneName: handleUpdateLaneNameRequest,
+            onUpdateNoteTitle: handleUpdateNoteTitleRequest,
+            onPasteAsNote: handlePasteAsNoteRequest,
+            onPasteAsImageNote: handlePasteAsImageNoteRequest
+        };
+        renderLanes(lanes, callbacks, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {

@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, onPasteAsNoteCallback, onPasteAsImageNoteCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -43,8 +43,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                     e.preventDefault();
                     e.stopPropagation();
                     const imageBlob = item.getAsFile();
-                    if (onPasteAsImageNoteCallback) {
-                        onPasteAsImageNoteCallback(lane.name, imageBlob);
+                    if (callbacks.onPasteAsImageNote) {
+                        callbacks.onPasteAsImageNote(lane.name, imageBlob);
                     }
                     return; // Image handled, we are done.
                 }
@@ -55,8 +55,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
             if (pastedText) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (onPasteAsNoteCallback) {
-                    onPasteAsNoteCallback(lane.name, pastedText);
+                if (callbacks.onPasteAsNote) {
+                    callbacks.onPasteAsNote(lane.name, pastedText);
                 }
             }
         });
@@ -82,8 +82,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         laneTitle.addEventListener('blur', (e) => {
             const newName = e.target.textContent.trim();
             const oldName = e.target.dataset.originalName;
-            if (onUpdateLaneNameCallback && newName && newName !== oldName) {
-                onUpdateLaneNameCallback(oldName, newName);
+            if (callbacks.onUpdateLaneName && newName && newName !== oldName) {
+                callbacks.onUpdateLaneName(oldName, newName);
             }
         });
 
@@ -101,8 +101,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         addNoteButton.dataset.laneName = lane.name;
 
         addNoteButton.addEventListener('click', () => {
-            if (onAddNoteCallback) {
-                onAddNoteCallback(lane.name);
+            if (callbacks.onAddNote) {
+                callbacks.onAddNote(lane.name);
             }
         });
         const deleteButton = document.createElement('button');
@@ -116,8 +116,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         deleteButton.dataset.laneName = lane.name; // Store lane name, though direct param is used
 
         deleteButton.addEventListener('click', () => {
-            if (onDeleteLaneCallback) {
-                onDeleteLaneCallback(lane.name);
+            if (callbacks.onDeleteLane) {
+                callbacks.onDeleteLane(lane.name);
             }
         });
 
@@ -165,8 +165,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                     if (e.target.closest('summary')) {
                         e.preventDefault();
                     }
-                    if (onEditNoteCallback) {
-                        onEditNoteCallback(note);
+                    if (callbacks.onEditNote) {
+                        callbacks.onEditNote(note);
                     }
                 });
 
@@ -180,8 +180,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 // Stop propagation for the delete button click to prevent the details from toggling
                 deleteNoteButton.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (onDeleteNoteCallback) {
-                        onDeleteNoteCallback(note.id, note.title);
+                    if (callbacks.onDeleteNote) {
+                        callbacks.onDeleteNote(note.id, note.title);
                     }
                 });
                 const noteTitle = document.createElement('h4');
@@ -202,8 +202,8 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 noteTitle.addEventListener('blur', (e) => {
                     const newTitle = e.target.textContent.trim();
                     const oldTitle = e.target.dataset.originalTitle;
-                    if (onUpdateNoteTitleCallback && newTitle && newTitle !== oldTitle) {
-                        onUpdateNoteTitleCallback(note.id, newTitle);
+                    if (callbacks.onUpdateNoteTitle && newTitle && newTitle !== oldTitle) {
+                        callbacks.onUpdateNoteTitle(note.id, newTitle);
                     } else if (!newTitle) {
                         e.target.textContent = oldTitle; // Revert if empty
                     }
