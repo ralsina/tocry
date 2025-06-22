@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   tocry:
     image: ghcr.io/ralsina/tocry:latest
