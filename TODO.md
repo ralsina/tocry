@@ -5,4 +5,4 @@
 * General notes view? Hierarchical? This is 99% of a note-taking app anyway
 * ✅ Code snippets?
 * ✅ Nicer editor (ToasterUI)
-* Image uploading?
+* ✅ Image uploading?
