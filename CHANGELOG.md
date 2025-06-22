@@ -2,15 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2025-06-21
+## [0.2.0] - 2025-06-22
 
 ### 🚀 Features
 
-- PWA manifest
+- Switch to ToasterUI editor, support syntax highlighting
+- Upload or paste images into the editor.
+- Editable note titles
 
 ### 💼 Other
 
 - Fix typo
+
+### 🎨 Styling
+
+- Handle long titles better
 
 ## [0.1.1] - 2025-06-21
 
