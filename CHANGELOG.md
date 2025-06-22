@@ -2,7 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2025-06-22
+## [0.4.0] - 2025-06-22
+
+### 🚀 Features
+
+- Create notes by pasting
+- Create notes by pasting images
+
+### 🐛 Bug Fixes
+
+- Nicer looking cards
+- Make search match titles again
+
+### 🚜 Refactor
+
+- Better event listener passing around
+
+## [0.3.0] - 2025-06-22
 
 ### 🚀 Features
 
@@ -13,6 +29,7 @@ All notable changes to this project will be documented in this file.
 ### 💼 Other
 
 - Fix typo
+- Release v0.3.0
 
 ### 🎨 Styling
 
