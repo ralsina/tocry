@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -150,6 +150,28 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 });
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
+                noteTitle.contentEditable = true;
+                noteTitle.dataset.originalTitle = note.title;
+
+                noteTitle.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.target.blur();
+                    } else if (e.key === 'Escape') {
+                        e.target.textContent = e.target.dataset.originalTitle;
+                        e.target.blur();
+                    }
+                });
+
+                noteTitle.addEventListener('blur', (e) => {
+                    const newTitle = e.target.textContent.trim();
+                    const oldTitle = e.target.dataset.originalTitle;
+                    if (onUpdateNoteTitleCallback && newTitle && newTitle !== oldTitle) {
+                        onUpdateNoteTitleCallback(note.id, newTitle);
+                    } else if (!newTitle) {
+                        e.target.textContent = oldTitle; // Revert if empty
+                    }
+                });
 
                 noteHeader.appendChild(noteTitle);
 

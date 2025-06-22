@@ -5,7 +5,7 @@ async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
@@ -98,6 +98,39 @@ async function handleUpdateLaneNameRequest(oldName, newName) {
     } catch (error) {
         alert("An error occurred while trying to rename the lane.");
         await initializeLanes(); // Revert UI
+    }
+}
+
+// Handler for updating a note's title directly from the card
+async function handleUpdateNoteTitleRequest(noteId, newTitle) {
+    const trimmedNewTitle = newTitle.trim();
+    if (!trimmedNewTitle) {
+        return initializeLanes(); // Revert if title is empty
+    }
+
+    try {
+        // To use the PUT endpoint for renaming, we need the full note object.
+        const allLanes = await fetchLanes();
+        let noteToUpdate = null;
+        for (const lane of allLanes) {
+            const foundNote = lane.notes.find(note => note.id === noteId);
+            if (foundNote) {
+                noteToUpdate = foundNote;
+                break;
+            }
+        }
+
+        if (!noteToUpdate) {
+            alert(`Error: Could not find note with ID "${noteId}" to rename.`);
+            return initializeLanes();
+        }
+
+        const updatedNoteData = { ...noteToUpdate, title: trimmedNewTitle };
+        await updateNote(noteId, { note: updatedNoteData, lane_name: null, position: null });
+        // No need to re-render, as the UI is already updated.
+    } catch (error) {
+        alert("An error occurred while trying to rename the note. Reverting changes.");
+        await initializeLanes(); // Revert UI on failure
     }
 }
 
