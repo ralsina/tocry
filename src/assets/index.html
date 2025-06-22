@@ -112,6 +112,24 @@
       </article>
     </dialog>
 
+    <!-- Custom Prompt Dialog -->
+    <dialog id="custom-prompt-dialog">
+      <article>
+        <header>
+          <hgroup>
+            <h5 id="prompt-dialog-title">Enter Value</h5>
+            <p id="prompt-dialog-message">Please provide a value.</p>
+          </hgroup>
+        </header>
+        <form id="prompt-dialog-form">
+          <input type="text" id="prompt-dialog-input" name="prompt-input" required />
+        </form>
+        <footer>
+          <button id="prompt-dialog-cancel-btn" class="secondary" type="button">Cancel</button>
+          <button id="prompt-dialog-ok-btn" type="submit" form="prompt-dialog-form">OK</button>
+        </footer>
+      </article>
+    </dialog>
 
     <!-- Container for toast notifications -->
     <div id="notification-container"></div>

@@ -118,6 +118,48 @@ function showConfirmation(message, title = 'Confirm Action') {
 }
 
 /**
+ * Displays a custom prompt dialog.
+ * @param {string} message The message to display in the dialog.
+ * @param {string} title The title of the dialog.
+ * @param {string} [defaultValue=''] The default value for the input field.
+ * @returns {Promise<string|null>} A promise that resolves with the input value, or null if canceled.
+ */
+function showPrompt(message, title, defaultValue = '') {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById('custom-prompt-dialog');
+        const titleElement = document.getElementById('prompt-dialog-title');
+        const messageElement = document.getElementById('prompt-dialog-message');
+        const form = document.getElementById('prompt-dialog-form');
+        const input = document.getElementById('prompt-dialog-input');
+        const okButton = document.getElementById('prompt-dialog-ok-btn');
+        const cancelButton = document.getElementById('prompt-dialog-cancel-btn');
+
+        if (!dialog || !titleElement || !messageElement || !form || !input || !okButton || !cancelButton) {
+            console.error('Prompt dialog elements not found.');
+            return resolve(window.prompt(message, defaultValue)); // Fallback to native prompt
+        }
+
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+        input.value = defaultValue;
+
+        const closeDialog = () => { dialog.close(); };
+
+        form.onsubmit = (e) => { e.preventDefault(); closeDialog(); resolve(input.value); };
+        cancelButton.onclick = () => { closeDialog(); resolve(null); };
+
+        dialog.addEventListener('close', () => { // Ensure listeners are cleaned up
+            form.onsubmit = null;
+            cancelButton.onclick = null;
+        }, { once: true });
+
+        dialog.showModal();
+        input.focus();
+        input.select();
+    });
+}
+
+/**
  * Displays a toast notification.
  * @param {string} message The message to display.
  * @param {string} type The type of notification ('info' or 'error'). Defaults to 'error'.
@@ -181,7 +223,7 @@ async function initializeLanes() {
 }
 
 async function handleAddLaneButtonClick() {
-    const laneName = prompt("Enter the name for the new lane:");
+    const laneName = await showPrompt("Enter the name for the new lane:", "Add New Lane");
 
     if (laneName !== null && laneName.trim() !== "") {
         try {
@@ -205,7 +247,7 @@ async function handleAddLaneButtonClick() {
 
 // Handler for delete lane requests, passed as a callback to renderLanes
 async function handleDeleteLaneRequest(laneName) {
-    if (await showConfirmation(`Are you sure you want to delete the lane "${laneName}"?`, 'Delete Lane')) {
+    if (await showConfirmation(`Are you sure you want to delete the lane "${laneName}"?`, "Delete Lane")) {
         try {
             // OPTIMISTIC UI UPDATE: Remove the lane from the DOM and cache immediately.
             const laneElement = document.querySelector(`.lane[data-lane-name="${laneName}"]`);
@@ -337,7 +379,7 @@ async function handleToggleNoteRequest(noteToUpdate, isExpanded) {
 
 // Handler for adding a new note to a lane
 async function handleAddNoteRequest(laneName) {
-    const noteTitle = prompt(`Enter title for new note in "${laneName}":`);
+    const noteTitle = await showPrompt(`Enter title for new note in "${laneName}":`, "Add New Note");
     if (noteTitle !== null && noteTitle.trim() !== "") {
         try {
             const response = await addNote(laneName, noteTitle.trim(), "", []); // Placeholder content and tags
@@ -360,7 +402,7 @@ async function handleAddNoteRequest(laneName) {
 
 // Handler for delete note requests
 async function handleDeleteNoteRequest(noteId, noteTitle) {
-    if (await showConfirmation(`Are you sure you want to delete the note "${noteTitle}"?`, 'Delete Note')) {
+    if (await showConfirmation(`Are you sure you want to delete the note "${noteTitle}"?`, "Delete Note")) {
         try {
             // OPTIMISTIC UI UPDATE: Remove the note from the DOM and cache immediately.
             const noteCard = document.querySelector(`.note-card[data-note-id="${noteId}"]`);
