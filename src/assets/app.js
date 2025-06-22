@@ -1,4 +1,4 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote } from './api.js';
+import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote, uploadImage } from './api.js';
 import { renderLanes } from './render.js';
 
 async function initializeLanes() {
@@ -179,7 +179,25 @@ function handleEditNoteRequest(note) {
             ['ul', 'ol', 'task'],
             ['table', 'image', 'link'],
             ['code', 'codeblock']
-        ]
+        ],
+        hooks: {
+            async addImageBlobHook(blob, callback) {
+                try {
+                    const formData = new FormData();
+                    // The backend expects the file part to be named anything, 'image' is a good convention.
+                    formData.append('image', blob);
+
+                    const response = await uploadImage(formData);
+                    const imageUrl = response.url;
+
+                    // The callback tells the editor to insert the image markdown with the returned URL
+                    callback(imageUrl, 'alt text');
+                } catch (error) {
+                    console.error('Image upload failed:', error);
+                    alert(`Image upload failed: ${error.message}`);
+                }
+            }
+        }
     });
 
     modal.showModal(); // Use the native <dialog> method to open
