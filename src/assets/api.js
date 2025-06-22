@@ -127,3 +127,23 @@ export async function deleteNote(noteId) {
         throw error; // Re-throw the error for the caller to handle
     }
 }
+
+export async function uploadImage(formData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/upload/image`, {
+            method: 'POST',
+            body: formData // No 'Content-Type' header, browser sets it for multipart/form-data
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+            const error = new Error(`Failed to upload image: ${response.status} ${response.statusText} - ${errorBody.error || errorBody.message}`);
+            error.status = response.status;
+            error.body = errorBody;
+            throw error;
+        }
+        return await response.json(); // Should contain { "url": "..." }
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+    }
+}

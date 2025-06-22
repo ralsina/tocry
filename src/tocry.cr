@@ -145,3 +145,6 @@ module ToCry
     end
   end
 end
+
+# Serve user-uploaded images from the 'uploads' directory on the filesystem
+public_folder "uploads"
