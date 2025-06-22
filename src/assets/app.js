@@ -605,7 +605,7 @@ function handleSearchInput(event) {
     const allNotes = document.querySelectorAll('.note-card');
 
     allNotes.forEach(noteCard => {
-        const titleElement = noteCard.querySelector('.note-card-header h4');
+        const titleElement = noteCard.querySelector('summary h4');
         const contentElement = noteCard.querySelector('.note-content');
         const tagElements = noteCard.querySelectorAll('.note-tags .tag');
 
