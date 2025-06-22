@@ -174,6 +174,7 @@ function createLaneElement(lane, callbacks, dragAndDropCallbacks) {
     laneHeader.className = 'lane-header';
 
     const laneTitle = document.createElement('h2');
+    laneTitle.className = 'lane-title';
     laneTitle.textContent = lane.name;
     makeTitleEditable(laneTitle, lane.name, (newName) => {
         if (callbacks.onUpdateLaneName) callbacks.onUpdateLaneName(lane, newName);
