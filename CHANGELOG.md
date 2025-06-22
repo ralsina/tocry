@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2025-06-22
+
+### 🚀 Features
+
+- Make note expanded/collapsed state persistent
+- More optimistic updates for better UX
+
+### 🐛 Bug Fixes
+
+- Better lane widths
+- Use title to show truncated titles
+- Collapsed notes were not FULLY collapsed
+- Lane drag/drop
+
+### 💼 Other
+
+- Release v0.5.0
+
+### 🚜 Refactor
+
+- Removed redundant styles
+- Element creation
+- Move all cSS colors to a separate file of variables
+- More color extraction
+
+### 🎨 Styling
+
+- New note implementation using divs
+- Nicer note headings
+- Nicer looking note dragging
+- Hide footer after 10 seconds
+- 20 color schemes
+- Replace alert() and confirm() with modern things
+- Replace prompts with nicer things
+- Make things more consistent
+- Color swatch
+- Nicer color chooser
+
 ## [0.4.0] - 2025-06-22
 
 ### 🚀 Features
