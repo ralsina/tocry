@@ -81,6 +81,7 @@ body {
 /* Style for the merged theme and color scheme switcher */
 .theme-and-color-switcher {
     display: flex;
+    align-items: center; /* Vertically center all items */
     /* Use Pico's border color for consistency */
     border: 1px solid var(--pico-form-element-border-color);
     border-radius: var(--pico-border-radius);
@@ -94,11 +95,23 @@ body {
     border: none; /* Remove individual border */
     border-radius: 0; /* Remove individual border-radius */
     background-color: var(--pico-form-element-background-color); /* Ensure it respects theme */
-    flex-grow: 1; /* Allow select to take available space */
-    padding-right: 2.5rem; /* Keep space for the dropdown arrow */
-    padding-left: var(--pico-spacing); /* Restore Pico's default left padding */
+    flex-grow: 0; /* Do not allow select to take available space when hidden */
+    padding-right: 0; /* Remove padding when hidden */
+    padding-left: 0; /* Remove padding when hidden */
     background-position: right 0.5rem center; /* Keep arrow position */
     color: var(--pico-color); /* Ensure text color respects theme */
+    opacity: 0; /* Hide by default */
+    pointer-events: none; /* Disable interaction when hidden */
+    width: 0; /* Collapse width when hidden */
+    transition: opacity 0.3s ease-in-out, width 0.3s ease-in-out, padding-right 0.3s ease-in-out; /* Smooth transition */
+}
+
+.theme-and-color-switcher.is-open #color-scheme-switcher {
+    opacity: 1; /* Show when open */
+    pointer-events: auto; /* Enable interaction when open */
+    width: auto; /* Expand to natural width */
+    flex-grow: 1; /* Allow select to take available space when visible */
+    padding-right: 2.5rem; /* Restore padding when open */
 }
 
 .theme-and-color-switcher #theme-switcher {
@@ -106,7 +119,7 @@ body {
     border-radius: 0; /* Remove individual border-radius */
     background-color: transparent; /* Let parent's background show through */
     flex-shrink: 0; /* Prevent button from shrinking */
-    padding: 0 calc(var(--pico-spacing) * 1.5); /* Remove vertical padding, keep horizontal */
+    padding: 0 var(--pico-spacing); /* Adjust padding for better visual balance */
     /* Add a subtle separator */
     border-right: 1px solid var(--pico-form-element-border-color);
 }
@@ -118,19 +131,9 @@ body {
     border: 1px solid var(--pico-form-element-border-color); /* Subtle border */
     background-color: var(--pico-primary); /* Will be set by JS */
     flex-shrink: 0;
-    margin: auto var(--pico-spacing); /* Space from button and select */
+    margin: 0 var(--pico-spacing); /* Space from button and select */
     transition: background-color 0.3s ease-in-out;
-}
-
-.theme-and-color-switcher #color-scheme-switcher {
-    border: none; /* Remove individual border */
-    border-radius: 0; /* Remove individual border-radius */
-    background-color: var(--pico-form-element-background-color); /* Ensure it respects theme */
-    flex-grow: 1; /* Allow select to take available space */
-    padding-right: 2.5rem; /* Keep space for the dropdown arrow */
-    padding-left: var(--pico-spacing); /* Restore Pico's default left padding */
-    background-position: right 0.5rem center; /* Keep arrow position */
-    color: var(--pico-color); /* Ensure text color respects theme */
+    cursor: pointer;
 }
 
 /* Override Pico's container for the header to reduce side margins */
