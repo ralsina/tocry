@@ -67,6 +67,7 @@
 /* Pico.css Dark Theme Overrides */
 html[data-theme="dark"] {
   /* Typography */
+  --font-family: "Chivo", sans-serif; /* Ensure Chivo is used for general text in dark mode */
   --font-mono: "Chivo Mono", monospace; /* Ensure Chivo Mono is used in dark mode too */
   --color: #adb5bd;
   --color-inverse: #111;
