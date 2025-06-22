@@ -16,7 +16,8 @@ async function initializeLanes() {
             onUpdateLaneName: handleUpdateLaneNameRequest,
             onUpdateNoteTitle: handleUpdateNoteTitleRequest,
             onPasteAsNote: handlePasteAsNoteRequest,
-            onPasteAsImageNote: handlePasteAsImageNoteRequest
+            onPasteAsImageNote: handlePasteAsImageNoteRequest,
+            onToggleNote: handleToggleNoteRequest
         };
         renderLanes(lanes, callbacks, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
@@ -134,6 +135,36 @@ async function handleUpdateNoteTitleRequest(noteToUpdate, newTitle) {
         await initializeLanes();
     } catch (error) {
         alert("An error occurred while trying to rename the note. Reverting changes.");
+        await initializeLanes(); // Revert UI on failure
+    }
+}
+
+// Handler for persisting the expanded/collapsed state of a note
+async function handleToggleNoteRequest(noteToUpdate, isExpanded) {
+    const updatedNoteData = { ...noteToUpdate, expanded: isExpanded };
+
+    try {
+        const response = await updateNote(noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
+
+        if (response.ok) {
+            // On success, we don't need to re-render the whole board.
+            // The UI has already been updated optimistically.
+            // We just need to update our local cache to reflect the change.
+            const lane = currentLanes.find(l => l.notes.some(n => n.id === noteToUpdate.id));
+            if (lane) {
+                const noteInCache = lane.notes.find(n => n.id === noteToUpdate.id);
+                if (noteInCache) {
+                    noteInCache.expanded = isExpanded;
+                }
+            }
+        } else {
+            // If the update fails, alert the user and revert the UI by re-rendering.
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to save note state: ${errorData.error || response.statusText}`);
+            await initializeLanes();
+        }
+    } catch (error) {
+        alert('An error occurred while saving the note state. Reverting changes.');
         await initializeLanes(); // Revert UI on failure
     }
 }

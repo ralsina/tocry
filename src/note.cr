@@ -9,8 +9,9 @@ module ToCry
     include YAML::Serializable
     property title : String
     property tags : Array(String) = [] of String # Default to empty array
+    property expanded : Bool = false             # Default to false
 
-    def initialize(@title : String, @tags : Array(String) = [] of String)
+    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false)
     end
   end
 
@@ -41,15 +42,20 @@ module ToCry
     property title : String = ""                 # Provide a default initializer
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
+    property expanded : Bool = false
 
     # Initialize a new Note with a generated UUID
     def initialize(
-      @title : String,
-      @tags : Array(String) = [] of String, # Default empty array for tags
-      @content : String = "",               # Default empty string for content
+      title : String,
+      tags : Array(String) = [] of String,
+      content : String = "",
+      expanded : Bool = false
     )
       @id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
-      self.title = @title
+      self.title = title
+      @tags = tags
+      @content = content
+      @expanded = expanded
     end
 
     # Loads a Note from its corresponding markdown file.
@@ -85,7 +91,7 @@ module ToCry
         raise "Invalid YAML frontmatter in #{file_path}: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content)
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded)
       note.id = id # Set the correct, persistent ID.
       note
     end
@@ -97,7 +103,7 @@ module ToCry
       file_path = File.join(notes_dir, "#{self.id}.md")
 
       # Use the new FrontMatter struct for serialization
-      frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags)
+      frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded)
       frontmatter_section = "#{frontmatter_struct.to_yaml}\n---\n"
       File.write(file_path, frontmatter_section + self.content)
       Log.info { "Note '#{self.title}' (ID: #{self.id}) saved to #{file_path}" }

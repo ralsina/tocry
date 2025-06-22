@@ -281,16 +281,18 @@ put "/note/:id" do |env|
     existing_note, current_lane = find_result
 
     # Update note content if it has changed
-    content_changed = (existing_note.title != new_note_data.title) ||
+    note_data_changed = (existing_note.title != new_note_data.title) ||
                       (existing_note.tags != new_note_data.tags) ||
-                      (existing_note.content != new_note_data.content)
+                      (existing_note.content != new_note_data.content) ||
+                      (existing_note.expanded != new_note_data.expanded)
 
-    if content_changed
+    if note_data_changed
       existing_note.title = new_note_data.title
       existing_note.tags = new_note_data.tags
       existing_note.content = new_note_data.content
+      existing_note.expanded = new_note_data.expanded
       existing_note.save
-      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) content updated." }
+      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated." }
     end
 
     # Handle moving the note if lane_name or position is provided
