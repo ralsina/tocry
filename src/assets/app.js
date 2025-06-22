@@ -5,7 +5,7 @@ async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, handlePasteAsNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
@@ -174,6 +174,36 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
             console.error('Error during delete note operation:', error);
             alert("An error occurred while trying to delete the note.");
         }
+    }
+}
+
+// Handler for creating a note from pasted text
+async function handlePasteAsNoteRequest(laneName, pastedText) {
+    if (!pastedText || pastedText.trim() === '') {
+        return;
+    }
+
+    const lines = pastedText.trim().split('\n');
+    const title = lines[0].trim();
+    const content = lines.slice(1).join('\n').trim();
+
+    if (!title) {
+        alert("Pasted text must have at least one line to be used as a title.");
+        return;
+    }
+
+    try {
+        const response = await addNote(laneName, title, content, []);
+        if (response.ok) {
+            console.log(`Note "${title}" created from paste in lane "${laneName}".`);
+            await initializeLanes();
+        } else {
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to create note from paste: ${errorData.error || response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error creating note from paste:', error);
+        alert("An error occurred while trying to create the note from paste.");
     }
 }
 

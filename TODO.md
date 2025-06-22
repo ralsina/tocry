@@ -7,3 +7,7 @@
 * ✅ Nicer editor (ToasterUI)
 * ✅ Image uploading?
 * Deadlines?
+* Multiboard?
+* Multiuser?
+* Paste notes?
+* Attachments?
