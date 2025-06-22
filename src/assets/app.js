@@ -5,7 +5,7 @@ async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
-        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, handlePasteAsNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+        renderLanes(lanes, handleDeleteLaneRequest, handleAddNoteRequest, handleDeleteNoteRequest, handleEditNoteRequest, handleUpdateLaneNameRequest, handleUpdateNoteTitleRequest, handlePasteAsNoteRequest, handlePasteAsImageNoteRequest, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
@@ -204,6 +204,32 @@ async function handlePasteAsNoteRequest(laneName, pastedText) {
     } catch (error) {
         console.error('Error creating note from paste:', error);
         alert("An error occurred while trying to create the note from paste.");
+    }
+}
+
+// Handler for creating a note from a pasted image
+async function handlePasteAsImageNoteRequest(laneName, imageBlob) {
+    try {
+        const formData = new FormData();
+        formData.append('image', imageBlob);
+
+        const uploadResponse = await uploadImage(formData);
+        const imageUrl = uploadResponse.url;
+
+        const title = "Pasted Image";
+        const content = `![Pasted Image](${imageUrl})`; // Correct markdown for the image
+
+        const addNoteResponse = await addNote(laneName, title, content, []);
+        if (addNoteResponse.ok) {
+            console.log(`Note "${title}" created from pasted image in lane "${laneName}".`);
+            await initializeLanes();
+        } else {
+            const errorData = await addNoteResponse.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to create note from pasted image: ${errorData.error || addNoteResponse.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error creating note from pasted image:', error);
+        alert("An error occurred while trying to create the note from the pasted image.");
     }
 }
 
