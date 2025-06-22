@@ -99,8 +99,6 @@ body {
     /* Light blue border */
     border-radius: 6px;
     /* Explicit rounded corners */
-    padding: 15px;
-    /* Explicit padding value for testing */
     flex-grow: 1;
     /* Allow lanes to grow and fill available space */
     flex-shrink: 0;
@@ -109,6 +107,7 @@ body {
     /* Add a background color to make the lane visible */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Ensure children respect the border-radius */
 }
 
 /* Responsive Lane Widths */
@@ -147,8 +146,10 @@ body {
 .lane-header {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
-    /* Adjust as needed */
+    /* Add padding and a distinct background color, similar to tags */
+    padding: 10px 15px;
+    gap: 0.75em; /* Add consistent spacing between all header elements */
+    background-color: rgba(55, 125, 255, 0.1);
 }
 
 .lane-header h2 {
@@ -183,7 +184,6 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-left: auto; /* Push the actions group to the right */
 }
 
 .lane-note-count {
@@ -191,9 +191,9 @@ body {
     color: var(--primary); /* Match tag text color */
     font-size: 0.8em; /* Keep font size consistent */
     font-weight: 600;
-    padding: 0.4em 0.8em; /* Increased top/bottom padding */
+    padding: 0.7em 0.8em; /* Adjust padding to vertically align with action buttons */
     border-radius: 9999px; /* pill shape */
-    margin-left: 0.75em;
+    margin-left: auto; /* Push the count and subsequent items to the right */
     line-height: 1;
 }
 
@@ -258,9 +258,10 @@ body {
 .note-summary {
     display: flex;
     align-items: center;
-    gap: 0.75em; /* Space between elements in the summary */
+    gap: 0.5em; /* Space between elements in the summary */
     padding: var(--spacing); /* Use standard Pico padding */
     flex-wrap: nowrap; /* Prevent items from wrapping */
+    min-width: 0; /* Prevents the container from overflowing its parent grid cell */
     /* No cursor: pointer here, as the toggle button handles clicks */
 }
 
@@ -325,7 +326,8 @@ body {
 }
 
 .note-collapsible.note-card--no-content .note-toggle-btn {
-    display: none; /* Hide the toggle button entirely if no content */
+    visibility: hidden; /* Hide the button but keep its space for alignment */
+    cursor: default;    /* Prevent pointer cursor on the invisible button */
 }
 
 .delete-note-btn {
@@ -334,7 +336,6 @@ body {
     color: var(--muted-color, #6c757d);
     cursor: pointer;
     line-height: 1;
-    margin-left: auto; /* Always push the delete button to the far right */
     flex-shrink: 0; /* Prevent the button from shrinking */
     /* Use flexbox to perfectly center the SVG icon */
     display: inline-flex;
@@ -365,6 +366,7 @@ body {
     /* Ensure even an empty list has a drop target area */
     overflow-y: auto;
     /* Add vertical scroll when content overflows */
+    padding: 15px; /* Add padding for the notes inside the list */
 }
 
 .note-card--hidden {
@@ -437,8 +439,11 @@ body {
     display: flex;
     align-items: center;
     gap: 0.4em; /* Space between tag pills */
-    margin-left: 1em; /* Space between title and tags */
-    flex-shrink: 0; /* Prevent tags from shrinking on long titles */
+    /* Allow the tags container to shrink and hide its overflow if there's not
+       enough space, preventing it from pushing the delete button out of view. */
+    min-width: 0;
+    overflow: hidden;
+    flex-shrink: 0; /* Prevent the tags container from shrinking */
 }
 
 .note-tags .tag {
