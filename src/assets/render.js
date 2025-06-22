@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, onPasteAsNoteCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -17,6 +17,7 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         laneColumn.className = 'lane'; // Add the 'lane' class for styling
         laneColumn.draggable = true; // Make the lane draggable
         laneColumn.dataset.laneName = lane.name; // Store the lane name for drag/drop operations
+        laneColumn.tabIndex = 0; // Make the lane focusable to receive paste events
 
         // Attach drag and drop event listeners
         laneColumn.addEventListener('dragstart', dragAndDropCallbacks.lane.dragstart);
@@ -24,6 +25,23 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
         laneColumn.addEventListener('dragleave', dragAndDropCallbacks.lane.dragleave);
         laneColumn.addEventListener('drop', dragAndDropCallbacks.lane.drop);
         laneColumn.addEventListener('dragend', dragAndDropCallbacks.lane.dragend);
+
+        // Add paste listener to the entire lane column
+        laneColumn.addEventListener('paste', (e) => {
+            // Don't interfere with pasting into editable fields
+            const activeElement = document.activeElement;
+            if (activeElement.isContentEditable || activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            if (onPasteAsNoteCallback) {
+                onPasteAsNoteCallback(lane.name, pastedText);
+            }
+        });
         const laneHeader = document.createElement('div');
         laneHeader.className = 'lane-header';
 
