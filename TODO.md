@@ -11,3 +11,4 @@
 * Multiuser?
 * ✅ Paste notes
 * Attachments?
+* Test on mobile

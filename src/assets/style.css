@@ -78,12 +78,37 @@ body {
     color: var(--pico-primary);
 }
 
-/* Style for the color scheme switcher */
-#color-scheme-switcher {
+/* Style for the merged theme and color scheme switcher */
+.theme-and-color-switcher {
+    display: flex;
+    /* Use Pico's border color for consistency */
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+    overflow: hidden; /* Ensures children's corners are clipped */
     margin-bottom: 0; /* Override Pico's default form element margin */
-    width: auto; /* Allow it to size to its content */
-    padding-right: 2.5rem; /* Ensure space for the dropdown arrow */
-    background-position: right 0.5rem center; /* Adjust arrow position */
+    /* Use Pico's form element background color for the merged unit */
+    background-color: var(--pico-form-element-background-color);
+}
+
+.theme-and-color-switcher #color-scheme-switcher {
+    border: none; /* Remove individual border */
+    border-radius: 0; /* Remove individual border-radius */
+    background-color: var(--pico-form-element-background-color); /* Ensure it respects theme */
+    flex-grow: 1; /* Allow select to take available space */
+    padding-right: 2.5rem; /* Keep space for the dropdown arrow */
+    padding-left: var(--pico-spacing); /* Restore Pico's default left padding */
+    background-position: right 0.5rem center; /* Keep arrow position */
+    color: var(--pico-color); /* Ensure text color respects theme */
+}
+
+.theme-and-color-switcher #theme-switcher {
+    border: none; /* Remove individual border */
+    border-radius: 0; /* Remove individual border-radius */
+    background-color: transparent; /* Let parent's background show through */
+    flex-shrink: 0; /* Prevent button from shrinking */
+    padding: 0 calc(var(--pico-spacing) * 1.5); /* Remove vertical padding, keep horizontal */
+    /* Add a subtle separator */
+    border-right: 1px solid var(--pico-form-element-border-color);
 }
 
 /* Override Pico's container for the header to reduce side margins */
@@ -170,13 +195,7 @@ body {
     background-color: var(--tocry-lane-header-bg);
 }
 
-// /* --- DEBUGGING: Force a background color in dark mode --- */
-// [data-theme="dark"] .lane-header {
-//     background-color: #ff69b4 !important; /* A very obvious pink color */
-// }
-// /* --- END DEBUGGING --- */
-
-.lane-header h2 {
+.lane .lane-header h2 {
     margin: 0;
     /* Remove default h2 margin to align better */
     font-weight: 500;
@@ -190,14 +209,15 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0; /* Required for text-overflow to work on a flex item */
+    line-height: 1; /* Align text vertically with buttons */
 }
 
-.lane-header h2:hover, .lane-header h2:focus {
+.lane .lane-header h2:hover, .lane .lane-header h2:focus {
     background-color: var(--pico-form-element-background-color);
     outline: none;
 }
 
-.lane-header h2:focus {
+.lane .lane-header h2:focus {
     /* When editing, show the full title instead of the ellipsis */
     white-space: normal;
     overflow: visible;
