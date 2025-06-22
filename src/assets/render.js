@@ -1,4 +1,4 @@
-export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, onPasteAsNoteCallback, dragAndDropCallbacks) {
+export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDeleteNoteCallback, onEditNoteCallback, onUpdateLaneNameCallback, onUpdateNoteTitleCallback, onPasteAsNoteCallback, onPasteAsImageNoteCallback, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
         console.error('Lanes container not found!');
@@ -34,12 +34,30 @@ export function renderLanes(lanes, onDeleteLaneCallback, onAddNoteCallback, onDe
                 return;
             }
 
-            e.preventDefault();
-            e.stopPropagation();
+            const items = (e.clipboardData || window.clipboardData).items;
 
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            if (onPasteAsNoteCallback) {
-                onPasteAsNoteCallback(lane.name, pastedText);
+            // Prioritize handling image paste
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const imageBlob = item.getAsFile();
+                    if (onPasteAsImageNoteCallback) {
+                        onPasteAsImageNoteCallback(lane.name, imageBlob);
+                    }
+                    return; // Image handled, we are done.
+                }
+            }
+
+            // Fallback to handling text paste
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text/plain');
+            if (pastedText) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onPasteAsNoteCallback) {
+                    onPasteAsNoteCallback(lane.name, pastedText);
+                }
             }
         });
         const laneHeader = document.createElement('div');
