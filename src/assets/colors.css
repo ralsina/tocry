@@ -1,0 +1,46 @@
+/* ==========================================================================
+   Color Variables
+   ========================================================================== */
+
+:root {
+  /* General & Lane Colors */
+  --tocry-lane-border: #add8e6;
+  --tocry-lane-header-bg: rgba(55, 125, 255, 0.1);
+  --tocry-drag-over-bg: rgba(0, 123, 255, 0.1);
+
+  /* Note Card Colors */
+  --tocry-note-shadow: rgba(0, 0, 0, 0.1);
+  --tocry-note-shadow-dragging: rgba(0, 0, 0, 0.3);
+  --tocry-tag-bg: rgba(55, 125, 255, 0.1);
+
+  /* UI Element Colors */
+  --tocry-scroll-btn-bg: rgba(29, 35, 42, 0.7);
+  --tocry-scroll-btn-fg: white;
+  --tocry-danger-hover-color: #c82333;
+
+  /* ToastUI Editor Light Theme */
+  --tocry-editor-border: var(--form-element-border-color);
+  --tocry-editor-bg: var(--form-element-background-color);
+  --tocry-editor-toolbar-bg: var(--form-element-background-color);
+  --tocry-editor-toolbar-border: var(--form-element-border-color);
+  --tocry-editor-text: var(--color);
+  --tocry-editor-toolbar-button: var(--muted-color);
+  --tocry-editor-toolbar-button-hover: var(--muted-border-color);
+}
+
+html[data-theme="dark"] {
+  /* General & Lane Colors */
+  --tocry-lane-border: #2c3e50; /* A darker, muted blue for dark mode */
+  --tocry-lane-header-bg: rgba(52, 152, 219, 0.1); /* A slightly different blue for dark mode */
+  --tocry-drag-over-bg: rgba(52, 152, 219, 0.1);
+  --tocry-tag-bg: rgba(52, 152, 219, 0.1);
+
+  /* ToastUI Editor Dark Theme */
+  --tocry-editor-border: #333;
+  --tocry-editor-bg: #000;
+  --tocry-editor-toolbar-bg: #000;
+  --tocry-editor-toolbar-border: #333;
+  --tocry-editor-text: #ccc;
+  --tocry-editor-toolbar-button: #ccc;
+  --tocry-editor-toolbar-button-hover: #444;
+}

@@ -1,3 +1,5 @@
+@import url("colors.css");
+
 html,
 body {
     font-size: 90%;
@@ -95,7 +97,7 @@ body {
     min-width: 25em; /* Default for larger screens */
     max-width: 40em; /* Allow lanes to expand more on very wide screens */
     /* Minimum width for the lane */
-    border: 2px solid #add8e6;
+    border: 2px solid var(--tocry-lane-border);
     /* Light blue border */
     border-radius: 6px;
     /* Explicit rounded corners */
@@ -149,7 +151,7 @@ body {
     /* Add padding and a distinct background color, similar to tags */
     padding: 10px 15px;
     gap: 0.75em; /* Add consistent spacing between all header elements */
-    background-color: rgba(55, 125, 255, 0.1);
+    background-color: var(--tocry-lane-header-bg);
 }
 
 .lane-header h2 {
@@ -187,7 +189,7 @@ body {
 }
 
 .lane-note-count {
-    background-color: rgba(55, 125, 255, 0.1); /* Match tag background */
+    background-color: var(--tocry-lane-header-bg); /* Match tag background */
     color: var(--primary); /* Match tag text color */
     font-size: 0.8em; /* Keep font size consistent */
     font-weight: 600;
@@ -218,7 +220,7 @@ body {
 
 .delete-lane-btn:hover,
 .delete-lane-btn:focus {
-    color: var(--primary-hover, #c82333);
+    color: var(--tocry-danger-hover-color);
     outline: none;
 }
 
@@ -345,7 +347,7 @@ body {
 
 .delete-note-btn:hover,
 .delete-note-btn:focus {
-    color: var(--primary-hover, #c82333);
+    color: var(--tocry-danger-hover-color);
     outline: none;
 }
 
@@ -354,8 +356,8 @@ body {
     padding: 10px 0;
     cursor: grab;
     /* --- New styles for search animation --- */
-    transition: all 0.35s ease-in-out;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for normal state */
+    transition: all 0.35s ease-in-out, box-shadow 0.2s ease-in-out;
+    box-shadow: 0 2px 5px var(--tocry-note-shadow); /* Subtle shadow for normal state */
     max-height: 1000px; /* Generous max-height for transition */
     overflow: hidden; /* Crucial for the max-height animation */
 }
@@ -383,12 +385,12 @@ body {
 .note-card--dragging {
     opacity: 0.4;
     cursor: grabbing;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* More pronounced shadow when dragging */
+    box-shadow: 0 5px 15px var(--tocry-note-shadow-dragging); /* More pronounced shadow when dragging */
 }
 
 .notes-list--drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
     /* A light blueish highlight */
+    background-color: var(--tocry-drag-over-bg);
     border-radius: var(--border-radius);
 }
 
@@ -451,7 +453,7 @@ body {
 .note-tags .tag {
     /* Use a semi-transparent version of the primary color for a subtle tint */
     /* This ensures it's distinct from the card background but still very light */
-    background-color: rgba(55, 125, 255, 0.1);
+    background-color: var(--tocry-tag-bg);
     color: var(--primary);
     padding: 0.2em 0.7em;
     border-radius: 9999px; /* Pill shape */
@@ -473,19 +475,19 @@ body {
 
 /* Toast UI Editor overrides to better fit Pico.css */
 .toastui-editor-defaultUI {
-    border-color: #333; /* Dark border for the editor container */
+    border-color: var(--tocry-editor-border);
     border-radius: var(--border-radius);
     overflow: hidden; /* Ensures border-radius applies to children */
 }
 
 .toastui-editor-main {
     /* Main editor area (includes editor and preview) */
-    background-color: #000; /* Dark background for editor area */
+    background-color: var(--tocry-editor-bg);
 }
 
 .toastui-editor-defaultUI .ProseMirror {
     /* The actual editable area */
-    color: #ccc;
+    color: var(--tocry-editor-text);
 }
 
 .toastui-editor-defaultUI .ProseMirror-focused {
@@ -493,50 +495,64 @@ body {
 }
 
 .toastui-editor-defaultUI .toastui-editor-toolbar {
-    background-color: #000; /* Dark background for toolbar */
-    border-bottom: 1px solid #333; /* Separator */
+    background-color: var(--tocry-editor-toolbar-bg);
+    border-bottom: 1px solid var(--tocry-editor-toolbar-border);
 }
 
 .toastui-editor-defaultUI .toastui-editor-toolbar button {
-    color: #ccc;
+    color: var(--tocry-editor-toolbar-button);
 }
 
 .toastui-editor-defaultUI .toastui-editor-toolbar button.active,
 .toastui-editor-defaultUI .toastui-editor-toolbar button:hover {
-    background-color: #444;
+    background-color: var(--tocry-editor-toolbar-button-hover);
 }
 
 .toastui-editor-defaultUI .toastui-editor-md-preview,
 .toastui-editor-defaultUI .toastui-editor-ww-container {
-    background-color: #000; /* Preview and WYSIWYG background */
-    color: #ccc;
+    background-color: var(--tocry-editor-bg);
+    color: var(--tocry-editor-text);
 }
 
-/* Adjustments for Pico.css theme variables */
-html[data-theme="light"] .toastui-editor-defaultUI {
-    border-color: var(--form-element-border-color);
-}
-html[data-theme="light"] .toastui-editor-main {
-    background-color: var(--form-element-background-color);
-}
-html[data-theme="light"] .toastui-editor-defaultUI .ProseMirror {
-    color: var(--color);
-}
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar {
-    background-color: var(--form-element-background-color);
-    border-bottom: 1px solid var(--form-element-border-color);
-}
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button {
-    color: var(--muted-color);
-}
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button.active,
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-toolbar button:hover {
-    background-color: var(--muted-border-color);
-}
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-md-preview,
-html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-ww-container {
-    background-color: var(--form-element-background-color);
-    color: var(--color);
+/* Ensure text inside the editor content area (ProseMirror) is readable */
+.toastui-editor-defaultUI .ProseMirror p,
+.toastui-editor-defaultUI .ProseMirror h1,
+.toastui-editor-defaultUI .ProseMirror h2,
+.toastui-editor-defaultUI .ProseMirror h3,
+.toastui-editor-defaultUI .ProseMirror h4,
+.toastui-editor-defaultUI .ProseMirror h5,
+.toastui-editor-defaultUI .ProseMirror h6,
+.toastui-editor-defaultUI .ProseMirror li,
+.toastui-editor-defaultUI .ProseMirror strong,
+.toastui-editor-defaultUI .ProseMirror em,
+.toastui-editor-defaultUI .ProseMirror a,
+.toastui-editor-defaultUI .ProseMirror code,
+/* And also for the preview and WYSIWYG containers */
+.toastui-editor-defaultUI .toastui-editor-md-preview p,
+.toastui-editor-defaultUI .toastui-editor-md-preview h1,
+.toastui-editor-defaultUI .toastui-editor-md-preview h2,
+.toastui-editor-defaultUI .toastui-editor-md-preview h3,
+.toastui-editor-defaultUI .toastui-editor-md-preview h4,
+.toastui-editor-defaultUI .toastui-editor-md-preview h5,
+.toastui-editor-defaultUI .toastui-editor-md-preview h6,
+.toastui-editor-defaultUI .toastui-editor-md-preview li,
+.toastui-editor-defaultUI .toastui-editor-md-preview strong,
+.toastui-editor-defaultUI .toastui-editor-md-preview em,
+.toastui-editor-defaultUI .toastui-editor-md-preview a,
+.toastui-editor-defaultUI .toastui-editor-md-preview code,
+.toastui-editor-defaultUI .toastui-editor-ww-container p,
+.toastui-editor-defaultUI .toastui-editor-ww-container h1,
+.toastui-editor-defaultUI .toastui-editor-ww-container h2,
+.toastui-editor-defaultUI .toastui-editor-ww-container h3,
+.toastui-editor-defaultUI .toastui-editor-ww-container h4,
+.toastui-editor-defaultUI .toastui-editor-ww-container h5,
+.toastui-editor-defaultUI .toastui-editor-ww-container h6,
+.toastui-editor-defaultUI .toastui-editor-ww-container li,
+.toastui-editor-defaultUI .toastui-editor-ww-container strong,
+.toastui-editor-defaultUI .toastui-editor-ww-container em,
+.toastui-editor-defaultUI .toastui-editor-ww-container a,
+.toastui-editor-defaultUI .toastui-editor-ww-container code {
+    color: var(--tocry-editor-text);
 }
 
 /* Custom Horizontal Scroll Buttons */
@@ -545,8 +561,8 @@ html[data-theme="light"] .toastui-editor-defaultUI .toastui-editor-ww-container 
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
-    background-color: rgba(29, 35, 42, 0.7); /* A dark, solid background */
-    color: white;
+    background-color: var(--tocry-scroll-btn-bg);
+    color: var(--tocry-scroll-btn-fg);
     border: none;
     border-radius: 50%;
     width: 50px;
