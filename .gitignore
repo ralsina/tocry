@@ -7,3 +7,5 @@ data/
 test_data/
 uploads/
 .crystal/
+integration-test/data
+integration-test/node-modules
