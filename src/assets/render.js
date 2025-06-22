@@ -250,6 +250,6 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
 
     lanes.forEach(lane => {
         const laneElement = createLaneElement(lane, callbacks, dragAndDropCallbacks);
-        lanesContainer.appendChild(laneColumn);
+        lanesContainer.appendChild(laneElement);
     });
 }
