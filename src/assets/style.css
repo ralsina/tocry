@@ -612,3 +612,44 @@ body {
 
 .scroll-btn--left { left: 15px; }
 .scroll-btn--right { right: 15px; }
+
+/* --- Custom Confirmation Dialog --- */
+#custom-confirm-dialog footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pico-spacing);
+}
+
+/* --- Notification Toasts --- */
+#notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050; /* High z-index to appear over everything */
+    display: flex;
+    flex-direction: column-reverse; /* New toasts appear on top */
+    gap: 10px;
+}
+
+.notification-toast {
+    background-color: var(--pico-card-background-color);
+    color: var(--pico-color);
+    padding: 15px 20px;
+    border-radius: var(--pico-border-radius);
+    box-shadow: var(--pico-card-box-shadow);
+    border-left: 5px solid var(--pico-primary);
+    opacity: 0;
+    transform: translateX(110%);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    min-width: 250px;
+    max-width: 350px;
+}
+
+.notification-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification-toast.error {
+    border-left-color: var(--pico-del-color);
+}
