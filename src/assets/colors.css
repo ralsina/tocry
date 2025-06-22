@@ -5,8 +5,8 @@
 /* Pico.css Default Variables (Light Theme) */
 :root {
   /* Typography */
-  --font-family: "Chivo", sans-serif;
-  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-family: "Chivo", sans-serif; /* Keep Chivo for general text */
+  --font-mono: "Chivo Mono", monospace; /* Use Chivo Mono for monospace */
   --font-size: 1rem;
   --line-height: 1.5;
   --color: #212529; /* Default text color */
@@ -67,6 +67,7 @@
 /* Pico.css Dark Theme Overrides */
 html[data-theme="dark"] {
   /* Typography */
+  --font-mono: "Chivo Mono", monospace; /* Ensure Chivo Mono is used in dark mode too */
   --color: #adb5bd;
   --color-inverse: #111;
 
