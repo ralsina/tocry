@@ -1,3 +1,33 @@
+/**
+ * Makes a DOM element's text content editable in-place.
+ * @param {HTMLElement} element The element to make editable (e.g., an h2 or h4).
+ * @param {string} originalValue The initial text content of the element.
+ * @param {function(string): void} onSaveCallback The callback to execute with the new value when saving.
+ */
+function makeTitleEditable(element, originalValue, onSaveCallback) {
+    element.contentEditable = true;
+    element.dataset.originalValue = originalValue;
+
+    element.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        } else if (e.key === 'Escape') {
+            e.target.textContent = e.target.dataset.originalValue;
+            e.target.blur();
+        }
+    });
+
+    element.addEventListener('blur', (e) => {
+        const newValue = e.target.textContent.trim();
+        const oldValue = e.target.dataset.originalValue;
+        if (newValue && newValue !== oldValue) {
+            onSaveCallback(newValue);
+        } else if (!newValue) {
+            e.target.textContent = oldValue; // Revert if empty
+        }
+    });
+}
 export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
     const lanesContainer = document.getElementById('lanes-container');
     if (!lanesContainer) {
@@ -63,25 +93,10 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
 
         const laneTitle = document.createElement('h2');
         laneTitle.textContent = lane.name;
-        laneTitle.contentEditable = true;
-        laneTitle.dataset.originalName = lane.name; // Store original name for comparison
-
-        // Add event listeners for editing the lane title
-        laneTitle.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Prevent creating a new line
-                e.target.blur();    // Trigger blur to save the change
-            } else if (e.key === 'Escape') {
-                e.target.textContent = e.target.dataset.originalName; // Revert changes
-                e.target.blur();
-            }
-        });
-
-        laneTitle.addEventListener('blur', (e) => {
-            const newName = e.target.textContent.trim();
-            const oldName = e.target.dataset.originalName;
-            if (callbacks.onUpdateLaneName && newName && newName !== oldName) {
-                callbacks.onUpdateLaneName(oldName, newName);
+        makeTitleEditable(laneTitle, lane.name, (newName) => {
+            if (callbacks.onUpdateLaneName) {
+                // Pass the whole lane object to the callback
+                callbacks.onUpdateLaneName(lane, newName);
             }
         });
 
@@ -179,26 +194,10 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
                 });
                 const noteTitle = document.createElement('h4');
                 noteTitle.textContent = note.title;
-                noteTitle.contentEditable = true;
-                noteTitle.dataset.originalTitle = note.title;
-
-                noteTitle.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.target.blur();
-                    } else if (e.key === 'Escape') {
-                        e.target.textContent = e.target.dataset.originalTitle;
-                        e.target.blur();
-                    }
-                });
-
-                noteTitle.addEventListener('blur', (e) => {
-                    const newTitle = e.target.textContent.trim();
-                    const oldTitle = e.target.dataset.originalTitle;
-                    if (callbacks.onUpdateNoteTitle && newTitle && newTitle !== oldTitle) {
-                        callbacks.onUpdateNoteTitle(note.id, newTitle);
-                    } else if (!newTitle) {
-                        e.target.textContent = oldTitle; // Revert if empty
+                makeTitleEditable(noteTitle, note.title, (newTitle) => {
+                    if (callbacks.onUpdateNoteTitle) {
+                        // Pass the whole note object to the callback
+                        callbacks.onUpdateNoteTitle(note, newTitle);
                     }
                 });
 

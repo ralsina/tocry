@@ -1,10 +1,13 @@
 import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote, uploadImage } from './api.js';
 import { renderLanes } from './render.js';
 
+let currentLanes = []; // Cache for the current state of lanes
+
 async function initializeLanes() {
     const lanesContainer = document.getElementById('lanes-container');
     try {
         const lanes = await fetchLanes();
+        currentLanes = lanes; // Update the cache
         const callbacks = {
             onDeleteLane: handleDeleteLaneRequest,
             onAddNote: handleAddNoteRequest,
@@ -79,24 +82,23 @@ async function handleDeleteLaneRequest(laneName) {
 
 // Handler for updating a lane's name. This is more complex because the PUT
 // endpoint requires the full lane object and its current position.
-async function handleUpdateLaneNameRequest(oldName, newName) {
+async function handleUpdateLaneNameRequest(laneToUpdate, newName) {
     const trimmedNewName = newName.trim();
+    const oldName = laneToUpdate.name;
+
     if (!trimmedNewName || oldName === trimmedNewName) {
         return; // No action needed if name is empty or unchanged
     }
 
     try {
-        // To use the PUT endpoint for renaming, we need the lane's current
-        // position and its full data object.
-        const allLanes = await fetchLanes();
-        const laneToUpdate = allLanes.find(lane => lane.name === oldName);
+        // Use the cached state to find the position, no need to fetch.
+        const currentPosition = currentLanes.findIndex(lane => lane.name === oldName);
 
-        if (!laneToUpdate) {
-            alert(`Error: Could not find lane "${oldName}" to rename.`);
+        if (currentPosition === -1) {
+            alert(`Error: Could not find lane "${oldName}" to determine its position. Refreshing.`);
             return initializeLanes(); // Refresh to be safe
         }
 
-        const currentPosition = allLanes.indexOf(laneToUpdate);
         const updatedLaneData = { ...laneToUpdate, name: trimmedNewName };
 
         const response = await updateLane(oldName, updatedLaneData, currentPosition);
@@ -112,32 +114,24 @@ async function handleUpdateLaneNameRequest(oldName, newName) {
 }
 
 // Handler for updating a note's title directly from the card
-async function handleUpdateNoteTitleRequest(noteId, newTitle) {
+async function handleUpdateNoteTitleRequest(noteToUpdate, newTitle) {
     const trimmedNewTitle = newTitle.trim();
     if (!trimmedNewTitle) {
         return initializeLanes(); // Revert if title is empty
     }
 
     try {
-        // To use the PUT endpoint for renaming, we need the full note object.
-        const allLanes = await fetchLanes();
-        let noteToUpdate = null;
-        for (const lane of allLanes) {
-            const foundNote = lane.notes.find(note => note.id === noteId);
-            if (foundNote) {
-                noteToUpdate = foundNote;
-                break;
-            }
-        }
-
-        if (!noteToUpdate) {
-            alert(`Error: Could not find note with ID "${noteId}" to rename.`);
-            return initializeLanes();
-        }
-
+        // The full note object is now passed directly, no need to fetch or find it.
         const updatedNoteData = { ...noteToUpdate, title: trimmedNewTitle };
-        await updateNote(noteId, { note: updatedNoteData, lane_name: null, position: null });
-        // No need to re-render, as the UI is already updated.
+        const response = await updateNote(noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+            alert(`Failed to rename note: ${errorData.error || response.statusText}`);
+        }
+        // To be consistent and ensure the UI is always in sync with the backend,
+        // we'll re-render after a successful update.
+        await initializeLanes();
     } catch (error) {
         alert("An error occurred while trying to rename the note. Reverting changes.");
         await initializeLanes(); // Revert UI on failure
