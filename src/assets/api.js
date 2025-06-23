@@ -1,25 +1,67 @@
 const API_BASE_URL = ''; // Assuming API endpoints are relative to the root
 
-export async function fetchLanes() {
+export async function fetchBoards() {
     try {
-        const response = await fetch(`${API_BASE_URL}/lanes`);
+        const response = await fetch(`${API_BASE_URL}/boards`);
         if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+            const errorBody = await response.json().catch(() => ({ message: response.statusText, error: "Failed to parse error response" }));
+            const error = new Error(`Failed to fetch boards: ${response.status} ${response.statusText} - ${errorBody.error || errorBody.message}`);
+            error.status = response.status;
+            error.body = errorBody;
+            throw error;
+        }
+        const data = await response.json();
+        if (!Array.isArray(data)) {
+            console.error(`API for /boards returned non-array data:`, data);
+            throw new TypeError('Expected an array of boards from the API, but received different data.');
+        }
+        return data;
+    } catch (error) {
+        console.error('Error fetching boards:', error);
+        throw error;
+    }
+}
+
+export async function createBoard(boardName) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/boards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: boardName })
+        });
+        return response;
+    } catch (error) {
+        console.error('Error creating board:', error);
+        throw error;
+    }
+}
+
+export async function fetchLanes(boardName) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lanes`);
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ message: response.statusText, error: "Failed to parse error response" }));
             const error = new Error(`Failed to fetch lanes: ${response.status} ${response.statusText} - ${errorBody.error || errorBody.message}`);
             error.status = response.status; // Attach status for easier handling
             error.body = errorBody; // Attach full body for more details
             throw error;
         }
-        return await response.json();
+        const data = await response.json();
+        // Crucial check: Ensure the data is an array before returning
+        if (!Array.isArray(data)) {
+            console.error(`API for /boards/${boardName}/lanes returned non-array data:`, data);
+            throw new TypeError('Expected an array of lanes from the API, but received different data.');
+        }
+        return data;
     } catch (error) {
         console.error('Error fetching lanes:', error);
         throw error; // Re-throw to be caught by initializeLanes
     }
 }
 
-export async function addLane(laneName) {
+export async function addLane(boardName, laneName) {
     try {
-        const response = await fetch(`${API_BASE_URL}/lane`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -33,10 +75,10 @@ export async function addLane(laneName) {
     }
 }
 
-export async function deleteLane(laneName) {
+export async function deleteLane(boardName, laneName) {
     try {
         const encodedLaneName = encodeURIComponent(laneName);
-        const response = await fetch(`${API_BASE_URL}/lane/${encodedLaneName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedLaneName}`, {
             method: 'DELETE'
         });
         return response; // Return the full response object for the caller to handle
@@ -46,10 +88,10 @@ export async function deleteLane(laneName) {
     }
 }
 
-export async function updateLanePosition(laneName, newPosition) {
+export async function updateLanePosition(boardName, laneName, newPosition) {
     try {
         const encodedLaneName = encodeURIComponent(laneName);
-        const response = await fetch(`${API_BASE_URL}/lane/${encodedLaneName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedLaneName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -64,10 +106,10 @@ export async function updateLanePosition(laneName, newPosition) {
     }
 }
 
-export async function updateLane(oldName, laneData, position) {
+export async function updateLane(boardName, oldName, laneData, position) {
     try {
         const encodedOldName = encodeURIComponent(oldName);
-        const response = await fetch(`${API_BASE_URL}/lane/${encodedOldName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedOldName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -81,9 +123,9 @@ export async function updateLane(oldName, laneData, position) {
     }
 }
 
-export async function addNote(laneName, title, content = "", tags = []) {
+export async function addNote(boardName, laneName, title, content = "", tags = []) {
     try {
-        const response = await fetch(`${API_BASE_URL}/note`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -100,9 +142,9 @@ export async function addNote(laneName, title, content = "", tags = []) {
     }
 }
 
-export async function updateNote(noteId, { note, lane_name, position }) {
+export async function updateNote(boardName, noteId, { note, lane_name, position }) {
     try {
-        const response = await fetch(`${API_BASE_URL}/note/${noteId}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note/${noteId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -116,9 +158,9 @@ export async function updateNote(noteId, { note, lane_name, position }) {
     }
 }
 
-export async function deleteNote(noteId) {
+export async function deleteNote(boardName, noteId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/note/${noteId}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note/${noteId}`, {
             method: 'DELETE'
         });
         return response; // Return the full response object for the caller to handle

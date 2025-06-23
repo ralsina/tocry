@@ -2,6 +2,17 @@ require "file_utils" # For File.dirname, File.basename
 require "kemal"
 require "json"   # For JSON serialization
 require "./lane" # Include the Lane class from its new file
+require "./board_manager"
+
+# Reopen HTTP::Server::Context to add a property for the current board's name.
+# This allows filters and routes to easily access the board name associated with the request.
+module HTTP
+  class Server
+    class Context
+      property board_name : String? = nil # Nullable because not all requests will have a board name
+    end
+  end
+end
 
 module ToCry
   Log = ::Log.for(self)
@@ -11,7 +22,8 @@ module ToCry
   # The global singleton instance of the Board.
   # This instance holds the current state of the application's board in memory.
   # Persistence (loading/saving) is handled by the Board#save method.
-  BOARD = Board.new
+  BOARD         = Board.new
+  BOARD_MANAGER = BoardManager.new
 
   class Board
     include JSON::Serializable

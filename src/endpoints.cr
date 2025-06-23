@@ -2,11 +2,91 @@ require "kemal"
 require "./tocry"    # To access ToCry::BOARD and other definitions
 require "uuid"       # For generating unique filenames
 require "file_utils" # For creating directories
+require "uri"        # For parsing URL paths
+
+# Custom error for when a request body is expected but not provided.
+class MissingBodyError < Exception; end
+
+# Helper function to retrieve the Board instance from the request context.
+private def get_board_from_context(env : HTTP::Server::Context) : ToCry::Board
+  board_name = env.get("board_name").as(String)
+  board = ToCry::BOARD_MANAGER.get(board_name)
+
+  unless board
+    # This path should not be reachable due to the before_all filter,
+    # but this check provides robustness and a clearer error message.
+    raise "Failed to retrieve board '#{board_name}' from context."
+  end
+  board
+end
+
+# Helper function to safely get the JSON request body.
+# If the body is missing, it raises a MissingBodyError.
+private def get_json_body(env : HTTP::Server::Context) : String
+  body = env.request.body
+  raise MissingBodyError.new("Request body is missing.") if body.nil?
+  body.gets_to_end
+end
+
+# Path-scoped before filter to validate the board name and store it in the context.
+before_all "/boards/:board_name/*" do |env|
+  board_name = env.params.url["board_name"].as(String)
+  # Use the BoardManager to check for existence. This also warms the cache.
+  board = ToCry::BOARD_MANAGER.get(board_name)
+
+  unless board
+    env.response.status_code = 404
+    env.response.content_type = "application/json"
+    env.response.print({error: "Board '#{board_name}' not found."}.to_json)
+    halt env # Stop processing the request
+  end
+  # Store the board name in the environment for other routes to use.
+  env.set("board_name", board_name)
+end
+
+# Global error handler for missing request bodies or invalid JSON.
+error MissingBodyError | JSON::ParseException do |env, ex|
+  env.response.status_code = 400 # Bad Request
+  env.response.content_type = "application/json"
+  {error: ex.message}.to_json
+end
+
+# Global error handler for any other unhandled exceptions.
+error Exception do |env, ex|
+  env.response.status_code = 500 # Internal Server Error
+  ToCry::Log.error(exception: ex) { "An unexpected error occurred: #{ex.message}" }
+  env.response.content_type = "application/json"
+  {error: "An unexpected error occurred."}.to_json
+end
+
+# API Endpoint to get all boards
+get "/boards" do |env|
+  env.response.content_type = "application/json"
+  ToCry::BOARD_MANAGER.list.to_json
+end
+
+# API Endpoint to create a new board
+# Expects a JSON body with a board name, e.g.:
+# { "name": "My New Board" }
+post "/boards" do |env|
+  json_body = get_json_body(env)
+  payload = NewBoardPayload.from_json(json_body)
+
+  new_board_name = payload.name.strip
+  raise MissingBodyError.new("Board name cannot be empty.") if new_board_name.empty?
+
+  ToCry::BOARD_MANAGER.create(new_board_name)
+
+  env.response.status_code = 201 # Created
+  env.response.content_type = "application/json"
+  {success: "Board '#{new_board_name}' created."}.to_json
+end
 
 # API Endpoint to get all lanes
-get "/lanes" do |env|
+get "/boards/:board_name/lanes" do |env|
   env.response.content_type = "application/json"
-  ToCry::BOARD.lanes.to_json
+  board = get_board_from_context(env)
+  board.lanes.to_json
 end
 
 # Helper struct for parsing the POST /lane request payload
@@ -20,6 +100,12 @@ struct UpdateLanePayload
   include JSON::Serializable
   property lane : ToCry::Lane # The updated lane data (including potentially new name)
   property position : UInt64  # The desired 0-based index in the board's lanes array
+end
+
+# Helper struct for parsing the POST /boards request payload
+struct NewBoardPayload
+  include JSON::Serializable
+  property name : String
 end
 
 # Helper struct for parsing the PUT /note/:id request payload
@@ -40,15 +126,10 @@ end
 # API Endpoint to add a new lane
 # Expects a JSON body with a lane name, e.g.:
 # { "name": "New Lane Name" }
-post "/lane" do |env|
+post "/boards/:board_name/lane" do |env|
   begin
-    body = env.request.body
-    if body.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "Request body is missing."}.to_json
-    end
-    json_body = body.gets_to_end
+    board = get_board_from_context(env)
+    json_body = get_json_body(env)
     payload = NewLanePayload.from_json(json_body)
 
     requested_name = payload.name
@@ -56,31 +137,22 @@ post "/lane" do |env|
     counter = 1
 
     # Deduplicate name if a lane with the same name already exists
-    while ToCry::BOARD.lanes.any? { |lane| lane.name == final_name }
+    while board.lanes.any? { |lane| lane.name == final_name }
       final_name = "#{requested_name} (#{counter})"
       counter += 1
     end
 
-    new_lane = ToCry::BOARD.lane_add(final_name)
+    new_lane = board.lane_add(final_name)
     if final_name != requested_name
-      ToCry::Log.info { "Lane '#{requested_name}' requested, added as '#{final_name}' to board via POST /lane due to name collision." }
+      ToCry::Log.info { "Lane '#{requested_name}' requested, added as '#{final_name}' to board '#{board.board_data_dir}' via POST /lane due to name collision." }
     else
-      ToCry::Log.info { "Lane '#{new_lane.name}' added to board via POST /lane." }
+      ToCry::Log.info { "Lane '#{new_lane.name}' added to board '#{board.board_data_dir}' via POST /lane." }
     end
-    ToCry::BOARD.save
+    board.save
 
     env.response.status_code = 201 # Created
     env.response.content_type = "application/json"
     new_lane.to_json
-  rescue ex : JSON::ParseException
-    env.response.status_code = 400 # Bad Request
-    env.response.content_type = "application/json"
-    {error: "Invalid JSON format: #{ex.message}"}.to_json
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing POST /lane: #{ex.message}" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
   end
 end
 
@@ -91,23 +163,17 @@ end
 # { "lane": { "name": "New Lane Name", "notes": [...] }, "position": 1 }
 # Note: This implementation primarily uses the 'name' and 'position' from the payload.
 # Updating notes via this endpoint is not implemented here.
-put "/lane/:name" do |env|
+put "/boards/:board_name/lane/:name" do |env|
   begin
     current_lane_name = env.params.url["name"].as(String)
-    body = env.request.body
-    if body.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "Request body is missing."}.to_json
-    end
-    json_body = body.gets_to_end
-
+    board = get_board_from_context(env)
+    json_body = get_json_body(env)
     payload = UpdateLanePayload.from_json(json_body)
     new_lane_data = payload.lane
     new_position = payload.position
 
     # Find the existing lane by its current name
-    existing_lane = ToCry::BOARD.lane(current_lane_name)
+    existing_lane = board.lane(current_lane_name)
 
     unless existing_lane
       env.response.status_code = 404 # Not Found
@@ -120,25 +186,16 @@ put "/lane/:name" do |env|
 
     # Move the lane to the new position
     # Ensure the new position is within valid bounds
-    actual_new_position = new_position.clamp(0, ToCry::BOARD.lanes.size - 1)
-    ToCry::BOARD.lanes.delete(existing_lane)
-    ToCry::BOARD.lanes.insert(actual_new_position, existing_lane)
+    actual_new_position = new_position.clamp(0, board.lanes.size - 1)
+    board.lanes.delete(existing_lane)
+    board.lanes.insert(actual_new_position, existing_lane)
 
-    ToCry::BOARD.save # Save the board to persist changes (renaming and reordering directories)
+    board.save # Save the board to persist changes (renaming and reordering directories)
 
     env.response.status_code = 200 # OK
     env.response.content_type = "application/json"
     existing_lane.to_json # Return the updated lane data
-  rescue ex : JSON::ParseException
-    env.response.status_code = 400 # Bad Request
-    env.response.content_type = "application/json"
-    {error: "Invalid JSON format: #{ex.message}"}.to_json
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing PUT /lane/:name for lane '#{env.params.url["name"]}'" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
-  end
+end
 end
 
 # API Endpoint to add a new note to a lane
@@ -151,22 +208,17 @@ end
 #   },
 #   "lane_name": "Todo"
 # }
-post "/note" do |env|
+post "/boards/:board_name/note" do |env|
   begin
-    body = env.request.body
-    if body.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "Request body is missing."}.to_json
-    end
-    json_body = body.gets_to_end
+    board = get_board_from_context(env)
+    json_body = get_json_body(env)
     payload = NewNotePayload.from_json(json_body)
 
     target_lane_name = payload.lane_name
     note_data = payload.note
 
     # Find the target lane
-    target_lane = ToCry::BOARD.lane(target_lane_name)
+    target_lane = board.lane(target_lane_name)
 
     unless target_lane
       env.response.status_code = 404 # Not Found
@@ -177,22 +229,13 @@ post "/note" do |env|
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
     new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content)
 
-    # Save the board to persist the new note (this will save the note file and create symlink)
-    ToCry::BOARD.save
+    # Save the board to persist the new note (this will save the note file and create symlink for this board)
+    board.save
 
     env.response.status_code = 201 # Created
     env.response.content_type = "application/json"
     new_note.to_json # Return the newly created note with its generated ID
-  rescue ex : JSON::ParseException
-    env.response.status_code = 400 # Bad Request
-    env.response.content_type = "application/json"
-    {error: "Invalid JSON format: #{ex.message}"}.to_json
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing POST /note: #{ex.message}" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
-  end
+end
 end
 
 MAX_IMAGE_SIZE = 1_048_576 # 1MB
@@ -210,9 +253,7 @@ post "/upload/image" do |env|
     uploaded_file = env.params.files.values.first?
 
     if uploaded_file.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "No file uploaded."}.to_json
+      raise MissingBodyError.new("No file uploaded.")
     end
 
     # Check if the file size exceeds the limit
@@ -224,12 +265,12 @@ post "/upload/image" do |env|
 
     # Generate a unique filename to prevent overwrites, while keeping the original extension
     extension = File.extname(uploaded_file.filename.as(String))
-    unique_filename = "#{UUID.random.to_s}#{extension}"
+    unique_filename = "#{UUID.random}#{extension}"
     save_path = File.join(upload_dir, unique_filename)
 
     # Save the file by copying the tempfile to our target location
-    File.open(save_path, "w") do |f|
-      IO.copy(uploaded_file.tempfile, f)
+    File.open(save_path, "w") do |outf|
+      IO.copy(uploaded_file.tempfile, outf)
     end
 
     # The public URL for the saved image
@@ -240,11 +281,6 @@ post "/upload/image" do |env|
     env.response.status_code = 201 # Created
     env.response.content_type = "application/json"
     {url: public_url}.to_json
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing POST /upload/image: #{ex.message}" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred during image upload."}.to_json
   end
 end
 
@@ -257,21 +293,16 @@ end
 #   "lane_name": "In Progress", // Optional: to move the note
 #   "position": 0             // Optional: new position in lane
 # }
-put "/note/:id" do |env|
+put "/boards/:board_name/note/:id" do |env|
   begin
     note_id = env.params.url["id"].as(String)
-    body = env.request.body
-    if body.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "Request body is missing."}.to_json
-    end
-    json_body = body.gets_to_end
+    board = get_board_from_context(env)
+    json_body = get_json_body(env)
     payload = UpdateNotePayload.from_json(json_body)
     new_note_data = payload.note
 
     # Find the note and its current lane on the board
-    find_result = ToCry::BOARD.note(note_id)
+    find_result = board.note(note_id)
     unless find_result
       env.response.status_code = 404
       env.response.content_type = "application/json"
@@ -281,9 +312,9 @@ put "/note/:id" do |env|
 
     # Update note content if it has changed
     note_data_changed = (existing_note.title != new_note_data.title) ||
-                      (existing_note.tags != new_note_data.tags) ||
-                      (existing_note.content != new_note_data.content) ||
-                      (existing_note.expanded != new_note_data.expanded)
+                        (existing_note.tags != new_note_data.tags) ||
+                        (existing_note.content != new_note_data.content) ||
+                        (existing_note.expanded != new_note_data.expanded)
 
     if note_data_changed
       existing_note.title = new_note_data.title
@@ -291,7 +322,7 @@ put "/note/:id" do |env|
       existing_note.content = new_note_data.content
       existing_note.expanded = new_note_data.expanded
       existing_note.save
-      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated." }
+      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.board_data_dir}'." }
     end
 
     # Handle moving the note if lane_name or position is provided
@@ -301,7 +332,7 @@ put "/note/:id" do |env|
 
     # Case 1: Moving to a different lane
     if target_lane_name && target_lane_name != current_lane.name
-      target_lane = ToCry::BOARD.lane(target_lane_name)
+      target_lane = board.lane(target_lane_name)
       unless target_lane
         env.response.status_code = 404
         env.response.content_type = "application/json"
@@ -327,70 +358,57 @@ put "/note/:id" do |env|
     end
 
     # Save the entire board if the structure was modified
-    ToCry::BOARD.save if structure_changed
+    board.save if structure_changed
 
     env.response.status_code = 200
     env.response.content_type = "application/json"
     existing_note.to_json
-  rescue ex : JSON::ParseException
-    env.response.status_code = 400 # Bad Request
-    env.response.content_type = "application/json"
-    {error: "Invalid JSON format: #{ex.message}"}.to_json
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing PUT /note/:id for ID '#{env.params.url["id"]?}'" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
   end
 end
 
 # API Endpoint to delete a lane by name
 # Expects the lane name in the URL path, e.g.:
 # DELETE /lane/My%20Lane%20Name
-delete "/lane/:name" do |env|
+delete "/boards/:board_name/lane/:name" do |env|
   begin
     lane_name = env.params.url["name"].as(String)
-    ToCry::BOARD.lane_del(lane_name)
+    board = get_board_from_context(env)
+    board.lane_del(lane_name)
     env.response.status_code = 200
     env.response.content_type = "application/json"
     {success: "Lane '#{lane_name}' deleted."}.to_json
-    # Or for 204 No Content:
-    # env.response.status_code = 204 # No Content
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing DELETE /lane/:name for lane '#{env.params.url["name"]}'" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
   end
 end
 
 # API Endpoint to delete a note by its ID
 # Expects the note ID in the URL path, e.g.:
 # DELETE /note/some-uuid-123
-delete "/note/:id" do |env|
+delete "/boards/:board_name/note/:id" do |env|
   begin
     note_id = env.params.url["id"].as(String)
+    board = get_board_from_context(env)
 
     # Find the note on the board to get a handle on the object
-    find_result = ToCry::BOARD.note(note_id)
+    find_result = board.note(note_id)
 
     if find_result
       note_to_delete, _ = find_result
-      note_to_delete.delete # This method handles file deletion and board saving
+      note_to_delete.delete(board) # Pass the board object to the note's delete method
 
       env.response.status_code = 200
       env.response.content_type = "application/json"
       note_to_delete.to_json # Return the deleted note's data
-    else
-      # Idempotency: If the note doesn't exist, the desired state is achieved.
-      env.response.status_code = 200
-      env.response.content_type = "application/json"
-      {success: "Note with ID '#{note_id}' not found, desired state achieved."}.to_json
     end
-  rescue ex
-    env.response.status_code = 500 # Internal Server Error
-    ToCry::Log.error(exception: ex) { "Error processing DELETE /note/:id for ID '#{env.params.url["id"]?}'" }
-    env.response.content_type = "application/json"
-    {error: "An unexpected error occurred."}.to_json
   end
+end
+
+# API Endpoint to delete a board by name
+# Expects the board name in the URL path, e.g.:
+# DELETE /boards/My%20Board
+delete "/boards/:board_name" do |env|
+  board_name = env.params.url["board_name"].as(String)
+  ToCry::BOARD_MANAGER.delete(board_name)
+  env.response.status_code = 200 # OK
+  env.response.content_type = "application/json"
+  {success: "Board '#{board_name}' deleted."}.to_json
 end

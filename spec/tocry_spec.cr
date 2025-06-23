@@ -55,14 +55,14 @@ describe ToCry::Board do
     it "serializes and deserializes a board with multiple lanes, some with notes" do
       original_board = ToCry::Board.new
       lane1 = original_board.lane_add("Todo")
-      note1_1 = lane1.note_add(title: "Task 1", content: "Do this")
+      lane1.note_add(title: "Task 1", content: "Do this")
 
-      lane2 = original_board.lane_add("Doing")
+      original_board.lane_add("Doing")
       # No notes in lane2
 
       lane3 = original_board.lane_add("Done")
-      note3_1 = lane3.note_add(title: "Task X", content: "Finished X")
-      note3_2 = lane3.note_add(title: "Task Y", content: "Finished Y")
+      lane3.note_add(title: "Task X", content: "Finished X")
+      lane3.note_add(title: "Task Y", content: "Finished Y")
 
       json_string = original_board.to_json
       deserialized_board = ToCry::Board.from_json(json_string)
@@ -88,7 +88,7 @@ describe ToCry::Board do
     it "produces JSON with expected structure for a board with one lane and one note" do
       original_board = ToCry::Board.new
       lane = original_board.lane_add("Sample Lane")
-      note = lane.note_add(title: "Sample Note")
+      lane.note_add(title: "Sample Note")
       parsed_json = JSON.parse(original_board.to_json)
 
       parsed_json["lanes"].as_a.size.should eq(1)
