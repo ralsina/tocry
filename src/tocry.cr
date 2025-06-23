@@ -16,22 +16,21 @@ module ToCry
   class Board
     include JSON::Serializable
 
-    def initialize(@lanes : Array(Lane) = [] of Lane)
+    property board_data_dir : String
+
+    def initialize(@lanes : Array(Lane) = [] of Lane, @board_data_dir : String = "data/default")
     end
 
     # Loads the board state from the file system.
     # Scans the 'data' directory for lane directories (NNNN_name pattern)
     # and creates Lane objects.
-    # Note: This currently creates empty lanes. Loading notes requires
-    # implementing Lane#load_notes and Note.load.
     def load
-      base_data_dir = "data"
-      unless File.directory?(base_data_dir)
-        Log.info { "Data directory '#{base_data_dir}' not found. Starting with an empty board." }
+      unless File.directory?(@board_data_dir)
+        Log.info { "Data directory '#{@board_data_dir}' not found. Starting with an empty board." }
         return
       end
 
-      lane_dirs = Dir.glob(File.join(base_data_dir, "[0-9][0-9][0-9][0-9]_*/")).sort.map(&.strip("/"))
+      lane_dirs = Dir.glob(File.join(@board_data_dir, "[0-9][0-9][0-9][0-9]_*/")).sort.map(&.strip("/"))
 
       @lanes.clear # Clear any default or existing lanes before loading
 
@@ -47,7 +46,7 @@ module ToCry
         lane_name_from_dir = parts[1]
         correct_prefix = (index + 1).to_s.rjust(4, '0')
         canonical_basename = "#{correct_prefix}_#{lane_name_from_dir}"
-        canonical_path = File.join(base_data_dir, canonical_basename)
+        canonical_path = File.join(@board_data_dir, canonical_basename)
 
         if dir_basename != canonical_basename
           Log.warn { "Normalizing lane directory: renaming '#{dir_path}' to '#{canonical_path}'." }
@@ -55,7 +54,7 @@ module ToCry
         end
 
         begin
-          loaded_lane = Lane.load(canonical_path)
+          loaded_lane = Lane.load(canonical_path, @board_data_dir)
           @lanes << loaded_lane
           Log.info { "Loaded lane '#{loaded_lane.name}' with #{loaded_lane.notes.size} notes from '#{canonical_path}'" }
         rescue ex
@@ -72,22 +71,21 @@ module ToCry
 
     def save
       # Ensure the base data directory exists
-      base_data_dir = "data"
-      FileUtils.mkdir_p(base_data_dir)
-      Log.info { "Base data directory '#{base_data_dir}' ensured." }
+      FileUtils.mkdir_p(@board_data_dir)
+      Log.info { "Base data directory '#{@board_data_dir}' ensured." }
 
       Log.info { "Saving board with #{lanes.size} lanes." }
 
       # Save each lane
       @lanes.each_with_index do |lane, index|
-        lane.save(index + 1) # Position is 1-based
+        lane.save(index + 1, @board_data_dir) # Position is 1-based
       end
       Log.info { "All lanes in the board have been processed for saving." }
 
       # Remove directories not matching the current lanes
-      all_lane_dirs = Dir.glob(File.join(base_data_dir, "[0-9][0-9][0-9][0-9]_*/")).map(&.strip("/")).to_set
+      all_lane_dirs = Dir.glob(File.join(@board_data_dir, "[0-9][0-9][0-9][0-9]_*/")).map(&.strip("/")).to_set
       saved_lane_names = @lanes.map_with_index(offset: 1) { |lane, index|
-        File.join(base_data_dir, "#{index.to_s.rjust(4, '0')}_#{lane.name}")
+        File.join(@board_data_dir, "#{index.to_s.rjust(4, '0')}_#{lane.name}")
       }.to_set
 
       (all_lane_dirs - saved_lane_names).each do |dir_path|
@@ -101,7 +99,7 @@ module ToCry
     end
 
     def lane_add(name : String) : Lane
-      new_lane = Lane.new(name)
+      new_lane = Lane.new(name, @board_data_dir)
       self.lanes << new_lane
       Log.info { "Lane '#{name}' added to the board." }
       new_lane

@@ -9,11 +9,11 @@ module ToCry
     property name : String
     property notes : Array(Note)
 
-    def initialize(@name : String, @notes : Array(Note) = [] of Note)
+    def initialize(@name : String, @board_data_dir : String, @notes : Array(Note) = [] of Note)
     end
 
     def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0) : Note
-      new_note = Note.new(title: title, tags: tags, content: content) # ID will be auto-generated
+      new_note = Note.new(title: title, tags: tags, content: content, board_data_dir: @board_data_dir) # Pass board_data_dir
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
@@ -24,12 +24,12 @@ module ToCry
       raise ex
     end
 
-    def save(position : Int)
+    def save(position : Int, board_data_dir : String)
       # Format position with leading zeros (e.g., 1 -> "0001")
       padded_position = position.to_s.rjust(4, '0')
       # Create the directory name using the position and lane name
       lane_directory_name = "#{padded_position}_#{self.name}"
-      lane_dir = File.join("data", lane_directory_name)
+      lane_dir = File.join(board_data_dir, lane_directory_name)
       FileUtils.mkdir_p(lane_dir)
       Log.info { "Lane directory '#{lane_directory_name}' created at #{lane_dir}" }
 
@@ -72,7 +72,7 @@ module ToCry
     #
     # Returns a new `Lane` instance.
     # Raises `RuntimeError` if the directory doesn't exist or has an invalid name format.
-    def self.load(folder : String)
+    def self.load(folder : String, board_data_dir : String)
       # TODO: normalize numbers so notes are all consecutive and whatnot like lanes
       # in Board.load
       unless Dir.exists?(folder)
@@ -95,15 +95,15 @@ module ToCry
           next nil unless File.symlink?(symlink_path)
           target_path = File.readlink(symlink_path)
           note_id = File.basename(target_path, ".md")
-          Log.info { "Loading note from symlink: #{symlink_path} -> #{target_path} (ID: #{note_id})" }
-          Note.load(note_id)
+          Log.info { "Loading note from symlink: #{symlink_path} -> #{target_path} (ID: #{note_id}) for board_data_dir: #{board_data_dir}" }
+          Note.load(note_id, board_data_dir) # Pass board_data_dir to Note.load
         rescue ex
           Log.warn(exception: ex) { "Skipping note: Failed to load from symlink '#{symlink_path}'" }
           nil
         end
       end
 
-      Lane.new(name: lane_name, notes: notes)
+      Lane.new(name: lane_name, notes: notes, board_data_dir: board_data_dir)
     end
   end
 end

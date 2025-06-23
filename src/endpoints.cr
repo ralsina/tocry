@@ -61,8 +61,7 @@ post "/lane" do |env|
       counter += 1
     end
 
-    new_lane = ToCry::Lane.new(name: final_name) # Creates a lane with no notes, using the (potentially) deduplicated name
-    ToCry::BOARD.lanes << new_lane
+    new_lane = ToCry::BOARD.lane_add(final_name)
     if final_name != requested_name
       ToCry::Log.info { "Lane '#{requested_name}' requested, added as '#{final_name}' to board via POST /lane due to name collision." }
     else

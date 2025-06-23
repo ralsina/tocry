@@ -35,3 +35,7 @@ shards:
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
+
+  semantic_compare:
+    git: https://github.com/j8r/semantic_compare.git
+    version: 0.5.1

@@ -4,8 +4,10 @@ require "file_utils"
 
 describe ToCry::Lane do
   describe "JSON Serialization" do
+    let(board_data_dir) { "data/default" }
+
     it "serializes and deserializes an empty lane" do
-      original_lane = ToCry::Lane.new(name: "Test Lane Empty")
+      original_lane = ToCry::Lane.new(name: "Test Lane Empty", board_data_dir: board_data_dir)
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
 
@@ -14,8 +16,8 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with one note" do
-      note1 = ToCry::Note.new(title: "Note 1", tags: ["tagA"], content: "Content for Note 1")
-      original_lane = ToCry::Lane.new(name: "Lane With One Note", notes: [note1])
+      note1 = ToCry::Note.new(title: "Note 1", board_data_dir: board_data_dir, tags: ["tagA"], content: "Content for Note 1")
+      original_lane = ToCry::Lane.new(name: "Lane With One Note", board_data_dir: board_data_dir, notes: [note1])
 
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
@@ -33,9 +35,9 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with multiple notes" do
-      note1 = ToCry::Note.new(title: "Alpha Note", tags: ["test", "alpha"], content: "Alpha content")
-      note2 = ToCry::Note.new(title: "Beta Note", tags: ["test", "beta"], content: "Beta content")
-      original_lane = ToCry::Lane.new(name: "Lane With Many Notes", notes: [note1, note2])
+      note1 = ToCry::Note.new(title: "Alpha Note", board_data_dir: board_data_dir, tags: ["test", "alpha"], content: "Alpha content")
+      note2 = ToCry::Note.new(title: "Beta Note", board_data_dir: board_data_dir, tags: ["test", "beta"], content: "Beta content")
+      original_lane = ToCry::Lane.new(name: "Lane With Many Notes", board_data_dir: board_data_dir, notes: [note1, note2])
 
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
@@ -57,8 +59,8 @@ describe ToCry::Lane do
     end
 
     it "produces JSON with expected structure for a lane with one note" do
-      note1 = ToCry::Note.new(title: "Structure Test Note", tags: ["struct"], content: "Structure content")
-      original_lane = ToCry::Lane.new(name: "JSON Structure Lane", notes: [note1])
+      note1 = ToCry::Note.new(title: "Structure Test Note", board_data_dir: board_data_dir, tags: ["struct"], content: "Structure content")
+      original_lane = ToCry::Lane.new(name: "JSON Structure Lane", board_data_dir: board_data_dir, notes: [note1])
       parsed_json = JSON.parse(original_lane.to_json)
 
       parsed_json["name"].as_s.should eq("JSON Structure Lane")
@@ -72,32 +74,32 @@ describe ToCry::Lane do
   end
 
   describe "File Persistence" do
-    data_dir = "data"
-    notes_dir = File.join(data_dir, ".notes")
+    let(board_data_dir) { "data/default" }
+    let(notes_dir) { File.join(board_data_dir, ".notes") }
 
     before_each do
       FileUtils.mkdir_p(notes_dir)
     end
 
     after_each do
-      FileUtils.rm_rf(data_dir) if Dir.exists?(data_dir)
+      FileUtils.rm_rf("data") if Dir.exists?("data")
     end
 
     it "saves a lane and can be loaded back (round-trip)" do
       # 1. Create an original lane and add some notes to it
-      original_lane = ToCry::Lane.new("To Do")
+      original_lane = ToCry::Lane.new("To Do", board_data_dir)
       note1 = original_lane.note_add("First Task", ["urgent", "testing"], "Content for the first task.")
       note2 = original_lane.note_add("Second Task", ["testing"], "Content for the second task.")
 
       # 2. Save the lane to the filesystem at position 0
-      original_lane.save(0)
+      original_lane.save(0, board_data_dir)
 
       # 3. Determine the path where the lane was saved and load it back
-      lane_dir_path = File.join(data_dir, "0000_To Do")
+      lane_dir_path = File.join(board_data_dir, "0000_To Do")
       # Sanity check that the directory was actually created
       Dir.exists?(lane_dir_path).should be_true
 
-      loaded_lane = ToCry::Lane.load(lane_dir_path)
+      loaded_lane = ToCry::Lane.load(lane_dir_path, board_data_dir)
 
       # 4. Assert that the loaded lane has the same properties as the original
       loaded_lane.name.should eq(original_lane.name)
