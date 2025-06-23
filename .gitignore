@@ -4,5 +4,6 @@
 /.shards/
 *.dwarf
 data/
+test_data/
 uploads/
 .crystal/

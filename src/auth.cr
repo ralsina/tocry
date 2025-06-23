@@ -8,6 +8,20 @@ require "./user"
 # by creating OAuth 2.0 Client IDs in the Google Cloud Console.
 MultiAuth.config("google", ENV.fetch("GOOGLE_CLIENT_ID", "YOUR_ID"), ENV.fetch("GOOGLE_CLIENT_SECRET", "YOUR_SECRET"))
 
+# HTML for a generic "Login Required" page.
+# This is used when an unauthenticated user tries to access a protected resource.
+LOGIN_REQUIRED_PAGE_HTML = <<-HTML
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login Required</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+</head>
+<body><main class="container"><article><h1>Login Required</h1><p>You need to be logged in to access this page.</p><p><a href="/auth/google" role="button">Login with Google</a></p></article></main></body>
+</html>
+HTML
+
+
 # --- Helpers ---
 
 # Gets the currently logged-in user from the session, if any.
@@ -86,4 +100,19 @@ get "/auth/:provider/callback" do |env| # Corrected: Top-level route definition
 
   env.session.string("user_id", user.id)
   env.redirect "/"
+end
+
+# Logout
+get "/logout" do |env|
+  env.session.destroy
+
+  # Directly render the "Logged Out" page.
+  env.response.content_type = "text/html"
+  <<-HTML
+  <!DOCTYPE html>
+  <html>
+  <head><title>Logged Out</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" /></head>
+  <body><main class="container"><article><h1>Logged Out</h1><p>You have been successfully logged out.</p><p><a href="/auth/google" role="button">Login with Google</a></p></article></main></body>
+  </html>
+  HTML
 end

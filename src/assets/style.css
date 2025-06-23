@@ -696,6 +696,7 @@ body {
     width: 100%;
     text-align: center;
     margin-bottom: 0;
+    margin-top: 0.5rem; /* Add some space above the logout button */
 }
 
 /* Custom Horizontal Scroll Buttons */

@@ -44,17 +44,7 @@ def setup_google_auth_mode
     else
       # For all other routes, check authentication.
       unless current_user(env)
-        # Check if it's an API request (e.g., Accept: application/json).
-        # This is a heuristic; a more robust API might use a specific header or path prefix.
-        if env.request.headers["Accept"]?.try &.includes?("application/json")
-          env.response.status_code = 401
-          env.response.content_type = "application/json"
-          env.response.print({error: "Unauthorized"}.to_json)
-          halt env
-        else
-          # It's likely an HTML page request, redirect to the root login page.
-          env.redirect "/"
-        end
+        halt env, 403, LOGIN_REQUIRED_PAGE_HTML
       end
     end
     # If current_user(env) is true, or if it's an excluded path, the request proceeds.
