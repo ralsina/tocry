@@ -2,14 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-
-
-## [0.5.1] - 2025-06-22
-
-### 🐛 Bug Fixes
-
-- Note updating
-
 ## [0.5.0] - 2025-06-22
 
 ### 🚀 Features
@@ -23,10 +15,7 @@ All notable changes to this project will be documented in this file.
 - Use title to show truncated titles
 - Collapsed notes were not FULLY collapsed
 - Lane drag/drop
-
-### 💼 Other
-
-- Release v0.5.0
+- Better note updates when adding/removing content
 
 ### 🚜 Refactor
 
@@ -59,6 +48,10 @@ All notable changes to this project will be documented in this file.
 
 - Nicer looking cards
 - Make search match titles again
+
+### 💼 Other
+
+- Release v0.4.0
 
 ### 🚜 Refactor
 
