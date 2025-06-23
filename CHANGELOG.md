@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2025-06-23
+
+### 🐛 Bug Fixes
+
+- Misc fixes
+
+### 💼 Other
+
+- Make binaries smaller
+
+### 🎨 Styling
+
+- Fix logout button spacing
+
 ## [0.6.0] - 2025-06-23
 
 ### 🚀 Features
@@ -13,6 +27,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Misc fixes
+
+### 💼 Other
+
+- Release v0.6.0
 
 ## [0.5.0] - 2025-06-22
 
