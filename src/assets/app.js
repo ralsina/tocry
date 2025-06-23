@@ -1,4 +1,4 @@
-import { fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote, uploadImage } from './api.js';
+import { fetchBoards, createBoard, fetchLanes, addLane, deleteLane, updateLanePosition, updateLane, addNote, updateNote, deleteNote, uploadImage } from './api.js';
 import { renderLanes, createNoteCardElement } from './render.js';
 
 const colorSchemes = {
@@ -186,12 +186,100 @@ function showNotification(message, type = 'error') {
     }, 5000);
 }
 
-let currentLanes = []; // Cache for the current state of lanes
+// Function to get the board name from the URL path (e.g., /b/my_board)
+function getBoardNameFromURL() {
+    const pathParts = window.location.pathname.split('/');
+    // URL is /b/{board_name}, so parts are ["", "b", "{board_name}"]
+    if (pathParts[1] === 'b' && pathParts[2]) {
+        return decodeURIComponent(pathParts[2]);
+    }
+    return null; // No board name in URL
+}
 
-async function initializeLanes() {
-    const lanesContainer = document.getElementById('lanes-container');
+
+let currentLanes = [];    // Cache for the current state of lanes
+let currentBoardName = 'default'; // Declare and initialize currentBoardName globally
+let previousBoardSelection = 'default'; // To revert to if "New board" is cancelled
+// --- Board Selector ---
+async function initializeBoardSelector() {
+    const boardSelector = document.getElementById('board-selector');
+    if (!boardSelector) return;
+
     try {
-        const lanes = await fetchLanes();
+        const boards = await fetchBoards();
+        boardSelector.innerHTML = ''; // Clear existing options
+
+        if (boards.length === 0) {
+            // Handle case where no boards exist (e.g., first run)
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No boards available';
+            boardSelector.appendChild(option);
+            boardSelector.disabled = true;
+            showNotification('No boards found. Please create a new board.', 'info');
+            return;
+        }
+
+        boards.forEach(boardName => {
+            const option = document.createElement('option');
+            option.value = boardName;
+            option.textContent = `Board: ${boardName}`;
+            boardSelector.appendChild(option);
+        });
+
+        // Add the "New board..." option
+        const newBoardOption = document.createElement('option');
+        newBoardOption.value = '__NEW_BOARD__';
+        newBoardOption.textContent = 'New board...';
+        boardSelector.appendChild(newBoardOption);
+
+        // Set initial selection based on currentBoardName (default or from URL later)
+        boardSelector.value = currentBoardName;
+        if (!boardSelector.value) { // If currentBoardName is not in the list, select the first one
+            boardSelector.value = boards[0];
+            currentBoardName = boards[0];
+        }
+        previousBoardSelection = boardSelector.value; // Store current selection
+        boardSelector.disabled = false;
+
+        boardSelector.addEventListener('change', async (event) => { // Make this async
+            const selectedValue = event.target.value;
+            if (selectedValue === '__NEW_BOARD__') {
+                // If "New board..." is selected, trigger the add board flow
+                // Store the current URL state before the prompt, so we can revert if cancelled
+                history.pushState({ board: previousBoardSelection }, '', `/b/${previousBoardSelection}`);
+                // Revert the selector immediately to the previous valid board
+                boardSelector.value = previousBoardSelection;
+
+                await handleAddBoardButtonClick();
+                // After attempting to add, revert the selector to the previous valid board
+                boardSelector.value = previousBoardSelection;
+            } else {
+                previousBoardSelection = selectedValue; // Update previous selection
+                initializeLanes(selectedValue); // Load lanes for the selected board
+            }
+            // Update the URL to reflect the selected board
+            history.pushState({ board: selectedValue }, '', `/b/${selectedValue}`);
+        });
+    } catch (error) {
+        console.error('Error initializing board selector:', error);
+        showNotification('Failed to load boards. Please try again.', 'error');
+        boardSelector.disabled = true;
+    }
+}
+
+async function initializeLanes(boardName) {
+    // If boardName is not provided, try to get it from the URL, otherwise use default
+    if (!boardName) {
+        const nameFromURL = getBoardNameFromURL();
+        boardName = nameFromURL || 'default';
+        // If the URL has no board name, redirect to /b/default
+        if (!nameFromURL) history.replaceState({ board: boardName }, '', `/b/${boardName}`);
+    }
+    const lanesContainer = document.getElementById('lanes-container');
+    currentBoardName = boardName; // Update the global currentBoardName
+    try {
+        const lanes = await fetchLanes(currentBoardName);
         currentLanes = lanes; // Update the cache
         const callbacks = {
             onDeleteLane: handleDeleteLaneRequest,
@@ -225,10 +313,10 @@ async function initializeLanes() {
 async function handleAddLaneButtonClick() {
     const laneName = await showPrompt("Enter the name for the new lane:", "Add New Lane");
 
-    if (laneName !== null && laneName.trim() !== "") {
+    if (laneName !== null && laneName.trim() !== "") { // Check for null and empty string
         try {
-            const response = await addLane(laneName.trim());
-            if (response.ok) {
+            const response = await addLane(currentBoardName, laneName.trim());
+            if (response.ok) { // Check the response status code
                 console.log('Lane created successfully');
                 await initializeLanes(); // Re-fetch and render all lanes
             } else {
@@ -240,8 +328,30 @@ async function handleAddLaneButtonClick() {
             console.error('Error creating lane:', error);
             showNotification("An error occurred while trying to create the lane.");
         }
-    } else if (laneName !== null) {
-        showNotification("Lane name cannot be empty.");
+    }
+}
+
+async function handleAddBoardButtonClick() {
+    const boardName = await showPrompt("Enter the name for the new board:", "Create New Board");
+
+    if (boardName !== null && boardName.trim() !== "") {
+        try {
+            const trimmedBoardName = boardName.trim();
+            const response = await createBoard(trimmedBoardName);
+            if (response.ok) {
+                showNotification(`Board "${trimmedBoardName}" created successfully.`, 'info');
+                history.pushState({ board: trimmedBoardName }, '', `/b/${trimmedBoardName}`); // Update URL
+                currentBoardName = trimmedBoardName; // Update currentBoardName BEFORE re-initializing the selector
+                await initializeBoardSelector(); // Re-populate selector and set its value
+                initializeLanes(trimmedBoardName); // Load the new board
+            } else {
+                const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+                showNotification(`Failed to create board: ${errorData.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error creating board:', error);
+            showNotification("An error occurred while trying to create the board.");
+        }
     }
 }
 
@@ -259,7 +369,7 @@ async function handleDeleteLaneRequest(laneName) {
             // Update scroll buttons visibility as lanes might have shifted
             updateScrollButtonsVisibility();
 
-            const response = await deleteLane(laneName);
+            const response = await deleteLane(currentBoardName, laneName);
             if (response.ok) {
                 console.log(`Lane "${laneName}" deleted successfully.`);
                 await initializeLanes(); // Re-fetch and render all lanes
@@ -301,7 +411,7 @@ async function handleUpdateLaneNameRequest(laneToUpdate, newName) {
         // Since render.js uses currentLanes, this will update the displayed name.
         laneToUpdate.name = trimmedNewName;
 
-        const response = await updateLane(oldName, updatedLaneData, currentPosition);
+        const response = await updateLane(currentBoardName, oldName, updatedLaneData, currentPosition);
         if (response.ok) {
             // On success, the UI is already updated optimistically, so no full re-render is needed.
             console.log(`Lane "${oldName}" successfully renamed to "${trimmedNewName}".`);
@@ -331,7 +441,7 @@ async function handleUpdateNoteTitleRequest(noteToUpdate, newTitle) {
         // The DOM is already updated by makeTitleEditable.
         noteToUpdate.title = trimmedNewTitle;
 
-        const response = await updateNote(noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
+        const response = await updateNote(currentBoardName, noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
@@ -352,7 +462,7 @@ async function handleToggleNoteRequest(noteToUpdate, isExpanded) {
     const updatedNoteData = { ...noteToUpdate, expanded: isExpanded };
 
     try {
-        const response = await updateNote(noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
+        const response = await updateNote(currentBoardName, noteToUpdate.id, { note: updatedNoteData, lane_name: null, position: null });
 
         if (response.ok) {
             // On success, we don't need to re-render the whole board.
@@ -381,8 +491,8 @@ async function handleToggleNoteRequest(noteToUpdate, isExpanded) {
 async function handleAddNoteRequest(laneName) {
     const noteTitle = await showPrompt(`Enter title for new note in "${laneName}":`, "Add New Note");
     if (noteTitle !== null && noteTitle.trim() !== "") {
-        try {
-            const response = await addNote(laneName, noteTitle.trim(), "", []); // Placeholder content and tags
+        try { // Placeholder content and tags
+            const response = await addNote(currentBoardName, laneName, noteTitle.trim(), "", []);
             if (response.ok) {
                 console.log(`Note "${noteTitle}" added successfully to lane "${laneName}".`);
                 await initializeLanes(); // Re-fetch and render all lanes
@@ -418,7 +528,7 @@ async function handleDeleteNoteRequest(noteId, noteTitle) {
                     break;
                 }
             }
-            const response = await deleteNote(noteId);
+            const response = await deleteNote(currentBoardName, noteId);
             if (response.ok) {
                 console.log(`Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`);
                 await initializeLanes(); // Re-fetch and render all lanes
@@ -451,7 +561,7 @@ async function handlePasteAsNoteRequest(laneName, pastedText) {
     }
 
     try {
-        const response = await addNote(laneName, title, content, []);
+        const response = await addNote(currentBoardName, laneName, title, content, []);
         if (response.ok) {
             console.log(`Note "${title}" created from paste in lane "${laneName}".`);
             await initializeLanes();
@@ -477,7 +587,7 @@ async function handlePasteAsImageNoteRequest(laneName, imageBlob) {
         const title = "Pasted Image";
         const content = `![Pasted Image](${imageUrl})`; // Correct markdown for the image
 
-        const addNoteResponse = await addNote(laneName, title, content, []);
+        const addNoteResponse = await addNote(currentBoardName, laneName, title, content, []);
         if (addNoteResponse.ok) {
             console.log(`Note "${title}" created from pasted image in lane "${laneName}".`);
             await initializeLanes();
@@ -602,7 +712,7 @@ async function handleEditNoteSubmit(event) {
 
     try {
         const { id, ...notePayload } = noteInCache;
-        const response = await updateNote(noteId, { note: notePayload, lane_name: null, position: null });
+        const response = await updateNote(currentBoardName, noteId, { note: notePayload, lane_name: null, position: null });
         if (response.ok) {
             closeEditModal();
             console.log(`Note "${noteId}" updated successfully.`);
@@ -742,7 +852,7 @@ async function handleLaneDrop(event) {
     const newPosition = isMovingRight ? targetIndexInTemp + 1 : targetIndexInTemp;
 
     try {
-        const response = await updateLanePosition(draggedLaneName, newPosition);
+        const response = await updateLanePosition(currentBoardName, draggedLaneName, newPosition);
         if (response.ok) {
             // The API call was successful. The UI is already updated optimistically.
             // We'll call initializeLanes to sync the cache and ensure consistency.
@@ -872,7 +982,7 @@ async function handleNoteDrop(event) {
         }
     }
 
-    const allLanes = await fetchLanes();
+    const allLanes = await fetchLanes(currentBoardName);
     if (!allLanes) { return showNotification('Could not fetch board data to complete the move.'); }
 
     const originalLaneObject = allLanes.find(lane => lane.name === originalLane);
@@ -900,7 +1010,7 @@ async function handleNoteDrop(event) {
     }
 
     try {
-        const response = await updateNote(noteId, { note: originalNoteObject, lane_name: targetLaneName, position: newPosition });
+        const response = await updateNote(currentBoardName, noteId, { note: originalNoteObject, lane_name: targetLaneName, position: newPosition });
         if (response.ok) {
             await initializeLanes();
         } else {
@@ -1137,6 +1247,14 @@ document.addEventListener('DOMContentLoaded', () => {
         themeSwitcher.addEventListener('click', handleThemeSwitch);
     }
 
+    // Initialize and set up board selector
+    // Get initial board name from URL or default
+    const initialBoardName = getBoardNameFromURL();
+    if (initialBoardName) {
+        currentBoardName = initialBoardName;
+        previousBoardSelection = initialBoardName;
+    }
+    initializeBoardSelector();
     initializeLanes();
     const addLaneButton = document.getElementById('add-lane-btn');
     if (addLaneButton) {

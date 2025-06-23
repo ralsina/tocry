@@ -81,7 +81,7 @@ describe ToCry::Note do
       # JSON::Serializable will initialize properties to their type's default if not in JSON
       # and no default is specified in `JSON::Field(default: ...)`
       note.tags.should eq [] of String # Default for Array(String) is an empty array
-      note.content.should eq ""       # Default for String is an empty string
+      note.content.should eq ""        # Default for String is an empty string
     end
   end
 

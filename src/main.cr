@@ -72,6 +72,28 @@ def main
   end
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
   add_handler baked_asset_handler
+
+  # Redirect the root URL to the default board for a better user experience.
+  get "/" do |env|
+    env.redirect "/b/default"
+  end
+
+  # Serve the main application HTML for board-specific URLs
+  # The regex ensures that board names do not contain dots, preventing this
+  # route from incorrectly catching asset requests like 'style.css' or sub-paths.
+  get "/b/:board_name" do |env|
+    board_name = env.params.url["board_name"].as(String)
+
+    # Validate that the extracted board_name does not contain slashes or dots.
+    # This mimics the behavior of the original regex %r{/b/([^/.]+)$}
+    if board_name.includes?('.')
+      env.response.status_code = 404 # Not Found
+      env.response.content_type = "application/json"
+      env.response.print({error: "Invalid board URL format or asset path."}.to_json)
+      halt env
+    end
+    send_file(env, File.join(__DIR__, "assets/index.html"))
+  end
   Kemal.run(port: port)
 end
 

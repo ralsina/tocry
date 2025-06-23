@@ -141,6 +141,24 @@ body {
     cursor: pointer;
 }
 
+/* Style for the board selector and add board button */
+#board-selector {
+    /* Inherit Pico's select styles */
+    margin-bottom: 0; /* Remove default margin */
+    flex-grow: 1; /* Allow it to take available space */
+    min-width: 100px; /* Ensure it's not too small */
+}
+
+#add-board-btn {
+    /* Inherit Pico's button styles */
+    margin-bottom: 0; /* Remove default margin */
+    flex-shrink: 0; /* Prevent shrinking */
+    padding: 0 var(--pico-spacing); /* Adjust padding */
+    border-left: 1px solid var(--pico-form-element-border-color); /* Separator */
+    background-color: transparent; /* Match theme switcher button */
+    color: var(--pico-color); /* Ensure text color respects theme */
+}
+
 /* Override Pico's container for the header to reduce side margins */
 .page-header .container {
     max-width: none;

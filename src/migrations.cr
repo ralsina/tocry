@@ -21,7 +21,7 @@ module ToCry
 
         if stored_version > current_version
           Log.fatal { "Data directory version (#{stored_version}) is newer than application version (#{current_version}). " +
-                      "Downgrading is not supported. Please use a newer version of the application." }
+            "Downgrading is not supported. Please use a newer version of the application." }
           exit 1
         elsif stored_version == current_version
           Log.info { "Data directory is up to date (version #{current_version}). No migration needed." }
@@ -86,7 +86,6 @@ module ToCry
 
         Log.info { "Initial data migration to multi-board format completed." }
       else
-
         Log.info { "No old single-board data found to migrate." }
       end
     end
