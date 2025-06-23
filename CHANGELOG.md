@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2025-06-23
+
+### 🚀 Features
+
+- Implemented data migration framework and did groundwork for multiboard
+- MultiBoard support
+- Authentication rewrite (supporting: noauth / basic / SSO via Google)
+
+### 🐛 Bug Fixes
+
+- Misc fixes
+
 ## [0.5.0] - 2025-06-22
 
 ### 🚀 Features
