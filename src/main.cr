@@ -46,7 +46,7 @@ def main
   bind_address = args["--bind"].as(String)
 
   # Configure the global data directory for the ToCry application
-  ToCry.set_data_directory(data_path)
+  ToCry.data_directory = data_path
 
   # Add a handler to serve user-uploaded images from the configured data path.
   # This replaces the `public_folder` macro.

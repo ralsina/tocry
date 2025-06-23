@@ -64,7 +64,7 @@ get "/auth/:provider/callback" do |env| # Corrected: Top-level route definition
     ToCry::Log.error { "OAuth callback for provider '#{provider}' received without an email address." }
     env.response.status_code = 400 # Bad Request
     env.response.content_type = "text/html"
-    halt env, <<-HTML
+    halt env, 500, <<-HTML
     <!DOCTYPE html>
     <html>
     <head><title>Authentication Error</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" /></head>
