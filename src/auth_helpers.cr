@@ -77,8 +77,8 @@ def setup_basic_auth_mode
   basic_auth auth_user, auth_pass # This applies a global filter from kemal-basic-auth
 
   # Root URL for Basic Auth mode
-  get "/" do |_| # This route is still needed to display the welcome message.
-    "<h1>Welcome to ToCry!</h1><p>You are using Basic Authentication.</p><a href='/b/default'>Go to Board</a>"
+  get "/" do |env| # Redirect to the default board.
+    env.redirect "/b/default"
   end
 end
 

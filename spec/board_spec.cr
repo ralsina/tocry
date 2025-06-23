@@ -3,7 +3,7 @@ require "file_utils"
 
 describe ToCry::Board do
   describe "File Persistence" do
-    data_dir = "data"
+    data_dir = "test_data_board"
     notes_dir = File.join(data_dir, ".notes")
 
     before_each do
@@ -16,7 +16,7 @@ describe ToCry::Board do
 
     it "saves a board and can be loaded back (round-trip)" do
       # 1. Create original board and populate it
-      original_board = ToCry::Board.new
+      original_board = ToCry::Board.new(board_data_dir: data_dir)
 
       lane1 = original_board.lane_add("To Do")
       note1_2 = lane1.note_add("Task 2", ["tag2"], "Content 2") # Added first, will be at index 1
@@ -37,7 +37,7 @@ describe ToCry::Board do
       Dir.exists?(File.join(data_dir, "9999_Orphaned")).should be_false
 
       # 3. Create a new board and load from disk
-      loaded_board = ToCry::Board.new
+      loaded_board = ToCry::Board.new(board_data_dir: data_dir)
       loaded_board.load
 
       # 4. Assertions

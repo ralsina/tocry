@@ -86,7 +86,7 @@ describe ToCry::Board do
     end
 
     it "produces JSON with expected structure for a board with one lane and one note" do
-      original_board = ToCry::Board.new
+      original_board = ToCry::Board.new()
       lane = original_board.lane_add("Sample Lane")
       lane.note_add(title: "Sample Note")
       parsed_json = JSON.parse(original_board.to_json)

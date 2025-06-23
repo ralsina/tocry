@@ -78,17 +78,15 @@ def main
 
   Kemal.config.host_binding = bind_address
 
-  # If any authentication is enabled, set up sessions using the kemal-session shard.
-  if use_google_auth || use_basic_auth
-    Kemal::Session.config do |config|
-      config.samesite = HTTP::Cookie::SameSite::Strict
-      config.cookie_name = "session_id"
-      # Using a secure secret from an environment variable is highly recommended.
-      config.secret = ENV.fetch("SESSION_SECRET", "a_very_long_and_secret_key_that_should_be_changed")
-      config.engine = Kemal::Session::MemoryEngine.new
-    end
-    ToCry::Log.info { "Session support enabled." }
+  # Configure sessions using the kemal-session shard.
+  # A session secret is always required if sessions are used anywhere in the application.
+  Kemal::Session.config do |config|
+    config.samesite = HTTP::Cookie::SameSite::Strict
+    config.cookie_name = "session_id"
+    config.secret = ENV.fetch("SESSION_SECRET", "a_very_long_and_secret_key_that_should_be_changed")
+    config.engine = Kemal::Session::MemoryEngine.new
   end
+  ToCry::Log.info { "Session support enabled." }
 
   if use_google_auth
     setup_google_auth_mode
