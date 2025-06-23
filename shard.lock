@@ -32,10 +32,14 @@ shards:
     git: https://github.com/kemalcr/kemal-basic-auth.git
     version: 1.0.0
 
+  kemal-session:
+    git: https://github.com/kemalcr/kemal-session.git
+    version: 1.0.0
+
+  multi_auth:
+    git: https://github.com/msa7/multi_auth.git
+    version: 1.1.1
+
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
-
-  semantic_compare:
-    git: https://github.com/j8r/semantic_compare.git
-    version: 0.5.1

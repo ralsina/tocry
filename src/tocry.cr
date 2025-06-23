@@ -4,26 +4,29 @@ require "json"   # For JSON serialization
 require "./lane" # Include the Lane class from its new file
 require "./board_manager"
 
-# Reopen HTTP::Server::Context to add a property for the current board's name.
-# This allows filters and routes to easily access the board name associated with the request.
-module HTTP
-  class Server
-    class Context
-      property board_name : String? = nil # Nullable because not all requests will have a board name
-    end
-  end
-end
-
 module ToCry
   Log = ::Log.for(self)
 
-  VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
+  # A class variable to store the configured data directory.
+  # It's initialized with a default, but will be set by `main.cr` at startup.
+  @@data_directory : String = "data"
 
-  # The global singleton instance of the Board.
-  # This instance holds the current state of the application's board in memory.
-  # Persistence (loading/saving) is handled by the Board#save method.
-  BOARD         = Board.new
+  # Getter for the globally configured data directory.
+  def self.data_directory
+    @@data_directory
+  end
+
+  # Singleton instance of BoardManager to manage board operations.
   BOARD_MANAGER = BoardManager.new
+  BOARD         = Board.new
+
+  # Setter for the globally configured data directory.
+  # This method should be called once at application startup.
+  def self.data_directory=(path : String)
+    @@data_directory = path
+  end
+
+  VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
 
   class Board
     include JSON::Serializable
@@ -155,6 +158,3 @@ module ToCry
     end
   end
 end
-
-# Serve user-uploaded images from the 'uploads' directory on the filesystem
-public_folder "uploads"

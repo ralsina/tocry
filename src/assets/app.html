@@ -56,7 +56,16 @@
             <li>
               <select id="board-selector" aria-label="Select board"></select>
             </li>
-            <li><button id="add-lane-btn" outline aria-label="Add new lane"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></li>
+            <li><button id="add-lane-btn" outline aria-label="Add new lane" title="Add Lane"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></li>
+            <li id="user-status" class="user-menu-container" style="display: none;">
+              <button id="user-menu-btn" aria-label="User menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </button>
+              <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none;">
+                <div id="user-info">Logged in as <strong id="user-name-dropdown"></strong></div>
+                <a href="/logout" id="logout-btn" role="button" class="secondary outline">Logout</a>
+              </div>
+            </li>
           </ul>
         </nav>
       </div>

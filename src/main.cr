@@ -1,11 +1,14 @@
 require "./tocry"
-require "./endpoints" # Add this line to include your new endpoints file
 require "baked_file_handler"
 require "./migrations"
 require "baked_file_system"
-require "docopt"
+require "docopt"         # Keep docopt
+require "./auth"         # Add auth (defines Google OAuth routes and current_user helper)
+require "./endpoints"    # Add this line to include your new endpoints file
+require "./auth_helpers" # New: Contains authentication mode setup functions
 require "kemal-basic-auth"
 require "kemal"
+require "kemal-session"
 
 DOC = <<-DOCOPT
 ToCry, a list of things To Do. Or Cry.
@@ -13,6 +16,7 @@ ToCry, a list of things To Do. Or Cry.
 Usage:
   tocry [options]
   tocry (-h | --help)
+  tocry [--data-path=PATH]
   tocry --version
 
 Options:
@@ -20,6 +24,7 @@ Options:
   -b ADDRESS, --bind=ADDRESS    Address to bind to [default: 127.0.0.1].
   -h --help                     Show this screen.
   --version                     Show version.
+  --data-path=PATH              Path to the data directory [default: data].
 DOCOPT
 
 class Assets
@@ -34,10 +39,24 @@ def main
   # We parse the command line (`ARGV`) using the help we described above.
 
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
+  data_path = args["--data-path"]?.as(String) || "data" # Default to "data"
 
   # Port and binding address are important
   port = args["--port"].as(String).to_i32
   bind_address = args["--bind"].as(String)
+
+  # Configure the global data directory for the ToCry application
+  ToCry.set_data_directory(data_path)
+
+  # Add a handler to serve user-uploaded images from the configured data path.
+  # This replaces the `public_folder` macro.
+  uploads_path = File.join(data_path, "uploads")
+  add_handler Kemal::StaticFileHandler.new(uploads_path)
+  # Ensure the uploads directory exists to prevent issues.
+  unless Dir.exists?(uploads_path)
+    ToCry::Log.warn { "Uploads directory not found at '#{uploads_path}'. Creating it now." }
+    FileUtils.mkdir_p(uploads_path)
+  end
 
   # Log at debug level. Probably worth making it configurable.
 
@@ -48,35 +67,38 @@ def main
   # Run any pending data migrations before loading the board.
   ToCry::Migration.run
 
+  # Set the data directory for the default board instance before loading it.
+  ToCry::BOARD.board_data_dir = File.join(data_path, "default")
   # Load the board state from the file system on startup
   ToCry::BOARD.load
 
+  # Determine authentication mode based on environment variables
+  use_google_auth = ENV["GOOGLE_CLIENT_ID"]? && ENV["GOOGLE_CLIENT_SECRET"]?
+  use_basic_auth = ENV["TOCRY_AUTH_USER"]? && ENV["TOCRY_AUTH_PASS"]?
+
   Kemal.config.host_binding = bind_address
 
-  # Read credentials and realm from environment variables
-  auth_user = ENV["TOCRY_AUTH_USER"]?
-  auth_pass = ENV["TOCRY_AUTH_PASS"]?
+  # If any authentication is enabled, set up sessions using the kemal-session shard.
+  if use_google_auth || use_basic_auth
+    Kemal::Session.config do |config|
+      config.samesite = HTTP::Cookie::SameSite::Strict
+      config.cookie_name = "session_id"
+      # Using a secure secret from an environment variable is highly recommended.
+      config.secret = ENV.fetch("SESSION_SECRET", "a_very_long_and_secret_key_that_should_be_changed")
+      config.engine = Kemal::Session::MemoryEngine.new
+    end
+    ToCry::Log.info { "Session support enabled." }
+  end
 
-  # Both username and password are set, enable basic authentication
-  if auth_user && auth_pass
-    ToCry::Log.info { "Basic Authentication enabled. User: #{auth_user}" }
-    basic_auth auth_user.as(String), auth_pass.as(String)
-  elsif auth_user || auth_pass
-    # Only one of the credentials was set - this is a misconfiguration.
-    # Exit with an error code to prevent running in an insecure state.
-    ToCry::Log.fatal { "Basic Authentication misconfigured: Both TOCRY_AUTH_USER and TOCRY_AUTH_PASS must be set if authentication is intended." }
-    exit 1
-  else
-    # Neither username nor password are set, run without authentication.
-    ToCry::Log.warn { "Basic Authentication is DISABLED. To enable, set TOCRY_AUTH_USER and TOCRY_AUTH_PASS environment variables." }
+  if use_google_auth
+    setup_google_auth_mode
+  elsif use_basic_auth
+    setup_basic_auth_mode
+  else # No Auth
+    setup_no_auth_mode
   end
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
   add_handler baked_asset_handler
-
-  # Redirect the root URL to the default board for a better user experience.
-  get "/" do |env|
-    env.redirect "/b/default"
-  end
 
   # Serve the main application HTML for board-specific URLs
   # The regex ensures that board names do not contain dots, preventing this
@@ -92,7 +114,7 @@ def main
       env.response.print({error: "Invalid board URL format or asset path."}.to_json)
       halt env
     end
-    send_file(env, File.join(__DIR__, "assets/index.html"))
+    send_file(env, File.join(__DIR__, "assets/app.html"))
   end
   Kemal.run(port: port)
 end
