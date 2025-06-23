@@ -4,7 +4,7 @@ require "file_utils"
 
 describe ToCry::Lane do
   describe "JSON Serialization" do
-    let(board_data_dir) { "data/default" }
+    board_data_dir = File.join(TEST_PATH, "default")
 
     it "serializes and deserializes an empty lane" do
       original_lane = ToCry::Lane.new(name: "Test Lane Empty", board_data_dir: board_data_dir)
@@ -74,15 +74,15 @@ describe ToCry::Lane do
   end
 
   describe "File Persistence" do
-    let(board_data_dir) { "data/default" }
-    let(notes_dir) { File.join(board_data_dir, ".notes") }
+    board_data_dir = File.join(TEST_PATH, "default")
+    notes_dir = File.join(board_data_dir, ".notes")
 
     before_each do
       FileUtils.mkdir_p(notes_dir)
     end
 
     after_each do
-      FileUtils.rm_rf("data") if Dir.exists?("data")
+      FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
     end
 
     it "saves a lane and can be loaded back (round-trip)" do

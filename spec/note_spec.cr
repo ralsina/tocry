@@ -2,10 +2,12 @@ require "./spec_helper"
 require "json" # Required for JSON.parse
 require "file_utils"
 
+TEST_PATH = "test_data_note" # Use a unique path to avoid conflicts with other specs
+
 describe ToCry::Note do
   describe "JSON Serialization" do
     it "serializes a note to JSON correctly" do
-      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.")
+      note = ToCry::Note.new("Test Title", TEST_PATH, ["tag1", "tag2"], "Test content.")
       # We need to know the ID to compare, so let's grab it
       known_id = note.id
       json_output = note.to_json
@@ -19,7 +21,7 @@ describe ToCry::Note do
     end
 
     it "serializes a note with empty tags and content correctly" do
-      note = ToCry::Note.new("Simple Title")
+      note = ToCry::Note.new("Simple Title", TEST_PATH)
       known_id = note.id
       json_output = note.to_json
 
@@ -86,20 +88,21 @@ describe ToCry::Note do
   end
 
   describe "File Persistence" do
-    notes_dir = File.join("data", ".notes")
+    notes_dir = File.join(TEST_PATH, ".notes")
 
     before_each do
       FileUtils.mkdir_p(notes_dir)
     end
 
     after_each do
-      FileUtils.rm_rf("data")
+      FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
     end
 
     it "saves a note and can be loaded back" do
       # 1. Create a new note
       original_note = ToCry::Note.new(
         "Round Trip Test",
+        TEST_PATH,
         ["save", "load"],
         "This note will be saved and then loaded."
       )
@@ -108,7 +111,7 @@ describe ToCry::Note do
       original_note.save
 
       # 3. Load the note back using its ID
-      loaded_note = ToCry::Note.load(original_note.id.to_s)
+      loaded_note = ToCry::Note.load(original_note.id.to_s, TEST_PATH)
 
       # 4. Assert that the loaded note is identical to the original
       loaded_note.id.should eq(original_note.id)
@@ -132,7 +135,7 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id)
+        note = ToCry::Note.load(note_id, TEST_PATH)
 
         note.id.should eq(note_id)
         note.title.should eq("Loaded Note")
@@ -142,7 +145,7 @@ describe ToCry::Note do
 
       it "raises FileNotFoundError if the note file does not exist" do
         expect_raises(File::NotFoundError) do
-          ToCry::Note.load("non-existent-id")
+          ToCry::Note.load("non-existent-id", TEST_PATH)
         end
       end
 
@@ -152,7 +155,7 @@ describe ToCry::Note do
         File.write(file_path, "Just some text without frontmatter.")
 
         expect_raises(Exception, "Invalid note format in #{file_path}. Could not parse frontmatter.") do
-          ToCry::Note.load(note_id)
+          ToCry::Note.load(note_id, TEST_PATH)
         end
       end
 
@@ -169,7 +172,7 @@ describe ToCry::Note do
         File.write(file_path, file_content)
 
         expect_raises(Exception, /Invalid YAML frontmatter in #{file_path}/) do
-          ToCry::Note.load(note_id)
+          ToCry::Note.load(note_id, TEST_PATH)
         end
       end
 
@@ -184,7 +187,7 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id)
+        note = ToCry::Note.load(note_id, TEST_PATH)
         note.title.should eq("Note Without Tags")
         note.tags.should be_empty
         note.content.strip.should eq("Content here.")
@@ -202,7 +205,7 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id)
+        note = ToCry::Note.load(note_id, TEST_PATH)
         note.title.should eq("Note Without Content")
         note.tags.should eq(["no_content"])
         note.content.strip.should be_empty

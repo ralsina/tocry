@@ -49,7 +49,7 @@ module ToCry
     # Initialize a new Note with a generated UUID
     def initialize(
       title : String,
-      @board_data_dir : String,
+      @board_data_dir : String? = nil,
       tags : Array(String) = [] of String,
       content : String = "",
       expanded : Bool = false,
