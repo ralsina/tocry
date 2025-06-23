@@ -1,6 +1,7 @@
 require "./tocry"
 require "./endpoints" # Add this line to include your new endpoints file
 require "baked_file_handler"
+require "./migrations"
 require "baked_file_system"
 require "docopt"
 require "kemal-basic-auth"
@@ -43,6 +44,9 @@ def main
   Log.setup(:debug) # Or use Log.setup_from_env for more flexibility
   ToCry::Log.info { "Starting ToCry server on #{bind_address}:#{port}" }
   # Start kemal listening on the right address
+
+  # Run any pending data migrations before loading the board.
+  ToCry::Migration.run
 
   # Load the board state from the file system on startup
   ToCry::BOARD.load

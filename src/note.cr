@@ -43,13 +43,16 @@ module ToCry
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
     property expanded : Bool = false
+    @[JSON::Field(ignore: true)]
+    property board_data_dir : String? = nil
 
     # Initialize a new Note with a generated UUID
     def initialize(
       title : String,
+      @board_data_dir : String,
       tags : Array(String) = [] of String,
       content : String = "",
-      expanded : Bool = false
+      expanded : Bool = false,
     )
       @id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
       self.title = title
@@ -60,14 +63,14 @@ module ToCry
 
     # Loads a Note from its corresponding markdown file.
     #
-    # The file is expected to be at `data/.notes/{id}.md`.
+    # The file is expected to be at `{board_data_dir}/.notes/{id}.md`.
     # It should contain YAML frontmatter for metadata (title, tags)
     # and the rest of the file is the note's content.
     #
     # Raises `IO::FileNotFoundError` if the file doesn't exist.
     # Raises `RuntimeError` if the file format is invalid or has invalid YAML.
-    def self.load(id : String)
-      file_path = File.join("data", ".notes", "#{id}.md")
+    def self.load(id : String, board_data_dir : String)
+      file_path = File.join(board_data_dir, ".notes", "#{id}.md")
       unless File.exists?(file_path)
         raise File::NotFoundError.new(file: file_path, message: "Note file not found for ID #{id} at #{file_path}")
       end
@@ -91,13 +94,16 @@ module ToCry
         raise "Invalid YAML frontmatter in #{file_path}: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded)
+      note = Note.new(frontmatter.title, board_data_dir, frontmatter.tags, note_content, frontmatter.expanded)
       note.id = id # Set the correct, persistent ID.
       note
     end
 
     def save
-      notes_dir = File.join("data", ".notes")
+      if @board_data_dir.nil?
+        raise "Board data directory is not set. Cannot save note without a board data directory."
+      end
+      notes_dir = File.join(@board_data_dir.as(String), ".notes")
       FileUtils.mkdir_p(notes_dir)
 
       file_path = File.join(notes_dir, "#{self.id}.md")
@@ -118,6 +124,10 @@ module ToCry
     # 2. Deleting the note's source markdown file from `data/.notes/`.
     # 3. Saving the board, which will remove any symlinks pointing to the deleted note.
     def delete
+      if @board_data_dir.nil?
+        raise "Board data directory is not set. Cannot delete note without a board data directory."
+      end
+
       note_id_str = self.id.to_s
 
       # 1. Find and remove the note from its lane in the in-memory board state.
@@ -131,7 +141,7 @@ module ToCry
       end
 
       # 2. Delete the note's source file.
-      note_file_path = File.join("data", ".notes", "#{note_id_str}.md")
+      note_file_path = File.join(@board_data_dir.as(String), ".notes", "#{note_id_str}.md")
       File.delete(note_file_path) if File.exists?(note_file_path)
 
       # 3. Save the board to persist the changes. This will remove the symlink.
