@@ -162,8 +162,8 @@ body {
 /* Override Pico's container for the header to reduce side margins */
 .page-header .container {
     max-width: none;
-    padding-right: 5vw;
-    padding-left: 5vw;
+    padding-right: 2vw; /* Reduced horizontal padding */
+    padding-left: 2vw;  /* Reduced horizontal padding */
 }
 
 /* Lanes container specific styling if needed, Pico's .grid handles columns */
@@ -649,6 +649,53 @@ body {
 .toastui-editor-defaultUI .toastui-editor-ww-container a,
 .toastui-editor-defaultUI .toastui-editor-ww-container code {
     color: var(--tocry-editor-text);
+}
+
+/* --- User Menu Dropdown --- */
+.user-menu-container {
+    position: relative; /* Anchor for the dropdown */
+    display: flex;
+    align-items: center;
+}
+
+#user-menu-btn {
+    background-color: var(--pico-primary);
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pico-primary-inverse);
+}
+
+#user-menu-btn:hover, #user-menu-btn:focus {
+    background-color: var(--pico-primary-hover);
+    outline: none;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: 100%; /* Position it right below the button */
+    right: 0;
+    background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+    box-shadow: var(--pico-card-box-shadow);
+    padding: var(--pico-spacing);
+    z-index: 1000;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pico-spacing);
+    white-space: nowrap;
+}
+
+.user-menu-dropdown #logout-btn {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0;
 }
 
 /* Custom Horizontal Scroll Buttons */

@@ -15,6 +15,10 @@ dependencies:
     github: kemalcr/kemal-basic-auth
   baked_file_handler:
     github: ralsina/baked_file_handler
+  multi_auth:
+    github: msa7/multi_auth
+  kemal-session:
+    github: kemalcr/kemal-session
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>

@@ -54,13 +54,52 @@ This project is built with the Crystal programming language.
 
 5. Open your browser and navigate to `http://localhost:3000`.
 
+### Authentication
+
+`tocry` supports three authentication modes, determined by environment variables set when the application starts. The modes are prioritized in the following order: Google OAuth, Basic Authentication, and then No Authentication.
+
+1. **Google OAuth (if you want multiple users)**
+   * **Description**: Users authenticate using their Google account. This mode provides a secure and user-friendly login experience.
+   * **How to Enable**: Set the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables.
+     * You'll need to create an OAuth 2.0 Client ID in the Google Cloud Console.
+     * Ensure your "Authorized redirect URI" is set to `http://localhost:3000/auth/google/callback` (adjust host/port if running on a different address).
+   * **Example**:
+
+     ```bash
+     export GOOGLE_CLIENT_ID="your_client_id"
+     export GOOGLE_CLIENT_SECRET="your_client_secret"
+     crystal run src/main.cr
+     ```
+
+2. **Basic Authentication (If you just want a password)**
+   * **Description**: A simple username/password prompt is presented by the browser. All users share the same credentials. This mode is suitable for private deployments where Google OAuth is not desired.
+   * **How to Enable**: Set the `TOCRY_AUTH_USER` and `TOCRY_AUTH_PASS` environment variables. This mode will be used if Google OAuth variables are not set.
+   * **Example**:
+
+     ```bash
+        export TOCRY_AUTH_USER="admin"
+        export TOCRY_AUTH_PASS="your_secure_password"
+        crystal run src/main.cr
+     ```
+
+3. **No Authentication (Default, if it's just for you and it's not exposed)**
+   * **Description**: No login is required. Anyone can access the application. This is the default mode if neither Google OAuth nor Basic Authentication environment variables are set.
+   * **How to Enable**: Do not set any of the authentication-related environment variables (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOCRY_AUTH_USER`, `TOCRY_AUTH_PASS`).
+   * **Example**:
+
+     ```bash
+     crystal run src/main.cr
+     ```
+
 ## Running with Docker
 
 As an alternative to building from source, you can run `tocry` using a Docker container.
+Remember to set environment variables for authentication as needed, using the `-e` flag
+in the `docker run` command.
 
 1. **Create a data directory:**
     Create a directory on your host machine to store `tocry`'s data. This is essential
-    to ensure your data persists if the container is removed or updated.
+   to ensure your data persists if the container is removed or updated.
 
     ```sh
     mkdir -p /path/to/your/data
@@ -68,7 +107,7 @@ As an alternative to building from source, you can run `tocry` using a Docker co
 
 2. **Run the container:**
     Run the container, making sure to replace `/path/to/your/data` with the absolute
-    path to the directory you just created.
+   path to the directory you just created.
 
     ```sh
     docker run -d --restart unless-stopped --name tocry -p 3000:3000 \
@@ -89,7 +128,7 @@ As an alternative to building from source, you can run `tocry` using a Docker co
 
 ### Using Docker Compose
 
-For an even simpler setup, you can use Docker Compose.
+For an even simpler setup, you can use Docker Compose. Remember to set environment variables for authentication as needed, using the `environment` section in the `docker-compose.yml` file.
 
 1. Create a `docker-compose.yml` file in your project directory with the following
    content (or use the one included in this repository):
@@ -110,14 +149,14 @@ For an even simpler setup, you can use Docker Compose.
           - ./data:/data
     ```
 
-3. Run the application from the same directory as your compose file:
+2. Run the application from the same directory as your compose file:
 
     ```sh
     docker compose up -d
     ```
 
-    This will automatically create a `data` directory in the current
-    folder to store persistent data.
+   This will automatically create a `data` directory in the current
+   folder to store persistent data.
 
 ## Usage
 
