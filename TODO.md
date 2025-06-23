@@ -9,8 +9,9 @@
 * Deadlines?
 * ✅ Multiboard
   * ✅ Need to implement data migrations
-* Multiuser?
+* ✅ Multiuser?
   * Create a socket to get notification of changes in the backend
+  * Implement board sharing
 * ✅ Paste notes
 * Attachments?
 * Test on mobile
