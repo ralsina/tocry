@@ -5,10 +5,7 @@ to be a straightforward tool for managing tasks across different stages or
 categories. The name comes from the eternal question every developer faces
 when looking at their task list: "Are you going ToDo or ToCry?"
 
-![image](https://github.com/user-attachments/assets/5e727159-4c65-4faf-9fac-5c94c539fb74)
-
-
-
+![image](https://github.com/user-attachments/assets/abaa6209-b457-4332-b039-c9dd240300f2)
 
 ## Features
 
