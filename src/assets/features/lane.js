@@ -245,6 +245,11 @@ export async function handleUpdateLaneNameRequest (laneToUpdate, newName) {
     // OPTIMISTIC UI UPDATE: Update the name in the local cache immediately.
     // Since render.js uses currentLanes, this will update the displayed name.
     laneToUpdate.name = trimmedNewName
+    // Also update the data-lane-name attribute on the DOM element for consistency
+    const laneElement = document.querySelector(`.lane[data-lane-name="${oldName}"]`)
+    if (laneElement) {
+      laneElement.dataset.laneName = trimmedNewName
+    }
 
     const response = await updateLane(
       state.currentBoardName,

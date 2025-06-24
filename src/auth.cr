@@ -39,7 +39,7 @@ def multi_auth(env)
   # Dynamically construct the full redirect URI (scheme + host + path)
   # This must match what you configured in your OAuth provider (e.g., Google Cloud Console).
   scheme = Kemal.config.scheme # Corrected: Use Kemal.config.scheme
-  host = env.request.host_with_port.as(String)
+  host = env.request.headers["Host"].as(String)
   callback_path = "/auth/#{provider}/callback"
   MultiAuth.make(provider, "#{scheme}://#{host}#{callback_path}")
 end

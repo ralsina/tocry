@@ -9,3 +9,4 @@ uploads/
 .crystal/
 integration-test/data
 integration-test/node_modules
+test-results/
