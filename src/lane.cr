@@ -9,6 +9,9 @@ module ToCry
     property name : String
     property notes : Array(Note)
 
+    @[JSON::Field(ignore: true)]
+    property board_data_dir : String = ""
+
     def initialize(@name : String, @board_data_dir : String, @notes : Array(Note) = [] of Note)
     end
 
