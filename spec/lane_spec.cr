@@ -4,8 +4,6 @@ require "file_utils"
 
 describe ToCry::Lane do
   describe "JSON Serialization" do
-    board_data_dir = File.join(TEST_PATH, "default")
-
     it "serializes and deserializes an empty lane" do
       original_lane = ToCry::Lane.new(name: "Test Lane Empty")
       json_string = original_lane.to_json

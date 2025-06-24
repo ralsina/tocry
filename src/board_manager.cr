@@ -88,8 +88,8 @@ module ToCry
       board = get(old_name)
       raise "Board '#{old_name}' not found for renaming." unless board
 
-      board.rename(new_name) # This updates the board_data_dir property and renames the directory
-      @boards.delete(old_name) # Remove old entry from cache
+      board.rename(new_name)    # This updates the board_data_dir property and renames the directory
+      @boards.delete(old_name)  # Remove old entry from cache
       @boards[new_name] = board # Add new entry to cache
       Log.info { "Board renamed from '#{old_name}' to '#{new_name}'." }
       board
