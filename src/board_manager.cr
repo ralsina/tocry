@@ -23,6 +23,11 @@ module ToCry
     def initialize
       # Ensure the base data directory exists when BoardManager is initialized.
       FileUtils.mkdir_p(ToCry.data_directory)
+      # Ensure the default board exists upon initialization.
+      unless get("default")
+        Log.info { "Default board not found, creating it." }
+        create("default")
+      end
     end
 
     # Lists all available boards by scanning the data directory for subdirectories.
