@@ -1,4 +1,5 @@
 const API_BASE_URL = ''; // Assuming API endpoints are relative to the root
+import { state } from "./features/state.js";
 
 export async function fetchBoards() {
     try {
@@ -61,7 +62,7 @@ export async function fetchLanes(boardName) {
 
 export async function addLane(boardName, laneName) {
     try {
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/lane`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -78,7 +79,7 @@ export async function addLane(boardName, laneName) {
 export async function deleteLane(boardName, laneName) {
     try {
         const encodedLaneName = encodeURIComponent(laneName);
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedLaneName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/lane/${encodedLaneName}`, {
             method: 'DELETE'
         });
         return response; // Return the full response object for the caller to handle
@@ -91,7 +92,7 @@ export async function deleteLane(boardName, laneName) {
 export async function updateLanePosition(boardName, laneName, newPosition) {
     try {
         const encodedLaneName = encodeURIComponent(laneName);
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedLaneName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/lane/${encodedLaneName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -109,7 +110,7 @@ export async function updateLanePosition(boardName, laneName, newPosition) {
 export async function updateLane(boardName, oldName, laneData, position) {
     try {
         const encodedOldName = encodeURIComponent(oldName);
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lane/${encodedOldName}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/lane/${encodedOldName}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -124,7 +125,7 @@ export async function updateLane(boardName, oldName, laneData, position) {
 }
 
 export async function addNote(boardName, laneName, title, content = "", tags = []) {
-    try {
+    try { // The boardName parameter is passed explicitly from the caller (e.g., note.js)
         const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note`, {
             method: 'POST',
             headers: {
@@ -144,7 +145,7 @@ export async function addNote(boardName, laneName, title, content = "", tags = [
 
 export async function updateNote(boardName, noteId, { note, lane_name, position }) {
     try {
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note/${noteId}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/note/${noteId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -160,7 +161,7 @@ export async function updateNote(boardName, noteId, { note, lane_name, position 
 
 export async function deleteNote(boardName, noteId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note/${noteId}`, {
+        const response = await fetch(`${API_BASE_URL}/boards/${state.currentBoardName}/note/${noteId}`, {
             method: 'DELETE'
         });
         return response; // Return the full response object for the caller to handle
