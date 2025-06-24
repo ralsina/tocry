@@ -1,25 +1,27 @@
-import { request } from '@playwright/test';
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'fs/promises'
+import path from 'path'
+import os from 'os'
 
-async function globalSetup() {
-  console.log('Global setup: Cleaning database...');
-  const requestContext = await request.newContext();
+async function globalSetup () {
+  console.log('Global setup: Preparing unique data directory...')
+  let uniqueDataDir
   try {
-    // Clear the database by removing the data directory
-    const dataDir = path.resolve(__dirname, '../data');
-    console.log(`Data directory: ${dataDir}`);
-    if (await fs.stat(dataDir).catch(() => null)) { // Check if directory exists
-      // await fs.rm(dataDir, { recursive: true, force: true });
-      console.log(`Removed data directory: ${dataDir}`);
-    }
+    // Create a unique temporary directory for this test run's data
+    // Using os.tmpdir() ensures it's in the system's temporary location
+    uniqueDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tocry-test-data-'))
+    console.log(`Using unique data directory: ${uniqueDataDir}`)
+
+    // Set an environment variable that playwright.config.js can read
+    // This is the mechanism to pass the dynamic path to the webServer command
+    process.env.PLAYWRIGHT_TEST_DATA_DIR = uniqueDataDir
+
+    // Return the path so globalTeardown can receive it as an argument
+    return uniqueDataDir
   } catch (error) {
-    console.error('Could not clean database during global setup:', error.message);
+    console.error('Failed to prepare unique data directory during global setup:', error.message)
     // Exit with a non-zero code to stop the test run if setup fails.
-    process.exit(1);
-  } finally {
-    await requestContext.dispose();
+    process.exit(1)
   }
 }
 
-export default globalSetup;
+export default globalSetup

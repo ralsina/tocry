@@ -40,6 +40,7 @@ def main
   # We parse the command line (`ARGV`) using the help we described above.
 
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
+  ARGV.clear # Clear ARGV to prevent further processing by Crystal
   data_path = args["--data-path"]?.as(String) || "data" # Default to "data"
 
   # Port and binding address are important
