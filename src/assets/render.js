@@ -247,11 +247,6 @@ export function renderLanes(lanes, callbacks, dragAndDropCallbacks) {
     }
     lanesContainer.innerHTML = ''; // Clear existing lanes
 
-    if (!lanes || lanes.length === 0) {
-        lanesContainer.innerHTML = '<p>No lanes to display. Click "+" to add a new lane.</p>';
-        return;
-    }
-
     lanes.forEach(lane => {
         const laneElement = createLaneElement(lane, callbacks, dragAndDropCallbacks);
         lanesContainer.appendChild(laneElement);
