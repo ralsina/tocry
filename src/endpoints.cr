@@ -10,7 +10,7 @@ class MissingBodyError < Exception; end
 # Helper function to retrieve the Board instance from the request context.
 private def get_board_from_context(env : HTTP::Server::Context) : ToCry::Board
   board_name = env.get("board_name").as(String)
-  board = ToCry::BOARD_MANAGER.get(board_name)
+  board = ToCry.board_manager.get(board_name)
 
   unless board
     # This path should not be reachable due to the before_all filter,
@@ -32,7 +32,7 @@ end
 before_all "/boards/:board_name/*" do |env|
   board_name = env.params.url["board_name"].as(String)
   # Use the BoardManager to check for existence. This also warms the cache.
-  board = ToCry::BOARD_MANAGER.get(board_name)
+  board = ToCry.board_manager.get(board_name)
 
   unless board
     env.response.status_code = 404
@@ -62,7 +62,7 @@ end
 # API Endpoint to get all boards
 get "/boards" do |env|
   env.response.content_type = "application/json"
-  ToCry::BOARD_MANAGER.list.to_json
+  ToCry.board_manager.list.to_json
 end
 
 # API Endpoint to create a new board
@@ -75,7 +75,7 @@ post "/boards" do |env|
   new_board_name = payload.name.strip
   raise MissingBodyError.new("Board name cannot be empty.") if new_board_name.empty?
 
-  ToCry::BOARD_MANAGER.create(new_board_name)
+  ToCry.board_manager.create(new_board_name)
 
   env.response.status_code = 201 # Created
   env.response.content_type = "application/json"
@@ -407,7 +407,7 @@ end
 # DELETE /boards/My%20Board
 delete "/boards/:board_name" do |env|
   board_name = env.params.url["board_name"].as(String)
-  ToCry::BOARD_MANAGER.delete(board_name)
+  ToCry.board_manager.delete(board_name)
   env.response.status_code = 200 # OK
   env.response.content_type = "application/json"
   {success: "Board '#{board_name}' deleted."}.to_json

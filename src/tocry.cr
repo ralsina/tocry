@@ -1,10 +1,13 @@
 require "file_utils" # For File.dirname, File.basename
 require "kemal"
 require "json"   # For JSON serialization
+require "ecr"    # For ECR templating
 require "./lane" # Include the Lane class from its new file
 require "./board_manager"
 
 module ToCry
+  VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
+
   Log = ::Log.for(self)
 
   # A class variable to store the configured data directory.
@@ -16,9 +19,16 @@ module ToCry
     @@data_directory
   end
 
-  # Singleton instance of BoardManager to manage board operations.
-  BOARD_MANAGER = BoardManager.new
-  BOARD         = Board.new
+  # Lazily initialized singleton instance of BoardManager to manage board operations.
+  # This ensures @@data_directory is set before BoardManager is used.
+  @@board_manager : BoardManager? = nil
+
+  def self.board_manager
+    @@board_manager ||= begin
+      Log.info { "Initializing BoardManager with data directory: #{@@data_directory}" }
+      BoardManager.new
+    end
+  end
 
   # Setter for the globally configured data directory.
   # This method should be called once at application startup.
@@ -26,14 +36,13 @@ module ToCry
     @@data_directory = path
   end
 
-  VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
-
   class Board
     include JSON::Serializable
 
     property board_data_dir : String
 
     def initialize(@lanes : Array(Lane) = [] of Lane, @board_data_dir : String = "data/default")
+      # board_data_dir must be provided by BoardManager
     end
 
     # Loads the board state from the file system.

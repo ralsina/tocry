@@ -310,7 +310,7 @@ function getBoardNameFromURL() {
   return null; // No board name in URL
 }
 
-let currentLanes = []; // Cache for the current state of lanes
+let currentLanes = []; // Cache for the current state of lanes (array of Lane objects)
 let currentBoardName = "default"; // Declare and initialize currentBoardName globally
 let previousBoardSelection = "default"; // To revert to if "New board" is cancelled
 // --- Board Selector ---
@@ -390,7 +390,7 @@ async function initializeBoardSelector() {
   }
 }
 
-async function initializeLanes(boardName) {
+async function initializeLanes(boardName = currentBoardName) { // Default to currentBoardName if no argument is provided
   const lanesContainer = document.getElementById("lanes-container");
   const addLaneButton = document.getElementById("add-lane-btn");
   currentBoardName = boardName; // Update the global currentBoardName
