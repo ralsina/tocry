@@ -42,6 +42,7 @@ def main
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
   ARGV.clear # Clear ARGV to prevent further processing by Crystal
   data_path = args["--data-path"]?.as(String) || "data" # Default to "data"
+  ToCry::Log.info { "Using data path: #{data_path}" }
 
   # Port and binding address are important
   port = args["--port"].as(String).to_i32

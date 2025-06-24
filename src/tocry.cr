@@ -42,7 +42,31 @@ module ToCry
     property board_data_dir : String
 
     def initialize(@lanes : Array(Lane) = [] of Lane, @board_data_dir : String = "data/default")
-      # board_data_dir must be provided by BoardManager
+    end
+
+    # Renames the board by updating its directory on the filesystem.
+    def rename(new_name : String)
+      # Validate new board name to prevent path traversal and hidden directories.
+      if new_name.includes?('/') || new_name.includes?('\\')
+        raise "Invalid board name. It cannot contain path separators."
+      end
+
+      if new_name.starts_with?('.')
+        raise "Invalid board name. It cannot start with a dot."
+      end
+
+      old_dir = @board_data_dir
+      new_dir = File.join(File.dirname(old_dir), new_name)
+      ToCry::BoardManager.validate_path_within_data_dir(new_dir)
+
+      # Check if a directory with the new name already exists
+      if File.exists?(new_dir)
+        raise "Board with name '#{new_name}' already exists."
+      end
+
+      FileUtils.mv(old_dir, new_dir)
+      @board_data_dir = new_dir # Update the instance variable after successful rename
+      Log.info { "Board directory renamed from '#{old_dir}' to '#{@board_data_dir}'." }
     end
 
     # Loads the board state from the file system.
@@ -123,7 +147,7 @@ module ToCry
     end
 
     def lane_add(name : String) : Lane
-      new_lane = Lane.new(name, @board_data_dir)
+      new_lane = Lane.new(name)
       self.lanes << new_lane
       Log.info { "Lane '#{name}' added to the board." }
       new_lane
@@ -164,6 +188,17 @@ module ToCry
     rescue ex
       Log.error(exception: ex) { "Error deleting lane with name '#{name}'" }
       raise ex # Re-raise the exception after logging
+    end
+  end
+
+  # Helper function to validate a string as a safe filename component.
+  # Rejects empty strings, '.', '..', strings containing path separators, or strings starting with '.'.
+  def self.validate_filename_component(name : String)
+    if name.empty?
+      raise "Name cannot be empty."
+    end
+    if name == "." || name == ".." || name.includes?('/') || name.includes?('\\') || name.starts_with?('.')
+      raise "Invalid name: It cannot be '.' or '..', contain path separators, or start with a dot."
     end
   end
 end

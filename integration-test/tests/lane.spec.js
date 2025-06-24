@@ -109,19 +109,18 @@ test.describe('Lane and Note Management', () => {
     const laneThree = page.locator('.lane[data-lane-name="Lane Three"]')
 
     // Verify initial order. Assuming new lanes are added to the beginning of the list,
-    // similar to how notes are handled in notes.spec.js.
-    // So, if added in order One, Two, Three, the display order will be Three, Two, One.
+    // new lanes are appended to the array, so the display order is the creation order.
     await expect(page.locator('.lane .lane-title')).toHaveText([
       'Lane One',
       'Lane Two',
       'Lane Three'
     ])
 
-    // Drag 'Lane One' (which is currently the last element) to 'Lane Three' (which is currently the first element).
-    // This should place 'Lane One' before 'Lane Three'.
+    // Drag 'Lane One' (currently at index 0) to 'Lane Three' (currently at index 2).
+    // This should move 'Lane One' to the end of the list.
     await laneOne.dragTo(laneThree)
 
-    // Verify the new order: Lane One, Lane Three, Lane Two
+    // Verify the new order: Lane Two, Lane Three, Lane One
     await expect(page.locator('.lane .lane-title')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
   })
 })

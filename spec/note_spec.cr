@@ -7,7 +7,7 @@ TEST_PATH = "test_data_note" # Use a unique path to avoid conflicts with other s
 describe ToCry::Note do
   describe "JSON Serialization" do
     it "serializes a note to JSON correctly" do
-      note = ToCry::Note.new("Test Title", TEST_PATH, ["tag1", "tag2"], "Test content.")
+      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.")
       # We need to know the ID to compare, so let's grab it
       known_id = note.id
       json_output = note.to_json
@@ -21,7 +21,7 @@ describe ToCry::Note do
     end
 
     it "serializes a note with empty tags and content correctly" do
-      note = ToCry::Note.new("Simple Title", TEST_PATH)
+      note = ToCry::Note.new("Simple Title")
       known_id = note.id
       json_output = note.to_json
 
@@ -102,13 +102,12 @@ describe ToCry::Note do
       # 1. Create a new note
       original_note = ToCry::Note.new(
         "Round Trip Test",
-        TEST_PATH,
         ["save", "load"],
         "This note will be saved and then loaded."
       )
 
       # 2. Save the note
-      original_note.save
+      original_note.save(TEST_PATH)
 
       # 3. Load the note back using its ID
       loaded_note = ToCry::Note.load(original_note.id.to_s, TEST_PATH)

@@ -9,14 +9,11 @@ module ToCry
     property name : String
     property notes : Array(Note)
 
-    @[JSON::Field(ignore: true)]
-    property board_data_dir : String = ""
-
-    def initialize(@name : String, @board_data_dir : String, @notes : Array(Note) = [] of Note)
+    def initialize(@name : String, @notes : Array(Note) = [] of Note)
     end
 
     def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0) : Note
-      new_note = Note.new(title: title, tags: tags, content: content, board_data_dir: @board_data_dir) # Pass board_data_dir
+      new_note = Note.new(title: title, tags: tags, content: content) # Pass board_data_dir
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
@@ -28,6 +25,13 @@ module ToCry
     end
 
     def save(position : Int, board_data_dir : String)
+      ToCry.validate_filename_component(self.name) # Validate lane name before saving
+
+      # First save all notes to ensure they are on disk
+      self.notes.each do |note|
+        note.save(board_data_dir)
+      end
+
       # Format position with leading zeros (e.g., 1 -> "0001")
       padded_position = position.to_s.rjust(4, '0')
       # Create the directory name using the position and lane name
@@ -49,7 +53,6 @@ module ToCry
       end
 
       self.notes.each_with_index do |note, index| # Changed to each_with_index to get the index
-        note.save                                 # This saves the note to data/.notes/note_id.md
 
         padded_index = index.to_s.rjust(4, '0')
         sanitized_title = note.slug # Note instance method for slug
@@ -90,6 +93,7 @@ module ToCry
       end
       lane_name = match[1]
 
+      ToCry.validate_filename_component(lane_name) # Validate loaded lane name
       # Find all markdown symlinks, sort them to maintain order
       symlink_paths = Dir.glob(File.join(folder, "*.md")).sort
 
@@ -106,7 +110,7 @@ module ToCry
         end
       end
 
-      Lane.new(name: lane_name, notes: notes, board_data_dir: board_data_dir)
+      Lane.new(name: lane_name, notes: notes)
     end
   end
 end

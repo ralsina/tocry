@@ -14,12 +14,10 @@ export default defineConfig({
   },
   webServer: {
     // Command to start the backend server in test mode.
-    // Pass the unique data directory generated in global-setup.js.
-    // Use a fallback to 'data' if the environment variable is not yet set (e.g., during config loading).
-    command: `../bin/tocry --data-path=${process.env.PLAYWRIGHT_TEST_DATA_DIR || 'data'}`,
+    command: '../bin/tocry --data-path=testdata',
     url: 'http://localhost:3000',
     timeout: 10 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
   },
-  globalSetup: require.resolve('./tests/global-setup.js') // globalTeardown is now part of globalSetup
+  globalSetup: undefined
 })

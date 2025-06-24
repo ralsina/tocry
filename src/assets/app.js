@@ -2,9 +2,9 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { colorSchemes, applyColorScheme, applyTheme, handleThemeSwitch } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
-import { getBoardNameFromURL, initializeBoardSelector } from './features/board.js'
+import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
 import { handleSearchInput } from './features/search.js' // This line was already correct
 import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
@@ -13,26 +13,9 @@ import { state } from './features/state.js' // Corrected import: directly import
 document.addEventListener('DOMContentLoaded', () => {
   // --- Theme & Color Scheme Setup ---
   const themeSwitcher = document.getElementById('theme-switcher')
-  const colorSchemeSwitcher = document.getElementById('color-scheme-switcher')
-
-  // Populate color scheme switcher
-  if (colorSchemeSwitcher) {
-    for (const schemeName in colorSchemes) {
-      const option = document.createElement('option')
-      option.value = schemeName
-      option.textContent = schemeName
-      colorSchemeSwitcher.appendChild(option)
-    }
-  }
 
   // Initialize auth status display
   initializeAuthStatus()
-
-  // Set initial color scheme from localStorage
-  const savedScheme = localStorage.getItem('colorScheme') || 'Default'
-  if (colorSchemeSwitcher) {
-    colorSchemeSwitcher.value = savedScheme
-  }
 
   // Set initial theme from localStorage (this will also trigger the initial color scheme application via applyTheme)
   const savedTheme =
@@ -46,6 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (themeSwitcher) {
     themeSwitcher.addEventListener('click', handleThemeSwitch)
   }
+
+  // Set up the board selector event listener once.
+  setupBoardSelectorListener();
 
   // Wrap the main app initialization in an async function to handle dependencies correctly.
   (async () => {
@@ -73,14 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search')
   if (searchInput) {
     searchInput.addEventListener('input', handleSearchInput)
-  }
-
-  if (colorSchemeSwitcher) {
-    colorSchemeSwitcher.addEventListener('change', (event) => {
-      const newScheme = event.target.value
-      localStorage.setItem('colorScheme', newScheme)
-      applyColorScheme(newScheme)
-    })
   }
 
   // Wire up keyboard shortcuts for scrolling

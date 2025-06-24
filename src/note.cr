@@ -29,9 +29,13 @@ module ToCry
 
     property id : String?
 
-    def id
-      @id = UUID.random.to_s if @id.nil?
-      @id
+    def id : String
+      if !@id
+        # Generate a new UUID if @id is not set
+        # UUID.random returns a UUID object, we convert it to string
+        @id = UUID.random.to_s
+      end
+      @id.as(String)
     end
 
     def title=(value : String)
@@ -43,13 +47,11 @@ module ToCry
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
     property expanded : Bool = false
-    @[JSON::Field(ignore: true)]
-    property board_data_dir : String? = nil
 
-    # Initialize a new Note with a generated UUID
+    # Initialize a new Note with a generated UUID.
+    # board_data_dir is not part of the JSON payload, it's set by the backend context.
     def initialize(
       title : String,
-      @board_data_dir : String? = nil,
       tags : Array(String) = [] of String,
       content : String = "",
       expanded : Bool = false,
@@ -94,16 +96,13 @@ module ToCry
         raise "Invalid YAML frontmatter in #{file_path}: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, board_data_dir, frontmatter.tags, note_content, frontmatter.expanded)
-      note.id = id # Set the correct, persistent ID.
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded)
+      note.id = id                         # Set the correct, persistent ID.
       note
     end
 
-    def save
-      if @board_data_dir.nil?
-        raise "Board data directory is not set. Cannot save note without a board data directory."
-      end
-      notes_dir = File.join(@board_data_dir.as(String), ".notes")
+    def save(board_data_dir : String)
+      notes_dir = File.join(board_data_dir.as(String), ".notes")
       FileUtils.mkdir_p(notes_dir)
 
       file_path = File.join(notes_dir, "#{self.id}.md")
@@ -124,11 +123,8 @@ module ToCry
     # 2. Deleting the note's source markdown file from `data/.notes/`.
     # 3. Saving the board, which will remove any symlinks pointing to the deleted note.
     def delete(board : ToCry::Board)
-      if @board_data_dir.nil?
-        raise "Board data directory is not set. Cannot delete note without a board data directory."
-      end
 
-      note_id_str = self.id.to_s
+      note_id_str = self.id
 
       # 1. Find and remove the note from its lane in the provided board's state.
       find_result = board.note(note_id_str)
@@ -141,7 +137,7 @@ module ToCry
       end
 
       # 2. Delete the note's source file.
-      note_file_path = File.join(@board_data_dir.as(String), ".notes", "#{note_id_str}.md")
+      note_file_path = File.join(board.board_data_dir, ".notes", "#{note_id_str}.md")
       File.delete(note_file_path) if File.exists?(note_file_path)
 
       # 3. Save the board to persist the changes. This will remove the symlink.

@@ -20,6 +20,20 @@ private def get_board_from_context(env : HTTP::Server::Context) : ToCry::Board
   board
 end
 
+# Helper function to validate a string as a safe path component.
+# Rejects empty strings, '.', '..', strings containing path separators, or strings starting with '.'.
+private def validate_path_component(name : String)
+  if name.empty?
+    raise MissingBodyError.new("Name cannot be empty.")
+  end
+  if name == "." || name == ".."
+    raise MissingBodyError.new("Invalid name: '.' and '..' are not allowed.")
+  end
+  if name.includes?('/') || name.includes?('\\') || name.starts_with?('.')
+    raise MissingBodyError.new("Invalid name: It cannot contain path separators or start with a dot.")
+  end
+end
+
 # Helper function to safely get the JSON request body.
 # If the body is missing, it raises a MissingBodyError.
 private def get_json_body(env : HTTP::Server::Context) : String
@@ -73,7 +87,8 @@ post "/boards" do |env|
   payload = NewBoardPayload.from_json(json_body)
 
   new_board_name = payload.name.strip
-  raise MissingBodyError.new("Board name cannot be empty.") if new_board_name.empty?
+  # Validate the new board name for safety
+  validate_path_component(new_board_name)
 
   ToCry.board_manager.create(new_board_name)
 
@@ -100,6 +115,12 @@ struct UpdateLanePayload
   include JSON::Serializable
   property lane : ToCry::Lane # The updated lane data (including potentially new name)
   property position : UInt64  # The desired 0-based index in the board's lanes array
+end
+
+# Helper struct for parsing the PUT /boards/:board_name request payload for renaming
+struct RenameBoardPayload
+  include JSON::Serializable
+  property new_name : String
 end
 
 # Helper struct for parsing the POST /boards request payload
@@ -133,6 +154,7 @@ post "/boards/:board_name/lane" do |env|
     payload = NewLanePayload.from_json(json_body)
 
     requested_name = payload.name
+    validate_path_component(requested_name) # Validate the requested lane name
     final_name = requested_name
     counter = 1
 
@@ -172,6 +194,7 @@ put "/boards/:board_name/lane/:name" do |env|
     new_lane_data = payload.lane
     new_position = payload.position
 
+    validate_path_component(new_lane_data.name) # Validate the new lane name for safety
     # Find the existing lane by its current name
     existing_lane = board.lane(current_lane_name)
 
@@ -196,6 +219,32 @@ put "/boards/:board_name/lane/:name" do |env|
     env.response.content_type = "application/json"
     existing_lane.to_json # Return the updated lane data
 end
+end
+
+# API Endpoint to rename a board
+# Expects the current board name in the URL path, e.g.:
+# PUT /boards/Old%20Board%20Name
+# Expects a JSON body like:
+# { "new_name": "New Board Name" }
+put "/boards/:board_name" do |env|
+  begin
+    old_board_name = env.params.url["board_name"].as(String)
+    json_body = get_json_body(env)
+    payload = RenameBoardPayload.from_json(json_body)
+    new_board_name = payload.new_name.strip
+
+    raise MissingBodyError.new("New board name cannot be empty.") if new_board_name.empty?
+    validate_path_component(new_board_name) # Validate the new board name for safety
+
+    ToCry.board_manager.rename(old_board_name, new_board_name)
+
+    env.response.status_code = 200 # OK
+    env.response.content_type = "application/json"
+    {success: "Board '#{old_board_name}' renamed to '#{new_board_name}'."}.to_json
+  rescue ex
+    ToCry::Log.error(exception: ex) { "Error renaming board '#{old_board_name}' to '#{new_board_name}'" }
+    raise ex
+  end
 end
 
 # API Endpoint to add a new note to a lane
@@ -321,7 +370,7 @@ put "/boards/:board_name/note/:id" do |env|
       existing_note.tags = new_note_data.tags
       existing_note.content = new_note_data.content
       existing_note.expanded = new_note_data.expanded
-      existing_note.save
+      existing_note.save(board.board_data_dir) # Save the note to persist changes
       ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.board_data_dir}'." }
     end
 

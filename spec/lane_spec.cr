@@ -7,7 +7,7 @@ describe ToCry::Lane do
     board_data_dir = File.join(TEST_PATH, "default")
 
     it "serializes and deserializes an empty lane" do
-      original_lane = ToCry::Lane.new(name: "Test Lane Empty", board_data_dir: board_data_dir)
+      original_lane = ToCry::Lane.new(name: "Test Lane Empty")
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
 
@@ -16,8 +16,8 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with one note" do
-      note1 = ToCry::Note.new(title: "Note 1", board_data_dir: board_data_dir, tags: ["tagA"], content: "Content for Note 1")
-      original_lane = ToCry::Lane.new(name: "Lane With One Note", board_data_dir: board_data_dir, notes: [note1])
+      note1 = ToCry::Note.new(title: "Note 1", tags: ["tagA"], content: "Content for Note 1")
+      original_lane = ToCry::Lane.new(name: "Lane With One Note", notes: [note1])
 
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
@@ -35,9 +35,9 @@ describe ToCry::Lane do
     end
 
     it "serializes and deserializes a lane with multiple notes" do
-      note1 = ToCry::Note.new(title: "Alpha Note", board_data_dir: board_data_dir, tags: ["test", "alpha"], content: "Alpha content")
-      note2 = ToCry::Note.new(title: "Beta Note", board_data_dir: board_data_dir, tags: ["test", "beta"], content: "Beta content")
-      original_lane = ToCry::Lane.new(name: "Lane With Many Notes", board_data_dir: board_data_dir, notes: [note1, note2])
+      note1 = ToCry::Note.new(title: "Alpha Note", tags: ["test", "alpha"], content: "Alpha content")
+      note2 = ToCry::Note.new(title: "Beta Note", tags: ["test", "beta"], content: "Beta content")
+      original_lane = ToCry::Lane.new(name: "Lane With Many Notes", notes: [note1, note2])
 
       json_string = original_lane.to_json
       deserialized_lane = ToCry::Lane.from_json(json_string)
@@ -59,8 +59,8 @@ describe ToCry::Lane do
     end
 
     it "produces JSON with expected structure for a lane with one note" do
-      note1 = ToCry::Note.new(title: "Structure Test Note", board_data_dir: board_data_dir, tags: ["struct"], content: "Structure content")
-      original_lane = ToCry::Lane.new(name: "JSON Structure Lane", board_data_dir: board_data_dir, notes: [note1])
+      note1 = ToCry::Note.new(title: "Structure Test Note", tags: ["struct"], content: "Structure content")
+      original_lane = ToCry::Lane.new(name: "JSON Structure Lane", notes: [note1])
       parsed_json = JSON.parse(original_lane.to_json)
 
       parsed_json["name"].as_s.should eq("JSON Structure Lane")
@@ -87,9 +87,11 @@ describe ToCry::Lane do
 
     it "saves a lane and can be loaded back (round-trip)" do
       # 1. Create an original lane and add some notes to it
-      original_lane = ToCry::Lane.new("To Do", board_data_dir)
+      original_lane = ToCry::Lane.new("To Do")
       note1 = original_lane.note_add("First Task", ["urgent", "testing"], "Content for the first task.")
+      note1.save(TEST_PATH)
       note2 = original_lane.note_add("Second Task", ["testing"], "Content for the second task.")
+      note2.save(TEST_PATH)
 
       # 2. Save the lane to the filesystem at position 0
       original_lane.save(0, board_data_dir)
