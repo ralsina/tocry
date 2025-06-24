@@ -5,7 +5,7 @@ module ToCry
   # multiple Board instances. It interacts with the filesystem to handle
   # the multi-board data structure, using the globally configured data directory.
   class BoardManager
-    Log      = ::Log.for(self)
+    Log = ::Log.for(self)
     @boards = {} of String => Board
 
     def initialize
