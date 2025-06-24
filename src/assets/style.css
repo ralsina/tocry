@@ -201,6 +201,36 @@ body {
     overflow: hidden; /* Ensure children respect the border-radius */
 }
 
+/* Onboarding message for empty boards */
+.empty-board-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+}
+
+.empty-board-message article {
+    max-width: 50ch;
+}
+
+/* Onboarding message for empty lanes */
+.empty-lane-message {
+    padding: var(--pico-spacing);
+    text-align: center;
+}
+
+.empty-lane-message article {
+    /* Pico's article provides a nice container already */
+    padding: var(--pico-spacing);
+    background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+}
+
+.empty-lane-message h4 {
+    margin-bottom: var(--pico-spacing);
+}
 /* Responsive Lane Widths */
 /* For screens up to 600px wide, make lanes full width */
 @media (max-width: 600px) {
@@ -324,6 +354,34 @@ body {
     outline: none;
 }
 
+.add-note-btn.pulse-animation {
+    animation: pulse 2s infinite;
+    background-color: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    border-radius: var(--pico-border-radius);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(var(--pico-primary-rgb), 0.7);
+    }
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px 20px rgba(var(--pico-primary-rgb), 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(var(--pico-primary-rgb), 0);
+    }
+}
+
+#add-lane-btn.pulse-animation {
+    animation: pulse 2s infinite;
+    background-color: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    border-radius: var(--pico-border-radius);
+}
 /* --- Custom Collapsible Note --- */
 
 /* 1. Set up the container as a grid for smooth animation.

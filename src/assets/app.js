@@ -293,12 +293,15 @@ async function initializeBoardSelector() {
                 await handleAddBoardButtonClick();
                 // After attempting to add, revert the selector to the previous valid board
                 boardSelector.value = previousBoardSelection;
+                // The handleAddBoardButtonClick already updates the URL if successful.
+                // If it failed or was cancelled, the URL should remain previousBoardSelection.
+                // So, no need to update URL here for __NEW_BOARD__.
             } else {
                 previousBoardSelection = selectedValue; // Update previous selection
                 initializeLanes(selectedValue); // Load lanes for the selected board
+                // Update the URL to reflect the selected board
+                history.pushState({ board: selectedValue }, '', `/b/${selectedValue}`);
             }
-            // Update the URL to reflect the selected board
-            history.pushState({ board: selectedValue }, '', `/b/${selectedValue}`);
         });
     } catch (error) {
         console.error('Error initializing board selector:', error);
@@ -316,22 +319,65 @@ async function initializeLanes(boardName) {
         if (!nameFromURL) history.replaceState({ board: boardName }, '', `/b/${boardName}`);
     }
     const lanesContainer = document.getElementById('lanes-container');
+    const addLaneButton = document.getElementById('add-lane-btn');
     currentBoardName = boardName; // Update the global currentBoardName
     try {
         const lanes = await fetchLanes(currentBoardName);
         currentLanes = lanes; // Update the cache
-        const callbacks = {
-            onDeleteLane: handleDeleteLaneRequest,
-            onAddNote: handleAddNoteRequest,
-            onDeleteNote: handleDeleteNoteRequest,
-            onEditNote: handleEditNoteRequest,
-            onUpdateLaneName: handleUpdateLaneNameRequest,
-            onUpdateNoteTitle: handleUpdateNoteTitleRequest,
-            onPasteAsNote: handlePasteAsNoteRequest,
-            onPasteAsImageNote: handlePasteAsImageNoteRequest,
-            onToggleNote: handleToggleNoteRequest
-        };
-        renderLanes(lanes, callbacks, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+
+        // --- Animation Cleanup ---
+        // Always remove animations first to reset state on re-render.
+        if (addLaneButton) addLaneButton.classList.remove('pulse-animation');
+        document.querySelectorAll('.add-note-btn.pulse-animation').forEach(btn => {
+            btn.classList.remove('pulse-animation');
+        });
+
+        if (lanes.length === 0) {
+            // Board is empty, show onboarding message and animate button
+            lanesContainer.innerHTML = `
+                <div class="empty-board-message">
+                    <article>
+                        <header><h2>Welcome to your new board!</h2></header>
+                        <p>This board is currently empty. Get started by adding your first lane.</p>
+                        <p>Click the pulsing <strong>+</strong> button in the header to create a lane and begin organizing your notes.</p>
+                    </article>
+                </div>
+            `;
+            if (addLaneButton) {
+                addLaneButton.classList.add('pulse-animation');
+            }
+        } else {
+            // Board has at least one lane, so render them all.
+            const callbacks = {
+                onDeleteLane: handleDeleteLaneRequest, onAddNote: handleAddNoteRequest, onDeleteNote: handleDeleteNoteRequest, onEditNote: handleEditNoteRequest, onUpdateLaneName: handleUpdateLaneNameRequest, onUpdateNoteTitle: handleUpdateNoteTitleRequest, onPasteAsNote: handlePasteAsNoteRequest, onPasteAsImageNote: handlePasteAsImageNoteRequest, onToggleNote: handleToggleNoteRequest
+            };
+            renderLanes(lanes, callbacks, { lane: laneDragAndDropCallbacks, note: noteDragAndDropCallbacks });
+
+            // Onboarding for the first empty lane
+            if (lanes.length === 1 && lanes[0].notes.length === 0) {
+                const firstLaneElement = lanesContainer.querySelector('.lane');
+                if (firstLaneElement) {
+                    const addNoteButton = firstLaneElement.querySelector('.add-note-btn');
+                    const notesList = firstLaneElement.querySelector('.notes-list');
+
+                    if (addNoteButton) {
+                        addNoteButton.classList.add('pulse-animation');
+                    }
+                    if (notesList) {
+                        // Replace the default "No notes" message with the onboarding one.
+                        notesList.innerHTML = `
+                            <div class="empty-lane-message">
+                                <article>
+                                    <header><h4>Great! Your first lane is ready.</h4></header>
+                                    <p>Now you can add your first task by clicking the pulsing <strong>+</strong> button in this lane's header.</p>
+                                    <p>You can also add more lanes using the button in the main header.</p>
+                                </article>
+                            </div>
+                        `;
+                    }
+                }
+            }
+        }
         // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
         setTimeout(updateScrollButtonsVisibility, 100);
     } catch (error) {
