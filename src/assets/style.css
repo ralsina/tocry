@@ -383,6 +383,13 @@ body {
     border-radius: var(--pico-border-radius);
 }
 
+/* --- Test Mode Overrides --- */
+/* Disable animations for elements with .pulse-animation when in test mode */
+html[data-test-mode] .pulse-animation {
+    animation: none !important; /* Override any animation */
+    transform: none !important; /* Reset any transforms applied by the animation */
+}
+
 .note-card.pulse-animation-once {
     /* Use the existing pulse animation, but run it only once to draw attention */
     animation: pulse 2s ease-in-out 1;

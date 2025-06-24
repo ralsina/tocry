@@ -78,7 +78,7 @@ export async function initializeBoardSelector () {
         // If it failed or was cancelled, the URL should remain previousBoardSelection.
         // So, no need to update URL here for __NEW_BOARD__.
       } else {
-        state.previousBoardSelection = selectedValue // Update previous selection
+        state.setPreviousBoardSelection(selectedValue) // Update previous selection
         initializeLanes(selectedValue) // Load lanes for the selected board
         // Update the URL to reflect the selected board
         history.pushState({ board: selectedValue }, '', `/b/${selectedValue}`)

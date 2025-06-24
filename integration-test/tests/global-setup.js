@@ -15,8 +15,16 @@ async function globalSetup () {
     // This is the mechanism to pass the dynamic path to the webServer command
     process.env.PLAYWRIGHT_TEST_DATA_DIR = uniqueDataDir
 
-    // Return the path so globalTeardown can receive it as an argument
-    return uniqueDataDir
+    console.log(`Global setup: Unique data directory set to: ${uniqueDataDir}`)
+
+    // Return an async function that Playwright will call during global teardown.
+    // This function will receive no arguments, but it will have access to uniqueDataDir
+    // via closure.
+    return async () => {
+      console.log(`Global teardown: Cleaning up data directory: ${uniqueDataDir}`)
+      await fs.rm(uniqueDataDir, { recursive: true, force: true })
+      console.log(`Successfully removed data directory: ${uniqueDataDir}`)
+    }
   } catch (error) {
     console.error('Failed to prepare unique data directory during global setup:', error.message)
     // Exit with a non-zero code to stop the test run if setup fails.
@@ -24,4 +32,4 @@ async function globalSetup () {
   }
 }
 
-export default globalSetup
+module.exports = globalSetup

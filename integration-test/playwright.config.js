@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 30 * 1000,
+  timeout: 3 * 1000,
   expect: {
     timeout: 5000
   },
@@ -21,6 +21,5 @@ export default defineConfig({
     timeout: 10 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
   },
-  globalSetup: require.resolve('./tests/global-setup.js'),
-  globalTeardown: require.resolve('./global-teardown.js')
+  globalSetup: require.resolve('./tests/global-setup.js') // globalTeardown is now part of globalSetup
 })
