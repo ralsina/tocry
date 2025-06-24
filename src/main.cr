@@ -68,11 +68,6 @@ def main
   # Run any pending data migrations before loading the board.
   ToCry::Migration.run
 
-  # Set the data directory for the default board instance before loading it.
-  ToCry::BOARD.board_data_dir = File.join(data_path, "default")
-  # Load the board state from the file system on startup
-  ToCry::BOARD.load
-
   # Determine authentication mode based on environment variables
   use_google_auth = ENV["GOOGLE_CLIENT_ID"]? && ENV["GOOGLE_CLIENT_SECRET"]?
   use_basic_auth = ENV["TOCRY_AUTH_USER"]? && ENV["TOCRY_AUTH_PASS"]?
