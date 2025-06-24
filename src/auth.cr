@@ -21,7 +21,6 @@ LOGIN_REQUIRED_PAGE_HTML = <<-HTML
 </html>
 HTML
 
-
 # --- Helpers ---
 
 # Gets the currently logged-in user from the session, if any.
