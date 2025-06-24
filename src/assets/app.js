@@ -2,7 +2,7 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { applyTheme, handleThemeSwitch } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
 import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize auth status display
   initializeAuthStatus()
+
+  // Populate the color scheme selector and set up its listener
+  initializeColorSchemeSelector()
 
   // Set initial theme from localStorage (this will also trigger the initial color scheme application via applyTheme)
   const savedTheme =
