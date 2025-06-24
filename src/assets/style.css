@@ -107,15 +107,17 @@ body {
     color: var(--pico-color); /* Ensure text color respects theme */
     opacity: 0; /* Hide by default */
     pointer-events: none; /* Disable interaction when hidden */
-    width: 0; /* Collapse width when hidden */
-    transition: opacity 0.3s ease-in-out, width 0.3s ease-in-out, padding-right 0.3s ease-in-out; /* Smooth transition */
+    max-width: 0; /* Collapse width when hidden */
+    overflow: hidden; /* Required for max-width transition */
+    transition: opacity 0.3s ease-in-out, max-width 0.3s ease-in-out, padding-left 0.3s ease-in-out, padding-right 0.3s ease-in-out;
 }
 
 .theme-and-color-switcher.is-open #color-scheme-switcher {
     opacity: 1; /* Show when open */
     pointer-events: auto; /* Enable interaction when open */
-    width: auto; /* Expand to natural width */
     flex-grow: 1; /* Allow select to take available space when visible */
+    max-width: 250px; /* Expand to a reasonable max-width */
+    padding-left: var(--pico-spacing); /* Restore left padding */
     padding-right: 2.5rem; /* Restore padding when open */
 }
 
@@ -492,7 +494,16 @@ html[data-test-mode] .pulse-animation {
     cursor: default;    /* Prevent pointer cursor on the invisible button */
 }
 
-.delete-note-btn {
+/* Container for note action buttons */
+.note-actions {
+    display: flex;
+    gap: 4px; /* Make buttons tighter */
+    margin-left: auto; /* Push buttons to the right */
+    margin-right: -8px; /* Pull buttons closer to the right edge, counteracting some of the parent's padding */
+}
+
+.delete-note-btn,
+.edit-note-btn {
     background: none;
     border: none;
     color: var(--pico-muted-color, #6c757d);
@@ -500,14 +511,26 @@ html[data-test-mode] .pulse-animation {
     line-height: 1;
     flex-shrink: 0; /* Prevent the button from shrinking */
     /* Use flexbox to perfectly center the SVG icon */
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
 }
 
 .delete-note-btn:hover,
 .delete-note-btn:focus {
     color: var(--tocry-danger-hover-color);
+    opacity: 1;
+    outline: none;
+}
+
+.edit-note-btn:hover,
+.edit-note-btn:focus {
+    color: var(--pico-primary-hover);
+    opacity: 1;
     outline: none;
 }
 

@@ -1,3 +1,4 @@
+/* global localStorage */
 import { test, expect } from '@playwright/test'
 
 // Helper to generate a unique board name for each test
@@ -44,5 +45,36 @@ test.describe('Board Management', () => {
 
     await expect(promptDialog).not.toBeVisible()
     await expect(page.locator('#board-selector')).toHaveValue(newBoardName)
+  })
+})
+
+test.describe('Theme and Color Scheme', () => {
+  test('should allow changing the color scheme and persist the choice', async ({ page }) => {
+    const themeContainer = page.locator('.theme-and-color-switcher')
+    const colorSwatch = page.locator('#current-color-swatch')
+    const colorSelector = page.locator('#color-scheme-switcher')
+
+    // 1. Assert selector is initially hidden by checking for the absence of 'is-open' class
+    await expect(themeContainer).not.toHaveClass(/is-open/)
+
+    // 2. Click the color swatch to reveal the selector
+    await colorSwatch.click()
+    await expect(themeContainer).toHaveClass(/is-open/)
+
+    // 3. Change the color scheme to 'Green'
+    await colorSelector.selectOption('Green')
+
+    // 4. Assert that the color swatch and localStorage have updated
+    // The color value is derived from `theme.js` for the 'Green' scheme's light theme
+    await expect(colorSwatch).toHaveCSS('background-color', 'rgb(56, 142, 60)')
+    const storedScheme = await page.evaluate(() => localStorage.getItem('colorScheme'))
+    expect(storedScheme).toBe('Green')
+
+    // 5. Reload the page to test for persistence
+    await page.reload()
+
+    // 6. Assert that the 'Green' scheme is still applied after the reload
+    await expect(colorSwatch).toHaveCSS('background-color', 'rgb(56, 142, 60)')
+    await expect(colorSelector).toHaveValue('Green')
   })
 })

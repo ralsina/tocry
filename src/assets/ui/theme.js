@@ -193,3 +193,33 @@ export function handleThemeSwitch () {
   localStorage.setItem('theme', newTheme)
   applyTheme(newTheme)
 }
+
+/**
+ * Populates the color scheme selector dropdown, sets its initial value from
+ * localStorage, and adds an event listener to handle changes.
+ */
+export function initializeColorSchemeSelector () {
+  const colorSchemeSwitcher = document.getElementById('color-scheme-switcher')
+  if (!colorSchemeSwitcher) return
+
+  // Populate with schemes from the colorSchemes object
+  Object.keys(colorSchemes).forEach(schemeName => {
+    const option = document.createElement('option')
+    option.value = schemeName
+    option.textContent = schemeName
+    colorSchemeSwitcher.appendChild(option)
+  })
+
+  // Set initial value from localStorage or default
+  const savedScheme = localStorage.getItem('colorScheme') || 'Default'
+  if (Object.keys(colorSchemes).includes(savedScheme)) {
+    colorSchemeSwitcher.value = savedScheme
+  }
+
+  // Add event listener to handle changes
+  colorSchemeSwitcher.addEventListener('change', (e) => {
+    const newScheme = e.target.value
+    localStorage.setItem('colorScheme', newScheme)
+    applyColorScheme(newScheme)
+  })
+}

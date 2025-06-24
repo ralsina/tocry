@@ -62,6 +62,17 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     if (callbacks.onDeleteNote) callbacks.onDeleteNote(note.id, note.title)
   })
 
+  const editNoteButton = document.createElement('button')
+  editNoteButton.className = 'edit-note-btn'
+  // Using a pencil icon for "edit"
+  editNoteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>'
+  editNoteButton.setAttribute('aria-label', `Edit note ${note.title}`)
+  editNoteButton.addEventListener('click', (e) => {
+    e.stopPropagation()
+    // Re-use the same callback as double-click for consistency
+    if (callbacks.onEditNote) callbacks.onEditNote(note)
+  })
+
   const noteTitle = document.createElement('h4')
   noteTitle.textContent = note.title
   noteTitle.setAttribute('title', note.title) // Add title attribute for tooltip
@@ -105,10 +116,15 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     }
   })
 
+  const noteActions = document.createElement('div')
+  noteActions.className = 'note-actions'
+  noteActions.appendChild(editNoteButton)
+  noteActions.appendChild(deleteNoteButton)
+
   summaryDiv.appendChild(toggleButton)
   summaryDiv.appendChild(noteTitle)
   if (tagsContainer) summaryDiv.appendChild(tagsContainer)
-  summaryDiv.appendChild(deleteNoteButton)
+  summaryDiv.appendChild(noteActions)
 
   collapsibleContainer.appendChild(summaryDiv)
 
