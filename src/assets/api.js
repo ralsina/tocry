@@ -37,6 +37,36 @@ export async function createBoard (boardName) {
   }
 }
 
+export async function renameBoard (oldBoardName, newBoardName) {
+  try {
+    const encodedOldBoardName = encodeURIComponent(oldBoardName)
+    const response = await fetch(`${API_BASE_URL}/boards/${encodedOldBoardName}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ new_name: newBoardName })
+    })
+    return response
+  } catch (error) {
+    console.error(`Error renaming board "${oldBoardName}" to "${newBoardName}":`, error)
+    throw error
+  }
+}
+
+export async function deleteBoard (boardName) {
+  try {
+    const encodedBoardName = encodeURIComponent(boardName)
+    const response = await fetch(`${API_BASE_URL}/boards/${encodedBoardName}`, {
+      method: 'DELETE'
+    })
+    return response
+  } catch (error) {
+    console.error(`Error deleting board "${boardName}":`, error)
+    throw error
+  }
+}
+
 export async function fetchLanes (boardName) {
   try {
     const response = await fetch(`${API_BASE_URL}/boards/${boardName}/lanes`)

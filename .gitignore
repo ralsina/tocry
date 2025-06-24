@@ -10,4 +10,5 @@ uploads/
 integration-test/data
 integration-test/node_modules
 integration-test/test-results/
+integration-test/testdata/
 .last-run.json

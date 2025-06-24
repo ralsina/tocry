@@ -1,6 +1,6 @@
 /* global history */
-import { fetchBoards, createBoard } from '../api.js'
-import { showPrompt, showNotification } from '../ui/dialogs.js'
+import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js'
+import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
 
@@ -14,6 +14,28 @@ export function getBoardNameFromURL () {
   return null // No board name in URL
 }
 
+const setupBoardSelectorListener = () => {
+  const boardSelector = document.getElementById('board-selector')
+  if (!boardSelector) return
+
+  boardSelector.addEventListener('change', async (event) => {
+    const selectedValue = event.target.value
+    if (selectedValue === '__NEW_BOARD__') {
+      await handleAddBoardButtonClick(boardSelector)
+    } else if (selectedValue === '__RENAME_BOARD__') {
+      await handleRenameBoardButtonClick(boardSelector)
+    } else if (selectedValue === '__DELETE_BOARD__') {
+      await handleDeleteBoardButtonClick(boardSelector)
+    } else if (selectedValue) { // A regular board was selected, and it's not the separator
+      await selectBoard(selectedValue)
+    } else {
+      // This handles selecting the separator. Revert to the previous valid selection.
+      boardSelector.value = state.previousBoardSelection
+    }
+  })
+}
+export { setupBoardSelectorListener }
+
 // --- Board Selector ---
 export async function initializeBoardSelector () {
   const boardSelector = document.getElementById('board-selector')
@@ -22,6 +44,31 @@ export async function initializeBoardSelector () {
   try {
     const boards = await fetchBoards()
     boardSelector.innerHTML = '' // Clear existing options
+
+    // Add the "New board..." option first
+    const newBoardOption = document.createElement('option')
+    newBoardOption.value = '__NEW_BOARD__'
+    newBoardOption.textContent = 'New board...'
+    boardSelector.appendChild(newBoardOption)
+
+    // Add "Rename current board..." option
+    const renameBoardOption = document.createElement('option')
+    renameBoardOption.value = '__RENAME_BOARD__'
+    renameBoardOption.textContent = 'Rename current board...'
+    boardSelector.appendChild(renameBoardOption)
+
+    // Add "Delete current board..." option
+    const deleteBoardOption = document.createElement('option')
+    deleteBoardOption.value = '__DELETE_BOARD__'
+    deleteBoardOption.textContent = 'Delete current board...'
+    boardSelector.appendChild(deleteBoardOption)
+
+    // Add a separator
+    const separatorOption = document.createElement('option')
+    separatorOption.value = '' // No value
+    separatorOption.textContent = '---' // Visual separator
+    separatorOption.disabled = true // Make it unselectable
+    boardSelector.appendChild(separatorOption)
 
     if (boards.length === 0) {
       // Handle case where no boards exist (e.g., first run)
@@ -41,12 +88,6 @@ export async function initializeBoardSelector () {
       boardSelector.appendChild(option)
     })
 
-    // Add the "New board..." option
-    const newBoardOption = document.createElement('option')
-    newBoardOption.value = '__NEW_BOARD__'
-    newBoardOption.textContent = 'New board...'
-    boardSelector.appendChild(newBoardOption)
-
     // Set initial selection based on currentBoardName (default or from URL later)
     boardSelector.value = state.currentBoardName
     if (!boardSelector.value) {
@@ -56,34 +97,7 @@ export async function initializeBoardSelector () {
     }
     state.setPreviousBoardSelection(boardSelector.value) // Store current selection
     boardSelector.disabled = false
-
-    boardSelector.addEventListener('change', async (event) => {
-      // Make this async
-      const selectedValue = event.target.value
-      if (selectedValue === '__NEW_BOARD__') {
-        // If "New board..." is selected, trigger the add board flow
-        // Store the current URL state before the prompt, so we can revert if cancelled
-        history.pushState(
-          { board: state.previousBoardSelection },
-          '',
-          `/b/${state.previousBoardSelection}`
-        )
-        // Revert the selector immediately to the previous valid board (using the getter)
-        boardSelector.value = state.previousBoardSelection
-
-        await handleAddBoardButtonClick()
-        // After attempting to add, revert the selector to the previous valid board (using the getter)
-        boardSelector.value = state.previousBoardSelection
-        // The handleAddBoardButtonClick already updates the URL if successful.
-        // If it failed or was cancelled, the URL should remain previousBoardSelection.
-        // So, no need to update URL here for __NEW_BOARD__.
-      } else {
-        state.setPreviousBoardSelection(selectedValue) // Update previous selection
-        initializeLanes(selectedValue) // Load lanes for the selected board
-        // Update the URL to reflect the selected board
-        history.pushState({ board: selectedValue }, '', `/b/${selectedValue}`)
-      }
-    })
+    return boardSelector // Return the selector element
   } catch (error) {
     console.error('Error initializing board selector:', error)
     showNotification('Failed to load boards. Please try again.', 'error')
@@ -91,7 +105,7 @@ export async function initializeBoardSelector () {
   }
 }
 
-export async function handleAddBoardButtonClick () {
+export async function handleAddBoardButtonClick (boardSelector) {
   const boardName = await showPrompt(
     'Enter the name for the new board:',
     'Create New Board'
@@ -106,15 +120,12 @@ export async function handleAddBoardButtonClick () {
           `Board "${trimmedBoardName}" created successfully.`,
           'info'
         )
-        history.pushState(
-          { board: trimmedBoardName },
-          '',
-          `/b/${trimmedBoardName}`
-        ) // Update URL
-        state.setBoardName(trimmedBoardName) // Update currentBoardName BEFORE re-initializing the selector
-        await initializeBoardSelector() // Re-populate selector and set its value
-        initializeLanes(trimmedBoardName) // Load the new board
+        const updatedSelector = await initializeBoardSelector() // Re-populate selector
+        updatedSelector.value = trimmedBoardName // Explicitly set value on the refreshed selector
+        await selectBoard(trimmedBoardName) // Load lanes and update URL
       } else {
+        // Revert the selector immediately to the previous valid board
+        boardSelector.value = state.previousBoardSelection
         const errorData = await response
           .json()
           .catch(() => ({ error: 'Failed to parse error response' }))
@@ -127,4 +138,124 @@ export async function handleAddBoardButtonClick () {
       showNotification('An error occurred while trying to create the board.')
     }
   }
+  // If prompt was cancelled or input was empty, revert the selector
+  if (boardName === null || boardName.trim() === '') {
+    boardSelector.value = state.previousBoardSelection
+  }
+}
+
+export async function handleRenameBoardButtonClick (boardSelector) {
+  const currentBoardName = state.currentBoardName
+  if (!currentBoardName) {
+    showNotification('No board selected to rename.')
+    boardSelector.value = state.previousBoardSelection
+    return
+  }
+
+  if (currentBoardName === 'default') {
+    showNotification('The "default" board cannot be renamed.', 'error')
+    // Revert the selector to the current (default) board
+    boardSelector.value = state.previousBoardSelection
+    return
+  }
+
+  const newBoardName = await showPrompt(
+    `Rename board "${currentBoardName}" to:`,
+    'Rename Board',
+    currentBoardName
+  )
+
+  if (newBoardName !== null && newBoardName.trim() !== '' && newBoardName.trim() !== currentBoardName) {
+    try {
+      const trimmedNewBoardName = newBoardName.trim()
+      const response = await renameBoard(currentBoardName, trimmedNewBoardName)
+      if (response.ok) {
+        showNotification(`Board "${currentBoardName}" renamed to "${trimmedNewBoardName}" successfully.`, 'info')
+        await initializeBoardSelector() // Re-populate selector
+        await selectBoard(trimmedNewBoardName) // Then select the new name
+      } else {
+        // Revert the selector immediately to the previous valid board
+        boardSelector.value = state.previousBoardSelection
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
+        showNotification(`Failed to rename board: ${errorData.error || response.statusText}`)
+      }
+    } catch (error) {
+      console.error('Error renaming board:', error)
+      showNotification('An error occurred while trying to rename the board.')
+    }
+  } else {
+    // If prompt was cancelled, input was empty, or name was unchanged, revert the selector
+    boardSelector.value = state.previousBoardSelection
+  }
+}
+
+export async function handleDeleteBoardButtonClick (boardSelector) {
+  const currentBoardName = state.currentBoardName
+  if (!currentBoardName) {
+    showNotification('No board selected to delete.')
+    boardSelector.value = state.previousBoardSelection
+    return
+  }
+
+  if (currentBoardName === 'default') {
+    showNotification('The "default" board cannot be deleted.', 'error')
+    // Revert the selector to the current (default) board
+    boardSelector.value = state.previousBoardSelection
+    return
+  }
+
+  if (await showConfirmation(`Are you sure you want to delete the board "${currentBoardName}"? This action cannot be undone.`, 'Delete Board')) {
+    try {
+      const response = await deleteBoard(currentBoardName)
+      if (response.ok) {
+        showNotification(`Board "${currentBoardName}" deleted successfully.`, 'info')
+        // After deleting, try to load the default board or the first available board
+        const boards = await fetchBoards()
+        let nextBoardName = 'default' // Fallback to 'default'
+        if (boards.length > 0) {
+          // If 'default' exists, use it. Otherwise, use the first board in the list.
+          if (boards.includes('default')) {
+            nextBoardName = 'default'
+          } else {
+            nextBoardName = boards[0]
+          }
+        } else {
+          // No boards left, prompt to create a new one
+          showNotification('All boards deleted. Please create a new board.', 'info')
+          nextBoardName = null // Indicate no board to select
+        }
+        await initializeBoardSelector() // Re-populate selector
+        if (nextBoardName) {
+          await selectBoard(nextBoardName)
+        } else {
+          // If no boards left, clear lanes and URL
+          document.getElementById('lanes-container').innerHTML = ''
+          history.pushState({}, '', '/')
+          state.setBoardName(null)
+        }
+      } else {
+        boardSelector.value = state.previousBoardSelection // Revert on failure
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
+        showNotification(`Failed to delete board: ${errorData.error || response.statusText}`)
+      }
+    } catch (error) {
+      console.error('Error deleting board:', error)
+      showNotification('An error occurred while trying to delete the board.')
+    }
+  } else {
+    boardSelector.value = state.previousBoardSelection // Revert if cancelled
+  }
+}
+
+async function selectBoard (boardName) {
+  const boardSelector = document.getElementById('board-selector')
+  state.setPreviousBoardSelection(boardName) // Update previous selection
+  state.setBoardName(boardName) // Update currentBoardName
+  if (boardSelector) {
+    // Ensure the dropdown visually reflects the selected board
+    boardSelector.value = boardName
+  }
+  initializeLanes(boardName) // Load lanes for the selected board
+  // Update the URL to reflect the selected board
+  history.pushState({ board: boardName }, '', `/b/${boardName}`)
 }
