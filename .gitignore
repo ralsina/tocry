@@ -9,4 +9,5 @@ uploads/
 .crystal/
 integration-test/data
 integration-test/node_modules
-test-results/
+integration-test/test-results/
+.last-run.json
