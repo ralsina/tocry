@@ -382,6 +382,11 @@ body {
     color: var(--pico-primary-inverse);
     border-radius: var(--pico-border-radius);
 }
+
+.note-card.pulse-animation-once {
+    /* Use the existing pulse animation, but run it only once to draw attention */
+    animation: pulse 2s ease-in-out 1;
+}
 /* --- Custom Collapsible Note --- */
 
 /* 1. Set up the container as a grid for smooth animation.

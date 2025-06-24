@@ -1,6 +1,7 @@
 require "./tocry"
 require "baked_file_handler"
 require "./migrations"
+require "ecr" # Required for render
 require "baked_file_system"
 require "docopt"         # Keep docopt
 require "./auth"         # Add auth (defines Google OAuth routes and current_user helper)
@@ -98,12 +99,16 @@ def main
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
   add_handler baked_asset_handler
 
+  # Redirect /b to the default board as well.
+  get "/b" do |env|
+    env.redirect "/b/default"
+  end
+
   # Serve the main application HTML for board-specific URLs
   # The regex ensures that board names do not contain dots, preventing this
   # route from incorrectly catching asset requests like 'style.css' or sub-paths.
   get "/b/:board_name" do |env|
     board_name = env.params.url["board_name"].as(String)
-
     # Validate that the extracted board_name does not contain slashes or dots.
     # This mimics the behavior of the original regex %r{/b/([^/.]+)$}
     if board_name.includes?('.')
@@ -112,7 +117,7 @@ def main
       env.response.print({error: "Invalid board URL format or asset path."}.to_json)
       halt env
     end
-    env.redirect "/app.html" # Redirect to the baked HTML file
+    render "templates/app.ecr"
   end
   Kemal.run(port: port)
 end
