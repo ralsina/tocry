@@ -2,11 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2025-06-24
+
+### 🚀 Features
+
+- Help user onboarding
+
+### 🐛 Bug Fixes
+
+- Show errors above the editor modal
+- Page reloading using actual templates
+- The --data-path option was buggy
+- Add integration tests
+- Lane serialization bug
+- Handle clean startup better
+- Color selector was broken
+
+### 🚜 Refactor
+
+- Use BoardManager everywhere in backend
+- Split huge app.js into many smaller files
+- Separate concerns about disk locations
+- Split endpoints.cr and tocry.cr
+
+### 🧪 Testing
+
+- Dummy test code
+
 ## [0.6.2] - 2025-06-24
 
 ### 🐛 Bug Fixes
 
 - Important fixes that made this only work in my machine, sorry, I am anxious
+
+### 💼 Other
+
+- Release v0.6.2
 
 ## [0.6.1] - 2025-06-23
 
