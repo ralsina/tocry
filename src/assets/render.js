@@ -1,4 +1,5 @@
 /**
+ * @module render
  * Makes a DOM element's text content editable in-place.
  * @param {HTMLElement} element The element to make editable (e.g., an h2 or h4).
  * @param {string} originalValue The initial text content of the element.
@@ -28,6 +29,7 @@ function makeTitleEditable(element, originalValue, onSaveCallback) {
         }
     });
 }
+import { state } from "./features/state.js";
 
 /**
  * Creates a single note card element with all its interactive parts.
@@ -225,7 +227,7 @@ function createLaneElement(lane, callbacks, dragAndDropCallbacks) {
             notesList.appendChild(noteCard);
         });
     } else {
-        const noNotesMessage = document.createElement('p');
+        const noNotesMessage = document.createElement('p'); // This will be replaced by onboarding message if applicable
         noNotesMessage.textContent = 'No notes in this lane.';
         notesList.appendChild(noNotesMessage);
     }
