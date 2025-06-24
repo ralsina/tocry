@@ -5,14 +5,16 @@ module ToCry
   # The Migration module handles evolving the data directory from one version
   # of the application to the next.
   module Migration
-    Log          = ::Log.for(self)
-    DATA_DIR     = "data"
-    VERSION_FILE = File.join(DATA_DIR, ".version")
+    Log = ::Log.for(self)
+
+    private def self.version_file_path
+      File.join(ToCry.data_directory, ".version")
+    end
 
     # The main entry point for running all necessary migrations.
     # This should be called once at application startup.
     def self.run
-      FileUtils.mkdir_p(DATA_DIR)
+      FileUtils.mkdir_p(ToCry.data_directory)
       stored_version_str = get_stored_version
       current_version = SemanticVersion.parse(VERSION)
 
@@ -41,11 +43,12 @@ module ToCry
     end
 
     private def self.get_stored_version : String?
-      File.exists?(VERSION_FILE) ? File.read(VERSION_FILE).strip : nil
+      path = version_file_path
+      File.exists?(path) ? File.read(path).strip : nil
     end
 
     private def self.update_version_file
-      File.write(VERSION_FILE, VERSION)
+      File.write(version_file_path, VERSION)
     end
 
     # This is where we will add all migration steps in order.
@@ -56,15 +59,18 @@ module ToCry
         migrate_to_multi_board_v1
       end
 
-      # Future migrations would be added here, for example:
-      # if from_version && SemanticVersion.new(from_version) < SemanticVersion.new("0.2.0")
-      #   migrate_to_v0_2_0
-      # end
+      # Migration 2: from "uploads" to ".uploads"
+      # This runs for any version before this feature is introduced.
+      # Assuming the new version will be >= 0.7.0
+      if from_version.nil? || (from_version && SemanticVersion.parse(from_version) < SemanticVersion.parse("0.6.2"))
+        migrate_uploads_to_hidden
+      end
     end
 
     private def self.migrate_to_multi_board_v1
-      default_board_dir = File.join(DATA_DIR, "default")
-      old_lane_dirs = Dir.glob(File.join(DATA_DIR, "[0-9][0-9][0-9][0-9]_*"))
+      data_dir = ToCry.data_directory
+      default_board_dir = File.join(data_dir, "default")
+      old_lane_dirs = Dir.glob(File.join(data_dir, "[0-9][0-9][0-9][0-9]_*"))
 
       if !old_lane_dirs.empty? && !Dir.exists?(default_board_dir)
         Log.warn { "Old single-board data structure detected. Migrating to 'default' board..." }
@@ -80,13 +86,25 @@ module ToCry
         end
 
         # Move the .notes directory if it exists
-        notes_dir = File.join(DATA_DIR, ".notes")
+        notes_dir = File.join(data_dir, ".notes")
         new_notes_dir = File.join(default_board_dir, ".notes")
         FileUtils.mv(notes_dir, new_notes_dir) if Dir.exists?(notes_dir)
 
         Log.info { "Initial data migration to multi-board format completed." }
       else
         Log.info { "No old single-board data found to migrate." }
+      end
+    end
+
+    private def self.migrate_uploads_to_hidden
+      data_dir = ToCry.data_directory
+      old_uploads_path = File.join(data_dir, "uploads")
+      new_uploads_path = File.join(data_dir, ".uploads")
+
+      if Dir.exists?(old_uploads_path) && !Dir.exists?(new_uploads_path)
+        Log.warn { "Found 'uploads' directory. Renaming to '.uploads' to prevent it from being treated as a board." }
+        FileUtils.mv(old_uploads_path, new_uploads_path)
+        Log.info { "Successfully moved '#{old_uploads_path}' to '#{new_uploads_path}'." }
       end
     end
   end

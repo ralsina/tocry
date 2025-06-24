@@ -246,7 +246,7 @@ MAX_IMAGE_SIZE = 1_048_576 # 1MB
 post "/upload/image" do |env|
   begin
     # Ensure the user-images subdirectory exists within the uploads directory
-    upload_dir = File.join(ToCry.data_directory, "uploads", "user-images")
+    upload_dir = File.join(ToCry.data_directory, ".uploads", "user-images")
     FileUtils.mkdir_p(upload_dir)
 
     # Get the first uploaded file from the request.
