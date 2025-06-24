@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2025-06-24
+
+### 🐛 Bug Fixes
+
+- Important fixes that made this only work in my machine, sorry, I am anxious
+
 ## [0.6.1] - 2025-06-23
 
 ### 🐛 Bug Fixes
@@ -11,6 +17,7 @@ All notable changes to this project will be documented in this file.
 ### 💼 Other
 
 - Make binaries smaller
+- Release v0.6.1
 
 ### 🎨 Styling
 
