@@ -97,7 +97,7 @@ module ToCry
       end
 
       note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded)
-      note.id = id                         # Set the correct, persistent ID.
+      note.id = id # Set the correct, persistent ID.
       note
     end
 
@@ -123,7 +123,6 @@ module ToCry
     # 2. Deleting the note's source markdown file from `data/.notes/`.
     # 3. Saving the board, which will remove any symlinks pointing to the deleted note.
     def delete(board : ToCry::Board)
-
       note_id_str = self.id
 
       # 1. Find and remove the note from its lane in the provided board's state.
