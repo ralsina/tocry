@@ -47,4 +47,44 @@ module ToCry
       raise "Invalid name: It cannot be '.' or '..', contain path separators, or start with a dot."
     end
   end
+
+  # --- User Directory Management ---
+
+  # Returns the base directory for all user data.
+  def self.users_base_directory : String
+    File.join(data_directory, "users")
+  end
+
+  # Gets the sanitized user ID for the current request.
+  # Returns "root" for no-auth/basic-auth, or a sanitized email for Google Auth.
+  def self.get_current_user_id(env : HTTP::Server::Context) : String
+    # Google Auth sets a user_id in the session, which is the user's email.
+    if user_email = env.session.string?("user_id")
+      # Sanitize email to be a valid directory name.
+      # Replace characters that are invalid in some filesystems.
+      sanitized_id = user_email.gsub(/[^a-zA-Z0-9_.-@]/, "_")
+      begin
+        validate_filename_component(sanitized_id)
+        return sanitized_id
+      rescue ex
+        Log.warn(exception: ex) { "Could not use sanitized email '#{sanitized_id}' as user directory name. Falling back to 'invalid_user'." }
+        return "invalid_user"
+      end
+    end
+    # Default user for no-auth or basic-auth modes.
+    "root"
+  end
+
+  # Ensures that the data directory for the current user exists.
+  # This is called on every request via a middleware.
+  def self.ensure_user_directory_exists(env : HTTP::Server::Context)
+    user_id = get_current_user_id(env)
+    user_dir = File.join(users_base_directory, user_id)
+    # Create the user's main directory and their boards subdirectory for future use.
+    # This is idempotent and safe to call on every request.
+    FileUtils.mkdir_p(File.join(user_dir, "boards"))
+  rescue ex
+    Log.error(exception: ex) { "Failed to create user directory for '#{user_id}'" }
+    # We don't re-raise, as this is a non-critical background task for now.
+  end
 end
