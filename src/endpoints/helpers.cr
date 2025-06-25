@@ -10,7 +10,7 @@ module ToCry::Endpoints::Helpers
   # Helper function to retrieve the Board instance from the request context.
   def self.get_board_from_context(env : HTTP::Server::Context) : ToCry::Board
     board_name = env.get("board_name").as(String)
-    board = ToCry.board_manager.get(board_name)
+    board = ToCry.board_manager.get(board_name, user: ToCry.get_current_user_id(env))
 
     unless board
       # This path should not be reachable due to the before_all filter,

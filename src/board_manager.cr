@@ -63,15 +63,40 @@ module ToCry
       end
     end
 
-    # Lists all available boards by scanning the data directory for subdirectories.
-    def list : Array(String)
-      @boards.keys.sort!
+    # Lists all available boards for a given user.
+    # This filters the globally known boards by what's present in the user's specific board directory.
+    def list(user : String) : Array(String)
+      user_boards_path = File.join(ToCry.users_base_directory, user, "boards")
+
+      unless File.directory?(user_boards_path)
+        Log.info { "User board directory '#{user_boards_path}' does not exist for user '#{user}'. Returning empty list." }
+        return [] of String
+      end
+
+      user_accessible_board_names = [] of String
+      Dir.children(user_boards_path).each do |entry|
+        # Symlinks are in the format {UUID}.{name}
+        if match = entry.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(.+)$/)
+          board_name_from_symlink = match[2]
+          user_accessible_board_names << board_name_from_symlink
+        else
+          Log.warn { "Found invalid entry format in user board directory '#{user_boards_path}': #{entry}" }
+        end
+      end
+
+      # Filter the globally known boards by what's accessible to the user
+      @boards.keys.select { |global_board_name| user_accessible_board_names.includes?(global_board_name) }.sort!
     end
 
     # Get a board by name, loading it if not in cache
-    def get(name : String) : Board?
+    def get(name : String, user : String) : Board?
       board_entry = @boards[name]?
       return nil unless board_entry
+
+      # Check if the board is accessible to the given user
+      unless list(user).includes?(name)
+        return nil
+      end
 
       board = board_entry[:board]
       # Ensure the board's content is loaded if it hasn't been already
@@ -100,13 +125,12 @@ module ToCry
       board.save # Save an empty board to create initial structure
 
       # For non-root users, create a symlink in their user directory.
-      if user && user != "root"
-        actual_user = user.not_nil!
+      if user != "root"
         # Construct the full path for the symlink: /data/users/{user}/boards/{UUID}.{name}
         user_board_symlink_path = File.join(
           ToCry.data_directory,
           "users",
-          actual_user,
+          user,
           "boards",
           board_dir_name
         )
@@ -115,7 +139,7 @@ module ToCry
         BoardManager.validate_path_within_data_dir(user_board_symlink_path)
         FileUtils.mkdir_p(File.dirname(user_board_symlink_path)) # Ensure user's boards directory exists
         FileUtils.ln_s(board_dir_path, user_board_symlink_path)  # Create the symlink
-        Log.info { "Symlink created for user '#{actual_user}' from '#{board_dir_path}' to '#{user_board_symlink_path}'." }
+        Log.info { "Symlink created for user '#{user}' from '#{board_dir_path}' to '#{user_board_symlink_path}'." }
       end
 
       @boards[name] = {uuid: uuid, board: board}
@@ -125,56 +149,94 @@ module ToCry
       board
     end
 
-    # Deletes a board by its name, removing it from cache and filesystem.
-    def delete(name : String) # No longer needs to check for "default"
-      board_entry = @boards.delete(name)
+    # Deletes a board by its name for a given user.
+    # If the user is 'root', the canonical board directory is deleted.
+    # Otherwise, only the user's symlink to the board is removed.
+    def delete(name : String, user : String)
+      # First, check if the board exists in the global list
+      board_entry = @boards[name]?
       unless board_entry
         raise "Board '#{name}' not found for deletion."
       end
 
       uuid = board_entry[:uuid]
-      @uuid_to_name_map.delete(uuid)
 
-      board_dir_path = board_entry[:board].board_data_dir
+      # Verify user access to the board before proceeding
+      unless get(name, user) # Use the user-aware get to check accessibility
+        raise "Board '#{name}' not found or not accessible to user '#{user}' for deletion."
+      end
 
-      BoardManager.validate_path_within_data_dir(board_dir_path)
-      FileUtils.rm_rf(board_dir_path) if Dir.exists?(board_dir_path)
-      Log.info { "Board '#{name}' and its directory '#{board_dir_path}' deleted." }
+      if user == "root"
+        # Root user deletes the canonical board directory
+        @boards.delete(name)
+        @uuid_to_name_map.delete(uuid)
+        board_dir_path = board_entry[:board].board_data_dir
+        BoardManager.validate_path_within_data_dir(board_dir_path)
+        FileUtils.rm_rf(board_dir_path) if Dir.exists?(board_dir_path)
+        Log.info { "Board '#{name}' and its canonical directory '#{board_dir_path}' deleted by root." }
+      else
+        # Non-root user deletes only their symlink
+        user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{name}")
+        BoardManager.validate_path_within_data_dir(user_board_symlink_path)
+        if File.symlink?(user_board_symlink_path)
+          FileUtils.rm(user_board_symlink_path)
+          Log.info { "Symlink for board '#{name}' at '#{user_board_symlink_path}' deleted by user '#{user}'." }
+        else
+          Log.warn { "User '#{user}' attempted to delete symlink for board '#{name}' at '#{user_board_symlink_path}', but it was not found or not a symlink." }
+        end
+      end
     end
 
-    # Renames an existing board.
-    # Updates the board's directory on the filesystem and refreshes the cache.
-    def rename(old_name : String, new_name : String) : Board # No longer needs to check for "default"
+    # Renames an existing board for a given user.
+    # If the user is 'root', the canonical board directory is renamed.
+    # Otherwise, only the user's symlink to the board is renamed.
+    def rename(old_name : String, new_name : String, user : String) : Board
       if @boards.has_key?(new_name)
         raise "Board with name '#{new_name}' already exists."
       end
 
       board_entry = @boards[old_name]
       raise "Board '#{old_name}' not found for renaming." unless board_entry
-
       uuid = board_entry[:uuid]
       board = board_entry[:board]
 
-      old_board_dir_name = "#{uuid}.#{old_name}"
-      new_board_dir_name = "#{uuid}.#{new_name}"
+      # Verify user access to the board before proceeding
+      unless get(old_name, user) # Use the user-aware get to check accessibility
+        raise "Board '#{old_name}' not found or not accessible to user '#{user}' for renaming."
+      end
 
-      old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
-      new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
+      if user == "root"
+        # Root user renames the canonical board directory
+        old_board_dir_name = "#{uuid}.#{old_name}"
+        new_board_dir_name = "#{uuid}.#{new_name}"
 
-      BoardManager.validate_path_within_data_dir(old_board_dir_path)
-      BoardManager.validate_path_within_data_dir(new_board_dir_path)
+        old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
+        new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
 
-      FileUtils.mv(old_board_dir_path, new_board_dir_path)
+        BoardManager.validate_path_within_data_dir(old_board_dir_path)
+        BoardManager.validate_path_within_data_dir(new_board_dir_path)
 
-      # Update the board instance's internal directory path
-      board.board_data_dir = new_board_dir_path
+        FileUtils.mv(old_board_dir_path, new_board_dir_path)
 
-      # Update the cache
-      @boards.delete(old_name)
-      @boards[new_name] = {uuid: uuid, board: board}
-      @uuid_to_name_map[uuid] = new_name
+        # Update the board instance's internal directory path
+        board.board_data_dir = new_board_dir_path
 
-      Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (directory: '#{old_board_dir_path}' to '#{new_board_dir_path}')." }
+        # Update the cache
+        @boards.delete(old_name)
+        @boards[new_name] = {uuid: uuid, board: board}
+        @uuid_to_name_map[uuid] = new_name
+        Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (canonical directory: '#{old_board_dir_path}' to '#{new_board_dir_path}') by root." }
+      else
+        # Non-root user renames only their symlink
+        old_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{old_name}")
+        new_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{new_name}")
+
+        BoardManager.validate_path_within_data_dir(old_user_board_symlink_path)
+        BoardManager.validate_path_within_data_dir(new_user_board_symlink_path)
+
+        FileUtils.mv(old_user_board_symlink_path, new_user_board_symlink_path)
+        Log.info { "Symlink for board '#{old_name}' renamed to '#{new_name}' at '#{old_user_board_symlink_path}' to '#{new_user_board_symlink_path}' by user '#{user}'." }
+      end
       board
     end
   end
