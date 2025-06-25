@@ -1,0 +1,7 @@
+export const BOARD_SELECTOR_OPTIONS = {
+  NEW_BOARD: '__NEW_BOARD__',
+  RENAME_BOARD: '__RENAME_BOARD__',
+  DELETE_BOARD: '__DELETE_BOARD__',
+  SEPARATOR: '---'
+}
+export const DEFAULT_BOARD_NAME = 'default'

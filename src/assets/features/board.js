@@ -1,6 +1,7 @@
 /* global history */
 import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
+import { BOARD_SELECTOR_OPTIONS, DEFAULT_BOARD_NAME } from '../utils/constants.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
 
@@ -20,11 +21,11 @@ const setupBoardSelectorListener = () => {
 
   boardSelector.addEventListener('change', async (event) => {
     const selectedValue = event.target.value
-    if (selectedValue === '__NEW_BOARD__') {
+    if (selectedValue === BOARD_SELECTOR_OPTIONS.NEW_BOARD) {
       await handleAddBoardButtonClick(boardSelector)
-    } else if (selectedValue === '__RENAME_BOARD__') {
+    } else if (selectedValue === BOARD_SELECTOR_OPTIONS.RENAME_BOARD) {
       await handleRenameBoardButtonClick(boardSelector)
-    } else if (selectedValue === '__DELETE_BOARD__') {
+    } else if (selectedValue === BOARD_SELECTOR_OPTIONS.DELETE_BOARD) {
       await handleDeleteBoardButtonClick(boardSelector)
     } else if (selectedValue) { // A regular board was selected, and it's not the separator
       await selectBoard(selectedValue)
@@ -46,19 +47,19 @@ export async function initializeBoardSelector () {
 
     // Add the "New board..." option first
     const newBoardOption = document.createElement('option')
-    newBoardOption.value = '__NEW_BOARD__'
+    newBoardOption.value = BOARD_SELECTOR_OPTIONS.NEW_BOARD
     newBoardOption.textContent = 'New board...'
     boardSelector.appendChild(newBoardOption)
 
     // Add "Rename current board..." option
     const renameBoardOption = document.createElement('option')
-    renameBoardOption.value = '__RENAME_BOARD__'
+    renameBoardOption.value = BOARD_SELECTOR_OPTIONS.RENAME_BOARD
     renameBoardOption.textContent = 'Rename current board...'
     boardSelector.appendChild(renameBoardOption)
 
     // Add "Delete current board..." option
     const deleteBoardOption = document.createElement('option')
-    deleteBoardOption.value = '__DELETE_BOARD__'
+    deleteBoardOption.value = BOARD_SELECTOR_OPTIONS.DELETE_BOARD
     deleteBoardOption.textContent = 'Delete current board...'
     boardSelector.appendChild(deleteBoardOption)
 
@@ -160,7 +161,7 @@ async function handleRenameBoardButtonClick (boardSelector) {
     return
   }
 
-  if (currentBoardName === 'default') {
+  if (currentBoardName === DEFAULT_BOARD_NAME) {
     showNotification('The "default" board cannot be renamed.', 'error')
     // Revert the selector to the current (default) board
     boardSelector.value = state.previousBoardSelection
@@ -205,7 +206,7 @@ async function handleDeleteBoardButtonClick (boardSelector) {
     return
   }
 
-  if (currentBoardName === 'default') {
+  if (currentBoardName === DEFAULT_BOARD_NAME) {
     showNotification('The "default" board cannot be deleted.', 'error')
     // Revert the selector to the current (default) board
     boardSelector.value = state.previousBoardSelection
@@ -219,11 +220,11 @@ async function handleDeleteBoardButtonClick (boardSelector) {
         showNotification(`Board "${currentBoardName}" deleted successfully.`, 'info')
         // After deleting, try to load the default board or the first available board
         const boards = await fetchBoards()
-        let nextBoardName = 'default' // Fallback to 'default'
+        let nextBoardName = DEFAULT_BOARD_NAME // Fallback to 'default'
         if (boards.length > 0) {
           // If 'default' exists, use it. Otherwise, use the first board in the list.
-          if (boards.includes('default')) {
-            nextBoardName = 'default'
+          if (boards.includes(DEFAULT_BOARD_NAME)) {
+            nextBoardName = DEFAULT_BOARD_NAME
           } else {
             nextBoardName = boards[0]
           }

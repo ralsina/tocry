@@ -1,9 +1,11 @@
+import { DEFAULT_BOARD_NAME } from '../utils/constants.js'
+
 // Global application state
 // Encapsulated in an object to allow mutable properties while maintaining a read-only module binding.
 export const state = {
   _currentLanes: [],
-  _currentBoardName: 'default',
-  _previousBoardSelection: 'default',
+  _currentBoardName: DEFAULT_BOARD_NAME,
+  _previousBoardSelection: DEFAULT_BOARD_NAME,
 
   get currentLanes () { return this._currentLanes },
   set currentLanes (value) { this._currentLanes = value },
