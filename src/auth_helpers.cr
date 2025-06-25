@@ -10,12 +10,12 @@ def setup_google_auth_mode
   ToCry::Log.info { "Google Authentication enabled." }
 
   # Global protection for all routes when Google Auth is enabled.
-  before_all "/*" do |env|
+  before_all do |env|
     # Exclude specific public routes from authentication check.
-    # These routes are handled by their own specific definitions.
+    # These routes are handled by their own specific definitions or are public.
     # Use regex for paths with parameters.
     case env.request.path
-    when "/", "/me", "/logout"
+    when "/me", "/logout"
       # Exact matches
       next
     when %r{^/auth/[^/]+$}, %r{^/auth/[^/]+/callback$} # Matches /auth/:provider and /auth/:provider/callback
