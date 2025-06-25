@@ -1,6 +1,7 @@
 /* global history */
 import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
+import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
@@ -117,15 +118,13 @@ export async function addBoard (boardName) {
     if (response.ok) {
       showNotification(`Board "${trimmedBoardName}" created successfully!`, 'success')
       return trimmedBoardName // Return the new board name on success
-    } else {
-      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
-      const errorMessage = errorData.error || `Failed to create board: ${response.status} ${response.statusText}`
-      showNotification(errorMessage, 'error')
-      throw new Error(errorMessage) // Throw to indicate API failure
+    } else { // API call failed
+      await handleApiError(response, `Failed to create board: ${response.status} ${response.statusText}`)
+      throw new Error('API error during board creation.') // Re-throw a generic error for the caller
     }
   } catch (error) {
     console.error('Error creating board:', error)
-    showNotification('An unexpected error occurred while creating the board.', 'error')
+    handleUIError(error, 'An unexpected error occurred while creating the board.')
     throw error // Re-throw for caller to handle
   }
 }
@@ -177,13 +176,12 @@ async function handleRenameBoardButtonClick (boardSelector) {
         await selectBoard(trimmedNewBoardName) // Then select the new name
       } else {
         // Revert the selector immediately to the previous valid board
-        boardSelector.value = state.previousBoardSelection
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
-        showNotification(`Failed to rename board: ${errorData.error || response.statusText}`)
+        boardSelector.value = state.previousBoardSelection // Revert on failure
+        await handleApiError(response, 'Failed to rename board.')
       }
     } catch (error) {
       console.error('Error renaming board:', error)
-      showNotification('An error occurred while trying to rename the board.')
+      handleUIError(error, 'An unexpected error occurred while trying to rename the board.')
     }
   } else {
     // If prompt was cancelled, input was empty, or name was unchanged, revert the selector
@@ -226,12 +224,11 @@ async function handleDeleteBoardButtonClick (boardSelector) {
         }
       } else {
         boardSelector.value = state.previousBoardSelection // Revert on failure
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
-        showNotification(`Failed to delete board: ${errorData.error || response.statusText}`)
+        await handleApiError(response, 'Failed to delete board.')
       }
     } catch (error) {
       console.error('Error deleting board:', error)
-      showNotification('An error occurred while trying to delete the board.')
+      handleUIError(error, 'An unexpected error occurred while trying to delete the board.')
     }
   } else {
     boardSelector.value = state.previousBoardSelection // Revert if cancelled

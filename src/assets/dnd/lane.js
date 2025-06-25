@@ -1,6 +1,7 @@
 import { updateLanePosition } from '../api.js'
 import { showNotification } from '../ui/dialogs.js'
 import { initializeLanes } from '../features/lane.js'
+import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { state } from '../features/state.js'
 
 // --- Drag and Drop Handlers for Lanes ---
@@ -80,17 +81,13 @@ async function handleLaneDrop (event) {
       // We'll call initializeLanes to sync the cache and ensure consistency.
       await initializeLanes()
     } else {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to move lane: ${errorData.error || response.statusText}`
-      )
+      await handleApiError(response, 'Failed to move lane.')
       // Revert UI on failure
       await initializeLanes()
     }
   } catch (error) {
-    showNotification('An error occurred while trying to move the lane.')
+    // This catch is for network errors or if updateLanePosition itself throws
+    handleUIError(error, 'An unexpected error occurred while moving the lane.')
     // Revert UI on failure
     await initializeLanes()
   }

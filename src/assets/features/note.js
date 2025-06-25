@@ -1,7 +1,12 @@
 /* global toastui */
 import { addNote, updateNote, deleteNote, uploadImage } from '../api.js'
-import { showPrompt, showConfirmation, showNotification } from '../ui/dialogs.js'
+import {
+  showPrompt,
+  showConfirmation,
+  showNotification
+} from '../ui/dialogs.js'
 import { createNoteCardElement } from '../render.js'
+import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { initializeLanes } from './lane.js'
 import { state } from './state.js'
 import { noteDragAndDropCallbacks } from '../dnd/note.js'
@@ -35,17 +40,14 @@ export async function handleToggleNoteRequest (noteToUpdate, isExpanded) {
       }
     } else {
       // If the update fails, alert the user and revert the UI by re-rendering.
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to save note state: ${errorData.error || response.statusText}`
-      )
+      await handleApiError(response, 'Failed to save note state.')
       await initializeLanes()
     }
   } catch (error) {
-    showNotification(
-      'An error occurred while saving the note state. Reverting changes.'
+    // This catch is for network errors or if updateNote itself throws
+    handleUIError(
+      error,
+      'An unexpected error occurred while saving the note state.'
     )
     await initializeLanes() // Revert UI on failure
   }
@@ -71,29 +73,19 @@ export async function handleAddNoteRequest (laneName) {
         console.log(
           `Note "${noteTitle}" added successfully to lane "${laneName}".`
         )
-        await initializeLanes() // Re-fetch and render all lanes
+        await initializeLanes()
       } else {
-        const errorData = await response
-          .json()
-          .catch(() => ({
-            error: 'Failed to parse error response from server'
-          }))
-        console.error(
-          `Failed to add note to lane "${laneName}":`,
-          response.status,
-          response.statusText,
-          errorData.error
-        )
-        showNotification(
-          `Failed to add note: ${errorData.error || response.statusText}`
+        // API call failed
+        await handleApiError(
+          response,
+          `Failed to add note to lane "${laneName}".`
         )
       }
     } catch (error) {
-      console.error('Error during add note operation:', error)
-      showNotification('An error occurred while trying to add the note.')
+      handleUIError(error, 'An unexpected error occurred while trying to add the note.')
     }
   } else if (noteTitle !== null) {
-    showNotification('Note title cannot be empty.')
+    handleUIError(new Error('Note title cannot be empty.'), 'Note title cannot be empty.')
   }
 }
 
@@ -128,27 +120,15 @@ export async function handleDeleteNoteRequest (noteId, noteTitle) {
         console.log(
           `Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`
         )
-        await initializeLanes() // Re-fetch and render all lanes
+        await initializeLanes()
       } else {
-        const errorData = await response
-          .json()
-          .catch(() => ({
-            error: 'Failed to parse error response from server'
-          }))
-        console.error(
-          `Failed to delete note "${noteTitle}":`,
-          response.status,
-          response.statusText,
-          errorData.error
-        )
-        showNotification(
-          `Failed to delete note: ${errorData.error || response.statusText}`
-        )
+        // API call failed
+        await handleApiError(response, `Failed to delete note "${noteTitle}".`)
         await initializeLanes() // Revert UI on failure
       }
     } catch (error) {
       console.error('Error during delete note operation:', error)
-      showNotification('An error occurred while trying to delete the note.')
+      handleUIError(error, 'An unexpected error occurred while trying to delete the note.')
     }
   }
 }
@@ -182,20 +162,11 @@ export async function handlePasteAsNoteRequest (laneName, pastedText) {
       console.log(`Note "${title}" created from paste in lane "${laneName}".`)
       await initializeLanes()
     } else {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to create note from paste: ${
-          errorData.error || response.statusText
-        }`
-      )
+      // API call failed
+      await handleApiError(response, 'Failed to create note from paste.')
     }
   } catch (error) {
-    console.error('Error creating note from paste:', error)
-    showNotification(
-      'An error occurred while trying to create the note from paste.'
-    )
+    handleUIError(error, 'An unexpected error occurred while trying to create the note from paste.')
   }
 }
 
@@ -224,20 +195,14 @@ export async function handlePasteAsImageNoteRequest (laneName, imageBlob) {
       )
       await initializeLanes()
     } else {
-      const errorData = await addNoteResponse
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to create note from pasted image: ${
-          errorData.error || addNoteResponse.statusText
-        }`
+      // API call failed
+      await handleApiError(
+        addNoteResponse,
+        'Failed to create note from pasted image.'
       )
     }
   } catch (error) {
-    console.error('Error creating note from pasted image:', error)
-    showNotification(
-      'An error occurred while trying to create the note from the pasted image.'
-    )
+    handleUIError(error, 'An unexpected error occurred while trying to create the note from the pasted image.')
   }
 }
 
@@ -285,8 +250,7 @@ export function handleEditNoteRequest (note) {
           // The callback tells the editor to insert the image markdown with the returned URL
           callback(imageUrl, 'alt text')
         } catch (error) {
-          console.error('Image upload failed:', error)
-          showNotification(`Image upload failed: ${error.message}`)
+          handleUIError(error, 'Image upload failed.')
         }
       }
     }
@@ -372,11 +336,10 @@ export async function handleEditNoteSubmit (event) {
       closeEditModal()
       console.log(`Note "${noteId}" updated successfully.`)
     } else {
-      showNotification('Failed to save note. Please try again.')
-      await initializeLanes() // Revert UI on failure
+      await handleApiError(response, 'Failed to save note.')
     }
   } catch (error) {
-    showNotification('An error occurred while saving the note.')
+    handleUIError(error, 'An unexpected error occurred while saving the note.')
     await initializeLanes() // Revert UI on failure
   }
 }
@@ -402,21 +365,14 @@ export async function handleUpdateNoteTitleRequest (noteToUpdate, newTitle) {
     })
 
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to rename note: ${errorData.error || response.statusText}`
-      )
+      await handleApiError(response, 'Failed to rename note.')
       await initializeLanes() // Revert UI on failure
     } else {
       console.log(`Note "${noteToUpdate.id}" title updated successfully.`)
       // UI is already updated, no full re-render needed.
     }
   } catch (error) {
-    showNotification(
-      'An error occurred while trying to rename the note. Reverting changes.'
-    )
+    handleUIError(error, 'An unexpected error occurred while trying to rename the note.')
     await initializeLanes() // Revert UI on failure
   }
 }
