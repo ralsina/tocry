@@ -58,11 +58,11 @@ module ToCry
   # Gets the sanitized user ID for the current request.
   # Returns "root" for no-auth/basic-auth, or a sanitized email for Google Auth.
   def self.get_current_user_id(env : HTTP::Server::Context) : String
-    # Google Auth sets a user_id in the session, which is the user's email.
-    if user_email = env.session.string?("user_id")
+    # Google Auth has the user email in the session
+    if user = current_user(env)
       # Sanitize email to be a valid directory name.
       # Replace characters that are invalid in some filesystems.
-      sanitized_id = user_email.gsub(/[^a-zA-Z0-9_.-@]/, "_")
+      sanitized_id = user.email.gsub(/[^a-zA-Z0-9_.-@]/, "_")
       begin
         validate_filename_component(sanitized_id)
         return sanitized_id

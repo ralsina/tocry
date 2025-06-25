@@ -103,6 +103,7 @@ def main
   get "/" do |env|
     # Get the current user
     user = ToCry.get_current_user_id(env)
+    pp! user
 
     # List boards for the current user
     boards = ToCry.board_manager.list(user)
