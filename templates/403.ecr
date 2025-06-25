@@ -3,20 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 Forbidden</title>
+    <title>Welcome to ToCry!</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <style>
         body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: var(--pico-background-color); }
         article { text-align: center; padding: 2rem; border-radius: var(--pico-border-radius); background-color: var(--pico-card-background-color); box-shadow: var(--pico-card-box-shadow); }
-        h1 { font-size: 4rem; margin-bottom: 0.5rem; }
-        p { font-size: 1.2rem; margin-bottom: 1.5rem; }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        p { font-size: 1rem; margin-bottom: 1.5rem; }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
     </style>
 </head>
 <body>
     <article>
-        <h1>403</h1>
-        <p>You do not have permission to access this resource.</p>
-        <a href="/auth/google" role="button">Login with Google</a>
+        <h1>Welcome to ToCry!</h1>
+        <p>ToCry is a simple, self-hosted Kanban-style TODO application designed to help you manage your tasks efficiently.</p>
+        <p>To access your boards and start organizing your tasks, please log in.</p>
+        <div class="button-group">
+            <a href="/auth/google" role="button">Login with Google</a>
+            <a href="https://tocry.ralsina.me" role="button" class="secondary outline">Learn more about ToCry</a>
+        </div>
     </article>
 </body>
 </html>
