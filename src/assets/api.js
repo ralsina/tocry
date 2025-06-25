@@ -1,6 +1,6 @@
 // Assuming API endpoints are relative to the root
 import { state } from './features/state.js'
-import { handleApiError } from './utils/apiErrorHandler.js'
+import { handleApiError } from './utils/errorHandler.js'
 const API_BASE_URL = ''
 
 export async function fetchBoards () {

@@ -5,6 +5,7 @@ import {
   showConfirmation,
   showNotification
 } from '../ui/dialogs.js'
+import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { updateScrollButtonsVisibility } from '../ui/scroll.js'
 import { state } from './state.js'
 import {
@@ -37,8 +38,10 @@ async function handleCreateFirstBoardClick () {
     await initializeBoardSelector() // Re-populate board selector to include the new board
     await selectBoard(newBoardName) // Use selectBoard to update UI and URL
   } catch (error) {
-    console.error('Error creating board:', error)
-    showNotification('An error occurred while trying to create the board.')
+    handleUIError(
+      error,
+      'An unexpected error occurred while trying to create the board.'
+    )
   }
 }
 
@@ -150,21 +153,12 @@ export async function initializeLanes (boardName = state.currentBoardName) {
     // Use a timeout to ensure the browser has had time to render and calculate scrollWidth
     setTimeout(updateScrollButtonsVisibility, 100)
   } catch (error) {
-    console.error('Error initializing lanes:', error)
-    if (lanesContainer) {
-      let errorMessage = 'Error loading lanes.'
-      if (error.status) {
-        // If it's an HTTP error
-        errorMessage += ` Server responded with ${error.status} ${error.message}.`
-        if (error.body && error.body.error) {
-          errorMessage += ` Details: ${error.body.error}`
-        }
-      } else {
-        // Generic network error
-        errorMessage += ` A network or unexpected error occurred: ${error.message}.`
-      }
-      lanesContainer.innerHTML = `<p>${errorMessage}</p>`
-    }
+    // This catch is for network errors or if fetchLanes itself throws
+    handleUIError(error, 'Failed to load lanes.')
+    // Display a generic error message in the container, without touching the empty state messages
+    lanesContainer.innerHTML = `<p class="error-message">${
+      error.message || 'Failed to load lanes due to an unexpected error.'
+    }</p>`
   }
 }
 
@@ -208,18 +202,8 @@ export async function handleAddLaneButtonClick () {
           }
         }
       } else {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: 'Failed to parse error response' }))
-        console.error(
-          'Failed to create lane:',
-          response.status,
-          response.statusText,
-          errorData.error
-        )
-        showNotification(
-          `Failed to create lane: ${errorData.error || response.statusText}`
-        )
+        // API call failed
+        await handleApiError(response, 'Failed to create lane.')
       }
     } catch (error) {
       console.error('Error creating lane:', error)
@@ -256,18 +240,8 @@ export async function handleDeleteLaneRequest (laneName) {
         console.log(`Lane "${laneName}" deleted successfully.`)
         await initializeLanes() // Re-fetch and render all lanes
       } else {
-        const errorData = await response.json().catch(() => ({
-          error: 'Failed to parse error response from server'
-        }))
-        console.error(
-          `Failed to delete lane "${laneName}":`,
-          response.status,
-          response.statusText,
-          errorData.error
-        )
-        showNotification(
-          `Failed to delete lane: ${errorData.error || response.statusText}`
-        )
+        // API call failed
+        await handleApiError(response, `Failed to delete lane: ${laneName}.`)
       }
     } catch (error) {
       // This catch is for network errors or if deleteLane itself throws
@@ -326,12 +300,7 @@ export async function handleUpdateLaneNameRequest (laneToUpdate, newName) {
       )
     } else {
       // On failure, alert the user and re-render to revert the optimistic UI change.
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to rename lane: ${errorData.error || response.statusText}`
-      )
+      await handleApiError(response, 'Failed to rename lane.')
       await initializeLanes() // Revert UI on failure
     }
   } catch (error) {

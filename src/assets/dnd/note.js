@@ -1,6 +1,7 @@
 import { fetchLanes, updateNote } from '../api.js'
 import { showNotification } from '../ui/dialogs.js'
 import { initializeLanes } from '../features/lane.js'
+import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { state } from '../features/state.js'
 import { handleDragAutoScroll, stopDragAutoScroll } from '../ui/scroll.js'
 
@@ -151,16 +152,12 @@ async function handleNoteDrop (event) {
     })
     if (response.ok) {
       await initializeLanes()
-    } else {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Failed to parse error response' }))
-      showNotification(
-        `Failed to move note: ${errorData.error || response.statusText}`
-      )
+    } else { // API call failed
+      await handleApiError(response, 'Failed to move note.')
       await initializeLanes()
     }
   } catch (error) {
+    handleUIError(error, 'An unexpected error occurred while trying to move the note.')
     showNotification('An error occurred while trying to move the note.')
     await initializeLanes()
   }
