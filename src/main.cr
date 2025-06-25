@@ -53,7 +53,7 @@ def main
 
   # Add a handler to serve user-uploaded images from the configured data path.
   # This replaces the `public_folder` macro.
-  uploads_path = File.join(data_path, ".uploads")
+  uploads_path = File.join(data_path, "uploads")
   add_handler Kemal::StaticFileHandler.new(uploads_path)
   # Ensure the uploads directory exists to prevent issues.
   unless Dir.exists?(uploads_path)

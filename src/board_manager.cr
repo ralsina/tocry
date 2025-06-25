@@ -1,4 +1,5 @@
 require "file_utils"
+require "uuid"
 
 module ToCry
   # The BoardManager is responsible for discovering, loading, and managing
@@ -6,7 +7,15 @@ module ToCry
   # the multi-board data structure, using the globally configured data directory.
   class BoardManager
     Log = ::Log.for(self)
-    @boards = {} of String => Board
+    # Maps board name to its UUID and the Board instance
+    # { board_name => { uuid: "...", board: Board_instance } }
+    @boards = {} of String => {uuid: String, board: Board}
+    # Maps board UUID to its name
+    @uuid_to_name_map = {} of String => String
+
+    private def board_base_dir
+      File.join(ToCry.data_directory, "boards")
+    end
 
     # Validates that a given path is inside the configured data directory.
     # This is a security measure to prevent path traversal attacks.
@@ -21,8 +30,12 @@ module ToCry
     end
 
     def initialize
-      # Ensure the base data directory exists when BoardManager is initialized.
-      FileUtils.mkdir_p(ToCry.data_directory)
+      # Ensure the base data directory for boards exists
+      FileUtils.mkdir_p(board_base_dir)
+
+      # Populate the board cache by scanning the new structure
+      scan_boards_directory
+
       # Ensure the default board exists upon initialization.
       unless get("default")
         Log.info { "Default board not found, creating it." }
@@ -30,43 +43,72 @@ module ToCry
       end
     end
 
+    # Scans the boards directory and populates the in-memory cache.
+    private def scan_boards_directory
+      @boards.clear
+      @uuid_to_name_map.clear
+
+      Dir.children(board_base_dir).each do |entry|
+        # Expected format: {UUID}.{name}
+        if match = entry.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(.+)$/)
+          uuid = match[1]
+          name = match[2]
+          board_dir = File.join(board_base_dir, entry)
+
+          if File.directory?(board_dir)
+            board = Board.new(board_data_dir: board_dir)
+            # We don't load the full board content here, just cache the instance
+            @boards[name] = {uuid: uuid, board: board}
+            @uuid_to_name_map[uuid] = name
+          else
+            Log.warn { "Found non-directory entry in boards directory: #{entry}" }
+          end
+        else
+          Log.warn { "Found invalid board directory name format: #{entry}" }
+        end
+      end
+    end
+
     # Lists all available boards by scanning the data directory for subdirectories.
     def list : Array(String)
-      Dir.children(ToCry.data_directory).select do |entry|
-        File.directory?(File.join(ToCry.data_directory, entry)) && !entry.starts_with?('.')
-      end.sort!
+      @boards.keys.sort!
     end
 
     # Get a board by name, loading it if not in cache
     def get(name : String) : Board?
-      return @boards[name] if @boards.has_key?(name)
+      board_entry = @boards[name]?
+      return nil unless board_entry
 
-      board_dir = File.join(ToCry.data_directory, name)
-      BoardManager.validate_path_within_data_dir(board_dir)
-      return nil unless File.directory?(board_dir)
-
-      board = Board.new(board_data_dir: board_dir)
-      board.load
-      @boards[name] = board
+      board = board_entry[:board]
+      # Ensure the board's content is loaded if it hasn't been already
+      unless board.loaded?
+        board.load
+      end
       board
     end
 
     # Creates a new board with the given name.
     # Raises if a board with the name already exists.
     def create(name : String) : Board
-      if get(name)
+      if @boards.has_key?(name)
         raise "Board '#{name}' already exists."
       end
 
-      board_dir = File.join(ToCry.data_directory, name)
-      BoardManager.validate_path_within_data_dir(board_dir)
-      # Create the directory first, then initialize the board with that directory.
-      # The Board.new will then use this directory for its save/load operations.
-      FileUtils.mkdir_p(board_dir)
-      board = Board.new(board_data_dir: board_dir)
+      uuid = UUID.random.to_s
+      # New board directory will be {UUID}.{name}
+      board_dir_name = "#{uuid}.#{name}"
+      board_dir_path = File.join(board_base_dir, board_dir_name)
+
+      BoardManager.validate_path_within_data_dir(board_dir_path)
+
+      FileUtils.mkdir_p(board_dir_path)
+      board = Board.new(board_data_dir: board_dir_path)
       board.save # Save an empty board to create initial structure
-      @boards[name] = board
-      Log.info { "Board '#{name}' created at '#{board_dir}'." }
+
+      @boards[name] = {uuid: uuid, board: board}
+      @uuid_to_name_map[uuid] = name
+
+      Log.info { "Board '#{name}' created at '#{board_dir_path}'." }
       board
     end
 
@@ -76,11 +118,19 @@ module ToCry
         raise "The 'default' board cannot be deleted."
       end
 
-      @boards.delete(name) # Remove from cache
-      board_dir = File.join(ToCry.data_directory, name)
-      BoardManager.validate_path_within_data_dir(board_dir)
-      FileUtils.rm_rf(board_dir) if Dir.exists?(board_dir)
-      Log.info { "Board '#{name}' and its directory '#{board_dir}' deleted." }
+      board_entry = @boards.delete(name)
+      unless board_entry
+        raise "Board '#{name}' not found for deletion."
+      end
+
+      uuid = board_entry[:uuid]
+      @uuid_to_name_map.delete(uuid)
+
+      board_dir_path = board_entry[:board].board_data_dir
+
+      BoardManager.validate_path_within_data_dir(board_dir_path)
+      FileUtils.rm_rf(board_dir_path) if Dir.exists?(board_dir_path)
+      Log.info { "Board '#{name}' and its directory '#{board_dir_path}' deleted." }
     end
 
     # Renames an existing board.
@@ -90,13 +140,36 @@ module ToCry
         raise "The 'default' board cannot be renamed."
       end
 
-      board = get(old_name)
-      raise "Board '#{old_name}' not found for renaming." unless board
+      if @boards.has_key?(new_name)
+        raise "Board with name '#{new_name}' already exists."
+      end
 
-      board.rename(new_name)    # This updates the board_data_dir property and renames the directory
-      @boards.delete(old_name)  # Remove old entry from cache
-      @boards[new_name] = board # Add new entry to cache
-      Log.info { "Board renamed from '#{old_name}' to '#{new_name}'." }
+      board_entry = @boards[old_name]
+      raise "Board '#{old_name}' not found for renaming." unless board_entry
+
+      uuid = board_entry[:uuid]
+      board = board_entry[:board]
+
+      old_board_dir_name = "#{uuid}.#{old_name}"
+      new_board_dir_name = "#{uuid}.#{new_name}"
+
+      old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
+      new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
+
+      BoardManager.validate_path_within_data_dir(old_board_dir_path)
+      BoardManager.validate_path_within_data_dir(new_board_dir_path)
+
+      FileUtils.mv(old_board_dir_path, new_board_dir_path)
+
+      # Update the board instance's internal directory path
+      board.board_data_dir = new_board_dir_path
+
+      # Update the cache
+      @boards.delete(old_name)
+      @boards[new_name] = {uuid: uuid, board: board}
+      @uuid_to_name_map[uuid] = new_name
+
+      Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (directory: '#{old_board_dir_path}' to '#{new_board_dir_path}')." }
       board
     end
   end

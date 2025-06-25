@@ -1,5 +1,5 @@
 name: tocry
-version: 0.7.0
+version: 0.7.1
 
 dependencies:
   baked_file_system:

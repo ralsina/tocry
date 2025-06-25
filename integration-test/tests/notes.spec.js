@@ -15,6 +15,17 @@ test.beforeEach(async ({ page }) => {
       name: uniqueBoardName
     }
   })
+
+  // If the board creation fails, log details to help with debugging.
+  if (!boardResponse.ok()) {
+    console.error(`Error creating board: ${boardResponse.status()} ${boardResponse.statusText()}`)
+    try {
+      const body = await boardResponse.json()
+      console.error(`Response body: ${JSON.stringify(body, null, 2)}`)
+    } catch (e) {
+      console.error(`Response body: ${await boardResponse.text()}`)
+    }
+  }
   await expect(boardResponse).toBeOK()
   // Navigate to a unique board URL to ensure isolation
   await page.goto(`/b/${uniqueBoardName}`)
