@@ -4,4 +4,3 @@ export const BOARD_SELECTOR_OPTIONS = {
   DELETE_BOARD: '__DELETE_BOARD__',
   SEPARATOR: '---'
 }
-export const DEFAULT_BOARD_NAME = 'default'

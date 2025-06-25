@@ -1,7 +1,7 @@
 /* global history */
 import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
-import { BOARD_SELECTOR_OPTIONS, DEFAULT_BOARD_NAME } from '../utils/constants.js'
+import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
 
@@ -156,13 +156,6 @@ async function handleAddBoardButtonClick (boardSelector) {
 async function handleRenameBoardButtonClick (boardSelector) {
   const currentBoardName = state.currentBoardName
   if (!currentBoardName) {
-    showNotification('No board selected to rename.')
-    boardSelector.value = state.previousBoardSelection
-    return
-  }
-
-  if (currentBoardName === DEFAULT_BOARD_NAME) {
-    showNotification('The "default" board cannot be renamed.', 'error')
     // Revert the selector to the current (default) board
     boardSelector.value = state.previousBoardSelection
     return
@@ -201,13 +194,6 @@ async function handleRenameBoardButtonClick (boardSelector) {
 async function handleDeleteBoardButtonClick (boardSelector) {
   const currentBoardName = state.currentBoardName
   if (!currentBoardName) {
-    showNotification('No board selected to delete.')
-    boardSelector.value = state.previousBoardSelection
-    return
-  }
-
-  if (currentBoardName === DEFAULT_BOARD_NAME) {
-    showNotification('The "default" board cannot be deleted.', 'error')
     // Revert the selector to the current (default) board
     boardSelector.value = state.previousBoardSelection
     return
@@ -219,15 +205,11 @@ async function handleDeleteBoardButtonClick (boardSelector) {
       if (response.ok) {
         showNotification(`Board "${currentBoardName}" deleted successfully.`, 'info')
         // After deleting, try to load the default board or the first available board
-        const boards = await fetchBoards()
-        let nextBoardName = DEFAULT_BOARD_NAME // Fallback to 'default'
-        if (boards.length > 0) {
-          // If 'default' exists, use it. Otherwise, use the first board in the list.
-          if (boards.includes(DEFAULT_BOARD_NAME)) {
-            nextBoardName = DEFAULT_BOARD_NAME
-          } else {
-            nextBoardName = boards[0]
-          }
+        const remainingBoards = await fetchBoards()
+        let nextBoardName = null
+
+        if (remainingBoards.length > 0) {
+          nextBoardName = remainingBoards[0]
         } else {
           // No boards left, prompt to create a new one
           showNotification('All boards deleted. Please create a new board.', 'info')
