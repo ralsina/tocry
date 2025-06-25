@@ -3,6 +3,7 @@ require "./tocry"
 require "uuid"
 require "file_utils"
 require "uri"
+require "ecr"
 
 # Import the refactored endpoint modules
 require "./endpoints/helpers"
@@ -26,8 +27,15 @@ error Exception do |env, ex|     # Removed begin/end block as it's not needed he
   {error: "An unexpected error occurred."}.to_json
 end
 
+# Global error handler for 403 Forbidden.
+error 403 do |env|
+  env.response.status_code = 403
+  env.response.content_type = "text/html"
+  ECR.render "templates/403.ecr"
+end
+
 error 404 do |env|
   env.response.status_code = 404
   env.response.content_type = "text/html"
-  render "templates/404.ecr"
+  ECR.render "templates/404.ecr"
 end

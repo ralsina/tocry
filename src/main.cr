@@ -98,8 +98,6 @@ def main
   else # No Auth
     setup_no_auth_mode
   end
-  baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
-  add_handler baked_asset_handler
 
   # Serve the main application HTML for the root path
   get "/" do |env|
@@ -119,6 +117,10 @@ def main
       render "templates/board_selection.ecr"
     end
   end
+
+  baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
+  add_handler baked_asset_handler
+
   Kemal.run(port: port)
 end
 
