@@ -70,7 +70,7 @@ module ToCry
     rescue ex
       ToCry::Log.error(exception: ex) { "Error loading board from file system" }
       @loaded = false # Mark as not loaded on error
-      raise ex # Re-raise for now to indicate a critical loading failure
+      raise ex        # Re-raise for now to indicate a critical loading failure
     end
 
     property lanes : Array(Lane) = [] of Lane

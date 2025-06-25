@@ -1,6 +1,5 @@
 require "file_utils"
 require "uuid"
-require "uuid"
 require "semantic_version"
 
 module ToCry
@@ -64,7 +63,7 @@ module ToCry
       # Migration 2: from "uploads" to ".uploads"
       # This runs for any version before this feature is introduced.
       # This runs for any version before 0.7.0
-      if from_version.nil? || (from_version && SemanticVersion.parse(from_version) < SemanticVersion.parse("0.7.0"))
+      if from_version.nil? || (from_version && SemanticVersion.parse(from_version) < SemanticVersion.parse("0.6.1"))
         migrate_uploads_to_hidden
       end
 
@@ -131,6 +130,7 @@ module ToCry
         ".version", # Application version file
         ".notes",   # Special directory, handled separately if not moved by v1
         ".uploads", # Target of v2 migration
+        "uploads",  # Old uploads directory, renamed to .uploads for 0.6.1
         "boards",   # Target of this migration
       ]
 
