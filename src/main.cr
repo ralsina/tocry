@@ -70,6 +70,11 @@ def main
   # Run any pending data migrations before loading the board.
   ToCry::Migration.run
 
+  # On every request, ensure the current user's data directory exists.
+  before_all do |env|
+    ToCry.ensure_user_directory_exists(env)
+  end
+
   # Determine authentication mode based on environment variables
   use_google_auth = ENV["GOOGLE_CLIENT_ID"]? && ENV["GOOGLE_CLIENT_SECRET"]?
   use_basic_auth = ENV["TOCRY_AUTH_USER"]? && ENV["TOCRY_AUTH_PASS"]?
