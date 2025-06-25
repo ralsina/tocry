@@ -25,3 +25,9 @@ error Exception do |env, ex|     # Removed begin/end block as it's not needed he
   env.response.content_type = "application/json"
   {error: "An unexpected error occurred."}.to_json
 end
+
+error 404 do |env|
+  env.response.status_code = 404
+  env.response.content_type = "text/html"
+  render "templates/404.ecr"
+end
