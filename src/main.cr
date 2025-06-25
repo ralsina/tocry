@@ -119,11 +119,6 @@ def main
       render "templates/board_selection.ecr"
     end
   end
-  error 404 do |env|
-    env.response.status_code = 404
-    env.response.content_type = "text/html"
-    render "templates/404.ecr"
-  end
   Kemal.run(port: port)
 end
 
