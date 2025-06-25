@@ -167,27 +167,8 @@ function createLaneElement (lane, callbacks, dragAndDropCallbacks) {
   laneColumn.addEventListener('drop', dragAndDropCallbacks.lane.drop)
   laneColumn.addEventListener('dragend', dragAndDropCallbacks.lane.dragend)
 
-  laneColumn.addEventListener('paste', (e) => {
-    const activeElement = document.activeElement
-    if (activeElement.isContentEditable || activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') return
-
-    const items = (e.clipboardData || window.clipboardData).items
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
-        e.preventDefault()
-        e.stopPropagation()
-        if (callbacks.onPasteAsImageNote) callbacks.onPasteAsImageNote(lane.name, items[i].getAsFile())
-        return
-      }
-    }
-
-    const pastedText = (e.clipboardData || window.clipboardData).getData('text/plain')
-    if (pastedText) {
-      e.preventDefault()
-      e.stopPropagation()
-      if (callbacks.onPasteAsNote) callbacks.onPasteAsNote(lane.name, pastedText)
-    }
-  })
+  // Delegate paste handling to a dedicated function
+  laneColumn.addEventListener('paste', (e) => handleLanePaste(e, lane.name, callbacks))
 
   const laneHeader = document.createElement('div')
   laneHeader.className = 'lane-header'
@@ -248,6 +229,37 @@ function createLaneElement (lane, callbacks, dragAndDropCallbacks) {
   }
   laneColumn.appendChild(notesList)
   return laneColumn
+}
+
+/**
+ * Handles paste events on a lane, delegating to appropriate note creation functions.
+ * @param {ClipboardEvent} event The paste event.
+ * @param {string} laneName The name of the lane where content is pasted.
+ * @param {object} callbacks Callbacks object containing onPasteAsNote and onPasteAsImageNote.
+ */
+function handleLanePaste (event, laneName, callbacks) {
+  const activeElement = document.activeElement
+  // Do not handle paste if user is pasting into an editable field
+  if (activeElement.isContentEditable || activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+    return
+  }
+
+  const items = (event.clipboardData || window.clipboardData).items
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+      event.preventDefault() // Prevent default paste behavior
+      event.stopPropagation() // Stop event from bubbling up
+      if (callbacks.onPasteAsImageNote) callbacks.onPasteAsImageNote(laneName, items[i].getAsFile())
+      return
+    }
+  }
+
+  const pastedText = (event.clipboardData || window.clipboardData).getData('text/plain')
+  if (pastedText) {
+    event.preventDefault() // Prevent default paste behavior
+    event.stopPropagation() // Stop event from bubbling up
+    if (callbacks.onPasteAsNote) callbacks.onPasteAsNote(laneName, pastedText)
+  }
 }
 
 /**
