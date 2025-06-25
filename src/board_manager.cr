@@ -35,12 +35,6 @@ module ToCry
 
       # Populate the board cache by scanning the new structure
       scan_boards_directory
-
-      # Ensure the default board exists upon initialization.
-      unless get("default")
-        Log.info { "Default board not found, creating it." }
-        create("default")
-      end
     end
 
     # Scans the boards directory and populates the in-memory cache.
@@ -88,8 +82,8 @@ module ToCry
     end
 
     # Creates a new board with the given name.
-    # Raises if a board with the name already exists.
-    def create(name : String) : Board
+    # Optionally creates a symlink for a user.
+    def create(name : String, user : String) : Board
       if @boards.has_key?(name)
         raise "Board '#{name}' already exists."
       end
@@ -105,6 +99,25 @@ module ToCry
       board = Board.new(board_data_dir: board_dir_path)
       board.save # Save an empty board to create initial structure
 
+      # For non-root users, create a symlink in their user directory.
+      if user && user != "root"
+        actual_user = user.not_nil!
+        # Construct the full path for the symlink: /data/users/{user}/boards/{UUID}.{name}
+        user_board_symlink_path = File.join(
+          ToCry.data_directory,
+          "users",
+          actual_user,
+          "boards",
+          board_dir_name
+        )
+
+        # Validate the user-specific path to prevent traversal attacks
+        BoardManager.validate_path_within_data_dir(user_board_symlink_path)
+        FileUtils.mkdir_p(File.dirname(user_board_symlink_path)) # Ensure user's boards directory exists
+        FileUtils.ln_s(board_dir_path, user_board_symlink_path)  # Create the symlink
+        Log.info { "Symlink created for user '#{actual_user}' from '#{board_dir_path}' to '#{user_board_symlink_path}'." }
+      end
+
       @boards[name] = {uuid: uuid, board: board}
       @uuid_to_name_map[uuid] = name
 
@@ -113,11 +126,7 @@ module ToCry
     end
 
     # Deletes a board by its name, removing it from cache and filesystem.
-    def delete(name : String)
-      if name == "default"
-        raise "The 'default' board cannot be deleted."
-      end
-
+    def delete(name : String) # No longer needs to check for "default"
       board_entry = @boards.delete(name)
       unless board_entry
         raise "Board '#{name}' not found for deletion."
@@ -135,11 +144,7 @@ module ToCry
 
     # Renames an existing board.
     # Updates the board's directory on the filesystem and refreshes the cache.
-    def rename(old_name : String, new_name : String) : Board
-      if old_name == "default"
-        raise "The 'default' board cannot be renamed."
-      end
-
+    def rename(old_name : String, new_name : String) : Board # No longer needs to check for "default"
       if @boards.has_key?(new_name)
         raise "Board with name '#{new_name}' already exists."
       end

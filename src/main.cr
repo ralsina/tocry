@@ -101,25 +101,29 @@ def main
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
   add_handler baked_asset_handler
 
-  # Redirect /b to the default board as well.
-  get "/b" do |env|
-    env.redirect "/b/default"
-  end
+  # Serve the main application HTML for the root path
+  get "/" do |env|
+    # Get the current user
+    user = ToCry.get_current_user_id(env)
 
-  # Serve the main application HTML for board-specific URLs
-  # The regex ensures that board names do not contain dots, preventing this
-  # route from incorrectly catching asset requests like 'style.css' or sub-paths.
-  get "/b/:board_name" do |env|
-    board_name = env.params.url["board_name"].as(String)
-    # Validate that the extracted board_name does not contain slashes or dots.
-    # This mimics the behavior of the original regex %r{/b/([^/.]+)$}
-    if board_name.includes?('.')
-      env.response.status_code = 404 # Not Found
-      env.response.content_type = "application/json"
-      env.response.print({error: "Invalid board URL format or asset path."}.to_json)
-      halt env
+    # List boards for the current user
+    boards = ToCry.board_manager.list
+
+    # If there's exactly one board, redirect to it
+    case boards.size
+    when 0
+      render "templates/app.ecr"
+    when 1
+      env.redirect "/b/#{boards.first}"
+    else
+      render "templates/board_selection.ecr"
     end
-    render "templates/app.ecr"
+  end
+  error 404 do |env|
+    env.response.status_code = 404
+    env.response.content_type = "text/html"
+    message = "Invalid board URL"
+    render "templates/404.ecr"
   end
   Kemal.run(port: port)
 end

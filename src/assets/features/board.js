@@ -1,5 +1,5 @@
 /* global history */
-import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js'
+import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
@@ -16,7 +16,7 @@ export function getBoardNameFromURL () {
 
 const setupBoardSelectorListener = () => {
   const boardSelector = document.getElementById('board-selector')
-  if (!boardSelector) return
+  if (!boardSelector) return // No board selector, nothing to set up
 
   boardSelector.addEventListener('change', async (event) => {
     const selectedValue = event.target.value
@@ -29,8 +29,7 @@ const setupBoardSelectorListener = () => {
     } else if (selectedValue) { // A regular board was selected, and it's not the separator
       await selectBoard(selectedValue)
     } else {
-      // This handles selecting the separator. Revert to the previous valid selection.
-      boardSelector.value = state.previousBoardSelection
+      boardSelector.value = state.previousBoardSelection // Revert to the previous valid selection if separator is chosen
     }
   })
 }
@@ -39,7 +38,7 @@ export { setupBoardSelectorListener }
 // --- Board Selector ---
 export async function initializeBoardSelector () {
   const boardSelector = document.getElementById('board-selector')
-  if (!boardSelector) return
+  if (!boardSelector) return // No board selector, nothing to initialize
 
   try {
     const boards = await fetchBoards()
@@ -77,10 +76,11 @@ export async function initializeBoardSelector () {
       option.textContent = 'No boards available'
       boardSelector.appendChild(option)
       boardSelector.disabled = true
-      showNotification('No boards found. Please create a new board.', 'info')
-      return
+      // No notification here, as initializeLanes will show the main welcome message
+      state.setBoardName(null) // Explicitly set currentBoardName to null
+      await initializeLanes(null) // Trigger initializeLanes with null to show welcome message
+      return // Exit early, no boards to select
     }
-
     boards.forEach((boardName) => {
       const option = document.createElement('option')
       option.value = boardName
@@ -89,62 +89,70 @@ export async function initializeBoardSelector () {
     })
 
     // Set initial selection based on currentBoardName (default or from URL later)
+    // The board from the URL (state.currentBoardName) will be attempted.
+    // If it's not a valid option, the dropdown will just show the first option.
     boardSelector.value = state.currentBoardName
-    if (!boardSelector.value) {
-      // If currentBoardName is not in the list, select the first one
-      state.setBoardName(boards[0])
-      boardSelector.value = state.currentBoardName
-    }
     state.setPreviousBoardSelection(boardSelector.value) // Store current selection
     boardSelector.disabled = false
     return boardSelector // Return the selector element
   } catch (error) {
     console.error('Error initializing board selector:', error)
     showNotification('Failed to load boards. Please try again.', 'error')
+    state.setBoardName(null) // Ensure state is clear on error
+    await initializeLanes(null) // Attempt to show welcome message even on error fetching boards
     boardSelector.disabled = true
   }
 }
 
-export async function handleAddBoardButtonClick (boardSelector) {
+// Core function to add a board (backend interaction and notification)
+export async function addBoard (boardName) {
+  const trimmedBoardName = boardName.trim()
+  if (trimmedBoardName === '') {
+    showNotification('Board name cannot be empty.', 'error')
+    throw new Error('Board name cannot be empty.') // Throw to indicate failure
+  }
+  try {
+    const response = await createBoard(trimmedBoardName)
+    if (response.ok) {
+      showNotification(`Board "${trimmedBoardName}" created successfully!`, 'success')
+      return trimmedBoardName // Return the new board name on success
+    } else {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
+      const errorMessage = errorData.error || `Failed to create board: ${response.status} ${response.statusText}`
+      showNotification(errorMessage, 'error')
+      throw new Error(errorMessage) // Throw to indicate API failure
+    }
+  } catch (error) {
+    console.error('Error creating board:', error)
+    showNotification('An unexpected error occurred while creating the board.', 'error')
+    throw error // Re-throw for caller to handle
+  }
+}
+
+// Handler for the "New board..." option in the selector
+async function handleAddBoardButtonClick (boardSelector) {
   const boardName = await showPrompt(
     'Enter the name for the new board:',
     'Create New Board'
   )
 
-  if (boardName !== null && boardName.trim() !== '') {
-    try {
-      const trimmedBoardName = boardName.trim()
-      const response = await createBoard(trimmedBoardName)
-      if (response.ok) {
-        showNotification(
-          `Board "${trimmedBoardName}" created successfully.`,
-          'info'
-        )
-        const updatedSelector = await initializeBoardSelector() // Re-populate selector
-        updatedSelector.value = trimmedBoardName // Explicitly set value on the refreshed selector
-        await selectBoard(trimmedBoardName) // Load lanes and update URL
-      } else {
-        // Revert the selector immediately to the previous valid board
-        boardSelector.value = state.previousBoardSelection
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: 'Failed to parse error response' }))
-        showNotification(
-          `Failed to create board: ${errorData.error || response.statusText}`
-        )
-      }
-    } catch (error) {
-      console.error('Error creating board:', error)
-      showNotification('An error occurred while trying to create the board.')
-    }
-  }
-  // If prompt was cancelled or input was empty, revert the selector
   if (boardName === null || boardName.trim() === '') {
+    boardSelector.value = state.previousBoardSelection // Revert if cancelled or empty
+    return
+  }
+
+  try {
+    const newBoardName = await addBoard(boardName) // Call the core addBoard function
+    const updatedSelector = await initializeBoardSelector() // Re-populate selector
+    updatedSelector.value = newBoardName // Explicitly set value on the refreshed selector
+    await selectBoard(newBoardName) // Load lanes and update URL
+  } catch (error) {
+    // Error already handled by addBoard, just revert the selector
     boardSelector.value = state.previousBoardSelection
   }
 }
 
-export async function handleRenameBoardButtonClick (boardSelector) {
+async function handleRenameBoardButtonClick (boardSelector) {
   const currentBoardName = state.currentBoardName
   if (!currentBoardName) {
     showNotification('No board selected to rename.')
@@ -189,7 +197,7 @@ export async function handleRenameBoardButtonClick (boardSelector) {
   }
 }
 
-export async function handleDeleteBoardButtonClick (boardSelector) {
+async function handleDeleteBoardButtonClick (boardSelector) {
   const currentBoardName = state.currentBoardName
   if (!currentBoardName) {
     showNotification('No board selected to delete.')
@@ -247,15 +255,15 @@ export async function handleDeleteBoardButtonClick (boardSelector) {
   }
 }
 
+// Function to select a board, update UI, and change URL
 async function selectBoard (boardName) {
   const boardSelector = document.getElementById('board-selector')
   state.setPreviousBoardSelection(boardName) // Update previous selection
   state.setBoardName(boardName) // Update currentBoardName
   if (boardSelector) {
-    // Ensure the dropdown visually reflects the selected board
-    boardSelector.value = boardName
+    boardSelector.value = boardName // Ensure the dropdown visually reflects the selected board
   }
   initializeLanes(boardName) // Load lanes for the selected board
-  // Update the URL to reflect the selected board
-  history.pushState({ board: boardName }, '', `/b/${boardName}`)
+  history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
 }
+export { selectBoard }

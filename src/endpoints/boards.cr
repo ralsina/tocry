@@ -21,6 +21,21 @@ module ToCry::Endpoints::Boards
     env.set("board_name", board_name)
   end
 
+  # Serve the main application HTML for board-specific URLs
+  get "/b/:board_name" do |env|
+    board_name = env.params.url["board_name"].as(String)
+    # Get the current user (for potential future logging or authorization)
+    user = ToCry.get_current_user_id(env)
+
+    # FIXME: do a proper validation that just prevents traversal
+    # Validate that the extracted board_name does not contain dots.
+    if board_name.includes?('.') || !ToCry.board_manager.get(board_name)
+      env.response.status_code = 404 # Not Found
+    else
+      render "templates/app.ecr"
+    end
+  end
+
   # API Endpoint to get all boards
   get "/boards" do |env|
     env.response.content_type = "application/json"
@@ -37,7 +52,9 @@ module ToCry::Endpoints::Boards
     new_board_name = payload.name.strip
     ToCry::Endpoints::Helpers.validate_path_component(new_board_name)
 
-    ToCry.board_manager.create(new_board_name)
+    # Get the current user from the request context and pass it to create.
+    user = ToCry.get_current_user_id(env)
+    ToCry.board_manager.create(new_board_name, user)
 
     env.response.status_code = 201 # Created
     env.response.content_type = "application/json"

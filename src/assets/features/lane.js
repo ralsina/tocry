@@ -1,6 +1,10 @@
 import { fetchLanes, addLane, deleteLane, updateLane } from '../api.js'
 import { renderLanes } from '../render.js'
-import { showPrompt, showConfirmation, showNotification } from '../ui/dialogs.js'
+import {
+  showPrompt,
+  showConfirmation,
+  showNotification
+} from '../ui/dialogs.js'
 import { updateScrollButtonsVisibility } from '../ui/scroll.js'
 import { state } from './state.js'
 import {
@@ -14,10 +18,63 @@ import {
 } from './note.js'
 import { laneDragAndDropCallbacks } from '../dnd/lane.js'
 import { noteDragAndDropCallbacks } from '../dnd/note.js'
+import { initializeBoardSelector, addBoard, selectBoard } from './board.js' // Import selectBoard
+
+// New function to handle creating the first board
+async function handleCreateFirstBoardClick () {
+  const boardName = await showPrompt(
+    'Enter the name for your first board:',
+    'Create New Board'
+  )
+
+  if (boardName === null || boardName.trim() === '') {
+    showNotification('Board creation cancelled or name was empty.', 'info')
+    return
+  }
+
+  try {
+    const newBoardName = await addBoard(boardName) // Call the core addBoard function
+    await initializeBoardSelector() // Re-populate board selector to include the new board
+    await selectBoard(newBoardName) // Use selectBoard to update UI and URL
+  } catch (error) {
+    console.error('Error creating board:', error)
+    showNotification('An error occurred while trying to create the board.')
+  }
+}
 
 export async function initializeLanes (boardName = state.currentBoardName) {
   const lanesContainer = document.getElementById('lanes-container')
   const addLaneButton = document.getElementById('add-lane-btn')
+
+  // If boardName is null (meaning no boards exist at all), display the welcome message directly
+  if (!boardName) {
+    lanesContainer.innerHTML = `
+                <div class="empty-board-message">
+                    <article>
+                        <header><h2>Welcome to ToCry.</h2></header>
+                        <p>You have no boards yet, you can create one by clicking this button</p>
+                        <button id="create-first-board-btn" class="primary">Create Your First Board</button>
+                    </article>
+                </div>
+            `
+    if (addLaneButton) {
+      // addLaneButton.classList.add('pulse-animation') // Removed as new button is primary CTA
+      // Ensure the addLaneButton is not pulsing if there are no boards to add lanes to
+      addLaneButton.classList.remove('pulse-animation')
+      addLaneButton.style.display = 'none' // Hide it completely
+    }
+    const createFirstBoardBtn = document.getElementById(
+      'create-first-board-btn'
+    )
+    if (createFirstBoardBtn) {
+      createFirstBoardBtn.addEventListener(
+        'click',
+        handleCreateFirstBoardClick
+      )
+    }
+    return // Exit early, no lanes to fetch for a non-existent board (no boards at all)
+  }
+
   state.setBoardName(boardName) // Update the global currentBoardName
   try {
     const lanes = await fetchLanes(state.currentBoardName)
@@ -31,9 +88,9 @@ export async function initializeLanes (boardName = state.currentBoardName) {
       .forEach((btn) => {
         btn.classList.remove('pulse-animation')
       })
-
     if (lanes.length === 0) {
-      // Board is empty, show onboarding message and animate button
+      // This block is still useful if a board exists but has no lanes
+      // Board is empty, show onboarding message for adding first lane
       lanesContainer.innerHTML = `
                 <div class="empty-board-message">
                     <article>
@@ -47,6 +104,7 @@ export async function initializeLanes (boardName = state.currentBoardName) {
         addLaneButton.classList.add('pulse-animation')
       }
     } else {
+      // If there are lanes, render them
       // Board has at least one lane, so render them all.
       const callbacks = {
         onDeleteLane: handleDeleteLaneRequest,
@@ -98,7 +156,9 @@ export async function initializeLanes (boardName = state.currentBoardName) {
       if (error.status) {
         // If it's an HTTP error
         errorMessage += ` Server responded with ${error.status} ${error.message}.`
-        if (error.body && error.body.error) { errorMessage += ` Details: ${error.body.error}` }
+        if (error.body && error.body.error) {
+          errorMessage += ` Details: ${error.body.error}`
+        }
       } else {
         // Generic network error
         errorMessage += ` A network or unexpected error occurred: ${error.message}.`
@@ -185,7 +245,9 @@ export async function handleDeleteLaneRequest (laneName) {
         laneElement.remove()
       }
       // Update cache: Filter out the deleted lane
-      state.setCurrentLanes(state.currentLanes.filter((lane) => lane.name !== laneName))
+      state.setCurrentLanes(
+        state.currentLanes.filter((lane) => lane.name !== laneName)
+      )
       // Update scroll buttons visibility as lanes might have shifted
       updateScrollButtonsVisibility()
 
@@ -194,11 +256,9 @@ export async function handleDeleteLaneRequest (laneName) {
         console.log(`Lane "${laneName}" deleted successfully.`)
         await initializeLanes() // Re-fetch and render all lanes
       } else {
-        const errorData = await response
-          .json()
-          .catch(() => ({
-            error: 'Failed to parse error response from server'
-          }))
+        const errorData = await response.json().catch(() => ({
+          error: 'Failed to parse error response from server'
+        }))
         console.error(
           `Failed to delete lane "${laneName}":`,
           response.status,
@@ -246,7 +306,9 @@ export async function handleUpdateLaneNameRequest (laneToUpdate, newName) {
     // Since render.js uses currentLanes, this will update the displayed name.
     laneToUpdate.name = trimmedNewName
     // Also update the data-lane-name attribute on the DOM element for consistency
-    const laneElement = document.querySelector(`.lane[data-lane-name="${oldName}"]`)
+    const laneElement = document.querySelector(
+      `.lane[data-lane-name="${oldName}"]`
+    )
     if (laneElement) {
       laneElement.dataset.laneName = trimmedNewName
     }

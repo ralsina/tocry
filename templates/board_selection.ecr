@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose a Board</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: var(--pico-background-color); }
+        article { text-align: center; padding: 2rem; border-radius: var(--pico-border-radius); background-color: var(--pico-card-background-color); box-shadow: var(--pico-card-box-shadow); }
+        .board-button { margin: 0.5rem; }
+    </style>
+</head>
+<body>
+    <article>
+        <h2>Choose a Board:</h2>
+        <% boards.each do |board_name| %>
+            <a href="/b/<%= board_name %>" role="button" class="board-button"><%= board_name %></a>
+        <% end %>
+    </article>
+</body>
+</html>
