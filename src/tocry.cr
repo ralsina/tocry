@@ -78,12 +78,12 @@ module ToCry
   # Ensures that the data directory for the current user exists.
   # This is called on every request via a middleware.
   def self.ensure_user_directory_exists(env : HTTP::Server::Context)
-    user_id = get_current_user_id(env) # Get the user ID
+    user_id = get_current_user_id(env)                  # Get the user ID
     user_dir = File.join(users_base_directory, user_id) # Path to the user's base directory
 
     if user_id == "root"
       root_boards_symlink_path = File.join(user_dir, "boards") # Expected path for the symlink
-      target_boards_path = File.join("..", "..", "boards") # Relative target for the symlink
+      target_boards_path = File.join("..", "..", "boards")     # Relative target for the symlink
 
       # Ensure the parent directory for the symlink exists
       FileUtils.mkdir_p(user_dir)
@@ -92,7 +92,7 @@ module ToCry
         Log.debug { "Root user boards symlink already exists at '#{root_boards_symlink_path}'." }
       elsif File.exists?(root_boards_symlink_path)
         Log.warn { "Root user boards directory exists but is not a symlink. Removing '#{root_boards_symlink_path}' to create symlink." }
-        FileUtils.rm_rf(root_boards_symlink_path) # Remove existing directory if it's not a symlink
+        FileUtils.rm_rf(root_boards_symlink_path)                    # Remove existing directory if it's not a symlink
         FileUtils.ln_s(target_boards_path, root_boards_symlink_path) # Create the symlink
         Log.info { "Created symlink for root user boards from '#{root_boards_symlink_path}' to '#{target_boards_path}'." }
       else

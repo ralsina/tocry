@@ -9,14 +9,12 @@ module ToCry::Endpoints::Boards
   # Path-scoped before filter to validate the board name and store it in the context.
   # This filter is specific to board-related paths.
   before_all "/boards/:board_name/*" do |env|
+    user = ToCry.get_current_user_id(env)
     board_name = env.params.url["board_name"].as(String)
-    board = ToCry.board_manager.get(board_name)
+    board = ToCry.board_manager.get(board_name, user)
 
     unless board
-      env.response.status_code = 404
-      env.response.content_type = "application/json"
-      env.response.print({error: "Board '#{board_name}' not found."}.to_json)
-      halt env # Stop processing the request
+      halt env, 404 # Stop processing the request
     end
     env.set("board_name", board_name)
   end
@@ -29,8 +27,8 @@ module ToCry::Endpoints::Boards
 
     # FIXME: do a proper validation that just prevents traversal
     # Validate that the extracted board_name does not contain dots.
-    if board_name.includes?('.') || !ToCry.board_manager.get(board_name)
-      env.response.status_code = 404 # Not Found
+    if board_name.includes?('.') || !ToCry.board_manager.get(board_name, user)
+      halt env, 404 # Not Found
     else
       render "templates/app.ecr"
     end
@@ -38,8 +36,9 @@ module ToCry::Endpoints::Boards
 
   # API Endpoint to get all boards
   get "/boards" do |env|
+    user = ToCry.get_current_user_id(env)
     env.response.content_type = "application/json"
-    ToCry.board_manager.list.to_json
+    ToCry.board_manager.list(user).to_json
   end
 
   # API Endpoint to create a new board
@@ -76,7 +75,8 @@ module ToCry::Endpoints::Boards
       raise ToCry::Endpoints::Helpers::MissingBodyError.new("New board name cannot be empty.") if new_board_name.empty?
       ToCry::Endpoints::Helpers.validate_path_component(new_board_name)
 
-      ToCry.board_manager.rename(old_board_name, new_board_name)
+      user = ToCry.get_current_user_id(env)
+      ToCry.board_manager.rename(old_board_name, new_board_name, user)
 
       env.response.status_code = 200 # OK
       env.response.content_type = "application/json"
@@ -92,7 +92,8 @@ module ToCry::Endpoints::Boards
   # DELETE /boards/My%20Board
   delete "/boards/:board_name" do |env|
     board_name = env.params.url["board_name"].as(String)
-    ToCry.board_manager.delete(board_name)
+    user = ToCry.get_current_user_id(env)
+    ToCry.board_manager.delete(board_name, user)
     env.response.status_code = 200 # OK
     env.response.content_type = "application/json"
     {success: "Board '#{board_name}' deleted."}.to_json

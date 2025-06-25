@@ -107,7 +107,7 @@ def main
     user = ToCry.get_current_user_id(env)
 
     # List boards for the current user
-    boards = ToCry.board_manager.list
+    boards = ToCry.board_manager.list(user)
 
     # If there's exactly one board, redirect to it
     case boards.size
@@ -122,7 +122,6 @@ def main
   error 404 do |env|
     env.response.status_code = 404
     env.response.content_type = "text/html"
-    message = "Invalid board URL"
     render "templates/404.ecr"
   end
   Kemal.run(port: port)
