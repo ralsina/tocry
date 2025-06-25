@@ -9,34 +9,20 @@ module ToCry
     include JSON::Serializable
 
     property board_data_dir : String
+    @loaded = false # New instance variable to track if content is loaded
 
     def initialize(@lanes : Array(Lane) = [] of Lane, @board_data_dir : String = "data/default")
     end
 
-    # Renames the board by updating its directory on the filesystem.
-    def rename(new_name : String)
-      # Validate new board name to prevent path traversal and hidden directories.
-      if new_name.includes?('/') || new_name.includes?('\\')
-        raise "Invalid board name. It cannot contain path separators."
-      end
+    # Indicates if the board's content has been loaded from disk.
+    def loaded?
+      @loaded
+    end
 
-      if new_name.starts_with?('.')
-        raise "Invalid board name. It cannot start with a dot."
-      end
-
-      old_dir = @board_data_dir
-      new_dir = File.join(File.dirname(old_dir), new_name)
-      # Access BoardManager through ToCry module, which will be loaded by main.cr
-      ToCry::BoardManager.validate_path_within_data_dir(new_dir)
-
-      # Check if a directory with the new name already exists
-      if File.exists?(new_dir)
-        raise "Board with name '#{new_name}' already exists."
-      end
-
-      FileUtils.mv(old_dir, new_dir)
-      @board_data_dir = new_dir # Update the instance variable after successful rename
-      ToCry::Log.info { "Board directory renamed from '#{old_dir}' to '#{@board_data_dir}'." }
+    # The board_data_dir is updated by BoardManager after the move.
+    # No longer performs filesystem operations directly.
+    def board_data_dir=(new_dir : String)
+      @board_data_dir = new_dir
     end
 
     # Loads the board state from the file system.
@@ -45,6 +31,7 @@ module ToCry
     def load
       unless File.directory?(@board_data_dir)
         ToCry::Log.info { "Data directory '#{@board_data_dir}' not found. Starting with an empty board." }
+        @lanes.clear
         return
       end
 
@@ -79,9 +66,10 @@ module ToCry
           ToCry::Log.error(exception: ex) { "Skipping lane: Failed to load from directory '#{canonical_path}'" }
         end
       end
+      @loaded = true
     rescue ex
       ToCry::Log.error(exception: ex) { "Error loading board from file system" }
-      # Decide whether to re-raise or continue with a potentially empty/partial board
+      @loaded = false # Mark as not loaded on error
       raise ex # Re-raise for now to indicate a critical loading failure
     end
 

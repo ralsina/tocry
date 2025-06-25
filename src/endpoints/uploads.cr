@@ -12,7 +12,7 @@ module ToCry::Endpoints::Uploads
   # Expects a multipart/form-data request with a file part.
   post "/upload/image" do |env|
     # Ensure the user-images subdirectory exists within the uploads directory
-    upload_dir = File.join(ToCry.data_directory, ".uploads", "user-images")
+    upload_dir = File.join(ToCry.data_directory, "uploads", "user-images")
     FileUtils.mkdir_p(upload_dir)
 
     # Get the first uploaded file from the request.
