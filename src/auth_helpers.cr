@@ -3,6 +3,25 @@ require "kemal-basic-auth" # For basic_auth helper
 require "./auth"           # For current_user helper
 require "./tocry"          # For ToCry::Log
 
+def check_access(env)
+  # Exclude specific public routes from authentication check.
+  # These routes are handled by their own specific definitions or are public.
+  # Use regex for paths with parameters.
+  case env.request.path
+  when "/me", "/logout"
+    # Exact matches
+  when %r{^/auth/[^/]+$}, %r{^/auth/[^/]+/callback$} # Matches /auth/:provider and /auth/:provider/callback
+    # Allow these paths to proceed without authentication check here.
+  when %r{/user-images/.*} # Allow access to user-uploaded images
+  else
+    # For all other routes, check authentication.
+    unless current_user(env)
+      env.response.status_code = 403
+    end
+  end
+  # If current_user(env) is true, or if it's an excluded path, the request proceeds.
+end
+
 # Function to set up Google Auth mode
 # This function defines Kemal routes and filters specific to Google OAuth.
 def setup_google_auth_mode
@@ -11,25 +30,13 @@ def setup_google_auth_mode
 
   # Global protection for all routes when Google Auth is enabled.
   before_all do |env|
-    # Exclude specific public routes from authentication check.
-    # These routes are handled by their own specific definitions or are public.
-    # Use regex for paths with parameters.
-    case env.request.path
-    when "/me", "/logout"
-      # Exact matches
-      next
-    when %r{^/auth/[^/]+$}, %r{^/auth/[^/]+/callback$} # Matches /auth/:provider and /auth/:provider/callback
-      # Allow these paths to proceed without authentication check here.
-      next
-    when %r{/user-images/.*} # Allow access to user-uploaded images
-      next
-    else
-      # For all other routes, check authentication.
-      unless current_user(env)
-        halt env, 403, LOGIN_REQUIRED_PAGE_HTML
-      end
-    end
-    # If current_user(env) is true, or if it's an excluded path, the request proceeds.
+    check_access(env)
+  end
+
+  # This is a special case for / which sometimes is accessed as ""
+  # and not matched by the above rule.
+  before_all "" do |env|
+    check_access(env)
   end
 end
 

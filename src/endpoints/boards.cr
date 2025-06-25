@@ -14,7 +14,7 @@ module ToCry::Endpoints::Boards
     board = ToCry.board_manager.get(board_name, user)
 
     unless board
-      halt env, 404 # Stop processing the request
+      env.response.status_code = 404
     end
     env.set("board_name", board_name)
   end
@@ -28,7 +28,7 @@ module ToCry::Endpoints::Boards
     # FIXME: do a proper validation that just prevents traversal
     # Validate that the extracted board_name does not contain dots.
     if board_name.includes?('.') || !ToCry.board_manager.get(board_name, user)
-      halt env, 404 # Not Found
+      env.response.status_code = 404
     else
       render "templates/app.ecr"
     end
