@@ -61,15 +61,7 @@ get "/auth/:provider/callback" do |env| # Corrected: Top-level route definition
   # Ensure email is present, as it's crucial for user identification.
   unless email = auth_user.email
     ToCry::Log.error { "OAuth callback for provider '#{provider}' received without an email address." }
-    env.response.status_code = 400 # Bad Request
-    env.response.content_type = "text/html"
-    halt env, 500, <<-HTML
-    <!DOCTYPE html>
-    <html>
-    <head><title>Authentication Error</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" /></head>
-    <body><main class="container"><article><h1>Authentication Error</h1><p>Could not retrieve email address from #{provider} provider. Please try again.</p><p><a href="/auth/google" role="button">Login with Google</a></p></article></main></body>
-    </html>
-    HTML
+    halt env, 400, "Email address is required for authentication."
   end
 
   # Use a default name if not provided by the OAuth provider.
