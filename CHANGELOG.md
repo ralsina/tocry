@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2025-06-26
+
+### 🚀 Features
+
+- Nice board creation/selection/exposing UX
+- Make BoardManager user-aware
+- Drop images into a lane to get a new note
+
+### 🐛 Bug Fixes
+
+- Improved board storage strategy, boards are now UUID-stored
+- Create user's home on demand
+- Broken root user boards symlink
+- Auth-protect /
+- More robust 403 and 404 handling
+- Simpler 400 on auth issues
+- Use the email as user_id instead of a random string
+- Prevent crash when dropping files outside a valid note area
+
+### 🚜 Refactor
+
+- Better error handling
+- Use constants
+- No more default board name in frontend
+- Centralized UI error handling
+- Split off lane pasting
+
+### 🎨 Styling
+
+- Better 403 page
+
+### 🧪 Testing
+
+- More integration tests
+- Integration tests for dragging and dropping images
+
 ## [0.7.0] - 2025-06-24
 
 ### 🚀 Features
@@ -17,6 +53,10 @@ All notable changes to this project will be documented in this file.
 - Lane serialization bug
 - Handle clean startup better
 - Color selector was broken
+
+### 💼 Other
+
+- Release v0.7.0
 
 ### 🚜 Refactor
 
