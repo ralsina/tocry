@@ -1,4 +1,4 @@
-import { fetchLanes, updateNote } from '../api.js'
+import { fetchLanes, updateNote, uploadImage } from '../api.js'
 import { showNotification } from '../ui/dialogs.js'
 import { initializeLanes } from '../features/lane.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
@@ -79,6 +79,66 @@ function handleNoteDragLeave (event) {
 async function handleNoteDrop (event) {
   event.preventDefault()
 
+  // Handle dropped files (e.g., images)
+  if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+    const targetLane = event.target.closest('.lane')
+    if (!targetLane) {
+      return
+    }
+    event.stopPropagation() // We are handling it, don't let it bubble to the lane.
+    const file = event.dataTransfer.files[0]
+    if (file.type.startsWith('image/')) {
+      const noteCard = event.target.closest('.note-card')
+      if (!noteCard) {
+        return
+      }
+      const noteId = noteCard.dataset.noteId
+
+      // Find note in state
+      let noteToUpdate
+      for (const lane of state.currentLanes) {
+        noteToUpdate = lane.notes.find((n) => n.id === noteId)
+        if (noteToUpdate) break
+      }
+
+      if (!noteToUpdate) {
+        showNotification('Could not find the note to update.')
+        return
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const uploadResponse = await uploadImage(formData)
+        const imageUrl = uploadResponse.url
+
+        // Append image markdown to existing content
+        const { id, ...notePayload } = noteToUpdate
+        notePayload.content = `${noteToUpdate.content}\n\n![${file.name || 'Dropped Image'}](${imageUrl})`
+
+        const response = await updateNote(state.currentBoardName, noteId, {
+          note: notePayload,
+          lane_name: null, // Not moving lane
+          position: null // Not changing position
+        })
+
+        if (response.ok) {
+          showNotification('Image added to note!', 'success')
+          await initializeLanes() // Re-render to show updated note content
+        } else {
+          await handleApiError(response, 'Failed to add image to note.')
+        }
+      } catch (error) {
+        handleUIError(
+          error,
+          'An unexpected error occurred while adding the image.'
+        )
+      }
+      return // Stop processing, file drop handled
+    }
+  }
+
   // Check if the dragged data is for a note. The note drag handler sets
   // 'application/json', while the lane handler only sets 'text/plain'.
   const jsonData = event.dataTransfer.getData('application/json')
@@ -152,12 +212,16 @@ async function handleNoteDrop (event) {
     })
     if (response.ok) {
       await initializeLanes()
-    } else { // API call failed
+    } else {
+      // API call failed
       await handleApiError(response, 'Failed to move note.')
       await initializeLanes()
     }
   } catch (error) {
-    handleUIError(error, 'An unexpected error occurred while trying to move the note.')
+    handleUIError(
+      error,
+      'An unexpected error occurred while trying to move the note.'
+    )
     showNotification('An error occurred while trying to move the note.')
     await initializeLanes()
   }
