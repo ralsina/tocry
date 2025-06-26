@@ -1,4 +1,4 @@
-import { updateLanePosition } from '../api.js'
+import { updateLanePosition, addNote, uploadImage } from '../api.js'
 import { showNotification } from '../ui/dialogs.js'
 import { initializeLanes } from '../features/lane.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
@@ -38,8 +38,60 @@ async function handleLaneDrop (event) {
   event.preventDefault()
   event.currentTarget.classList.remove('lane--drag-over')
 
-  const draggedLaneName = event.dataTransfer.getData('text/plain')
   const targetLaneName = event.currentTarget.dataset.laneName
+
+  // 1. Handle dropped files (e.g., images)
+  if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+    const file = event.dataTransfer.files[0] // Process only the first dropped file
+    if (file.type.startsWith('image/')) {
+      try {
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const uploadResponse = await uploadImage(formData)
+        const imageUrl = uploadResponse.url
+
+        const title = file.name || 'Dropped Image'
+        const content = `![${title}](${imageUrl})`
+
+        const addNoteResponse = await addNote(
+          state.currentBoardName,
+          targetLaneName,
+          title,
+          content,
+          []
+        )
+
+        if (addNoteResponse.ok) {
+          showNotification('Image note created successfully!', 'success')
+          await initializeLanes() // Re-render lanes to show new note
+        } else {
+          await handleApiError(addNoteResponse, 'Failed to create image note.')
+        }
+      } catch (error) {
+        handleUIError(error, 'An unexpected error occurred while creating the image note.')
+      }
+      return // Stop processing, file drop handled
+    }
+  }
+
+  const draggedLaneName = event.dataTransfer.getData('text/plain')
+  // Check if the dropped text corresponds to a lane reorder (i.e., it's a lane name)
+  const isLaneReorder = state.currentLanes.some(lane => lane.name === draggedLaneName)
+
+  if (draggedLaneName && !isLaneReorder) {
+    // It's plain text that is NOT a lane name, so create a new text note
+    try {
+      const lines = draggedLaneName.trim().split('\n')
+      const title = lines[0].trim()
+      const content = lines.slice(1).join('\n').trim()
+      await addNote(state.currentBoardName, targetLaneName, title, content, [])
+      await initializeLanes()
+    } catch (error) {
+      handleUIError(error, 'An unexpected error occurred while trying to create the text note.')
+    }
+    return // Stop processing, text note created
+  }
 
   if (!draggedLaneName || draggedLaneName === targetLaneName) {
     return // No change needed if dropped on itself or invalid drag data
