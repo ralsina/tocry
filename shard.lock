@@ -34,7 +34,7 @@ shards:
 
   kemal-session:
     git: https://github.com/kemalcr/kemal-session.git
-    version: 1.0.0
+    version: 1.2.0
 
   multi_auth:
     git: https://github.com/msa7/multi_auth.git
@@ -43,3 +43,7 @@ shards:
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
+
+  sepia:
+    git: https://github.com/ralsina/sepia.git
+    version: 0.1.0+git.commit.168e9f2a3edea24bd80494d918943b2f661e4380

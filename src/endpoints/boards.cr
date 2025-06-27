@@ -4,8 +4,6 @@ require "../tocry"
 require "./helpers"
 
 module ToCry::Endpoints::Boards
-  # Note: No longer extending Helpers, we will call its methods directly.
-
   # Path-scoped before filter to validate the board name and store it in the context.
   # This filter is specific to board-related paths.
   before_all "/boards/:board_name/*" do |env|
@@ -24,21 +22,18 @@ module ToCry::Endpoints::Boards
     board_name = env.params.url["board_name"].as(String)
     # Get the current user (for potential future logging or authorization)
     user = ToCry.get_current_user_id(env)
-
-    # FIXME: do a proper validation that just prevents traversal
-    # Validate that the extracted board_name does not contain dots.
-    if board_name.includes?('.') || !ToCry.board_manager.get(board_name, user)
-      env.response.status_code = 404
-    else
-      render "templates/app.ecr"
-    end
+    render "templates/app.ecr"
   end
 
   # API Endpoint to get all boards
   get "/boards" do |env|
     user = ToCry.get_current_user_id(env)
     env.response.content_type = "application/json"
-    ToCry.board_manager.list(user).to_json
+    board_names = ToCry.board_manager.list(user).map { |uuid|
+      ToCry.board_manager.@boards[uuid].name
+    }
+    pp! board_names, user, ToCry.board_manager.@boards.keys
+    board_names.to_json
   end
 
   # API Endpoint to create a new board

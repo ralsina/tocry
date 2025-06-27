@@ -1,19 +1,38 @@
 require "file_utils" # For File.join, mkdir_p, symlink, Dir.glob, File.delete
 require "./note"     # Lane contains Notes
 require "json"       # For JSON serialization
+require "sepia"      # For Sepia::Container
 
 module ToCry
   class Lane
     include JSON::Serializable
+    include Sepia::Container
 
     property name : String
     property notes : Array(Note)
 
+    # Override sepia_id getter to return the lane's name
+    def sepia_id : String
+      @name
+    end
+
+    # Override sepia_id= setter to set the lane's name
+    def sepia_id=(value : String)
+      @name = value
+    end
+
+    # Constructor that accepts a name, which will be used as sepia_id.
     def initialize(@name : String, @notes : Array(Note) = [] of Note)
+      @sepia_id = @name # Set the sepia_id to the lane's name
+    end
+
+    # Default constructor for deserialization (Sepia needs this)
+    def initialize(@notes : Array(Note) = [] of Note)
+      @sepia_id = @name = "Untitled Lane" # Default name if not provided
     end
 
     def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0) : Note
-      new_note = Note.new(title: title, tags: tags, content: content) # Pass board_data_dir
+      new_note = Note.new(title: title, tags: tags, content: content)
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
@@ -22,95 +41,6 @@ module ToCry
     rescue ex
       Log.error(exception: ex) { "Failed to add note '#{title}' to lane '#{self.name}'" }
       raise ex
-    end
-
-    def save(position : Int, board_data_dir : String)
-      ToCry.validate_filename_component(self.name) # Validate lane name before saving
-
-      # First save all notes to ensure they are on disk
-      self.notes.each do |note|
-        note.save(board_data_dir)
-      end
-
-      # Format position with leading zeros (e.g., 1 -> "0001")
-      padded_position = position.to_s.rjust(4, '0')
-      # Create the directory name using the position and lane name
-      lane_directory_name = "#{padded_position}_#{self.name}"
-      lane_dir = File.join(board_data_dir, lane_directory_name)
-      FileUtils.mkdir_p(lane_dir)
-      Log.info { "Lane directory '#{lane_directory_name}' created at #{lane_dir}" }
-
-      # Before creating new symlinks, clean up old note symlinks in this directory
-      Dir.glob(File.join(lane_dir, "*.md")).each do |existing_symlink_path|
-        if File.symlink?(existing_symlink_path)
-          begin
-            File.delete(existing_symlink_path)
-            Log.info { "Deleted old note symlink: #{existing_symlink_path}" }
-          rescue ex
-            Log.warn(exception: ex) { "Failed to delete old note symlink: #{existing_symlink_path}" }
-          end
-        end
-      end
-
-      self.notes.each_with_index do |note, index| # Changed to each_with_index to get the index
-
-        padded_index = index.to_s.rjust(4, '0')
-        sanitized_title = note.slug # Note instance method for slug
-
-        symlink_filename = "#{padded_index}_#{sanitized_title}.md"
-        source_note_path = File.join("..", ".notes", "#{note.id}.md") # Relative path for symlink
-        symlink_target_path = File.join(lane_dir, symlink_filename)
-
-        File.symlink(source_note_path, symlink_target_path)
-        Log.info { "Symlink created for note '#{note.title}' (ID: #{note.id}) from #{source_note_path} to #{symlink_target_path}" }
-      end
-    rescue ex
-      Log.error(exception: ex) { "Error saving lane '#{self.name}' (directory: #{lane_directory_name}) at #{lane_dir}" }
-      raise ex # Re-raise the exception after logging
-    end
-
-    # Loads a Lane from a directory on the filesystem.
-    #
-    # The directory name is expected to be in the format "NNNN_lane_name".
-    # It finds all note symlinks within the directory, which are expected
-    # to be in the format "MMMM_note_slug.md", sorted by MMMM.
-    # It follows each symlink to load the corresponding Note.
-    #
-    # Returns a new `Lane` instance.
-    # Raises `RuntimeError` if the directory doesn't exist or has an invalid name format.
-    def self.load(folder : String, board_data_dir : String)
-      # TODO: normalize numbers so notes are all consecutive and whatnot like lanes
-      # in Board.load
-      unless Dir.exists?(folder)
-        raise "Lane directory not found: #{folder}"
-      end
-
-      folder_basename = File.basename(folder)
-      # Regex to extract lane name from "NNNN_lane_name"
-      match = folder_basename.match(/^\d{4,}_(.*)$/)
-      unless match
-        raise "Invalid lane folder name format: #{folder_basename}. Expected 'NNNN_lane_name'."
-      end
-      lane_name = match[1]
-
-      ToCry.validate_filename_component(lane_name) # Validate loaded lane name
-      # Find all markdown symlinks, sort them to maintain order
-      symlink_paths = Dir.glob(File.join(folder, "*.md")).sort
-
-      notes = symlink_paths.compact_map do |symlink_path|
-        begin
-          next nil unless File.symlink?(symlink_path)
-          target_path = File.readlink(symlink_path)
-          note_id = File.basename(target_path, ".md")
-          Log.info { "Loading note from symlink: #{symlink_path} -> #{target_path} (ID: #{note_id}) for board_data_dir: #{board_data_dir}" }
-          Note.load(note_id, board_data_dir) # Pass board_data_dir to Note.load
-        rescue ex
-          Log.warn(exception: ex) { "Skipping note: Failed to load from symlink '#{symlink_path}'" }
-          nil
-        end
-      end
-
-      Lane.new(name: lane_name, notes: notes)
     end
   end
 end

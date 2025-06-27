@@ -10,6 +10,7 @@ require "./auth_helpers" # New: Contains authentication mode setup functions
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
+require "sepia"
 
 DOC = <<-DOCOPT
 ToCry, a list of things To Do. Or Cry.
@@ -50,6 +51,7 @@ def main
 
   # Configure the global data directory for the ToCry application
   ToCry.data_directory = data_path
+  Sepia::Storage::INSTANCE.path = data_path
 
   # Add a handler to serve user-uploaded images from the configured data path.
   # This replaces the `public_folder` macro.
@@ -105,7 +107,9 @@ def main
     user = ToCry.get_current_user_id(env)
 
     # List boards for the current user
-    boards = ToCry.board_manager.list(user)
+    boards = ToCry.board_manager.list(user).map do |uuid|
+      ToCry.board_manager.@boards[uuid].name
+    end
 
     # If there's exactly one board, redirect to it
     case boards.size

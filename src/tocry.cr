@@ -83,7 +83,9 @@ module ToCry
 
     if user_id == "root"
       root_boards_symlink_path = File.join(user_dir, "boards") # Expected path for the symlink
-      target_boards_path = File.join("..", "..", "boards")     # Relative target for the symlink
+      target_boards_path = Path[board_manager.board_base_dir].relative_to(
+        Path[root_boards_symlink_path].dirname
+      ) # The target path for the symlink
 
       # Ensure the parent directory for the symlink exists
       FileUtils.mkdir_p(user_dir)
