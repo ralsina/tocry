@@ -87,19 +87,19 @@ describe ToCry::Lane do
       # 1. Create an original lane and add some notes to it
       original_lane = ToCry::Lane.new("To Do")
       note1 = original_lane.note_add("First Task", ["urgent", "testing"], "Content for the first task.")
-      note1.save(TEST_PATH)
+      note1.save
       note2 = original_lane.note_add("Second Task", ["testing"], "Content for the second task.")
-      note2.save(TEST_PATH)
+      note2.save
 
       # 2. Save the lane to the filesystem at position 0
-      original_lane.save(0, board_data_dir)
+      original_lane.save(File.join(board_data_dir, "0000_To Do"))
 
       # 3. Determine the path where the lane was saved and load it back
       lane_dir_path = File.join(board_data_dir, "0000_To Do")
       # Sanity check that the directory was actually created
       Dir.exists?(lane_dir_path).should be_true
 
-      loaded_lane = ToCry::Lane.load(lane_dir_path, board_data_dir)
+      loaded_lane = ToCry::Lane.load(original_lane.sepia_id, lane_dir_path)
 
       # 4. Assert that the loaded lane has the same properties as the original
       loaded_lane.name.should eq(original_lane.name)

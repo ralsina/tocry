@@ -4,19 +4,20 @@ require "file_utils"
 describe ToCry::Board do
   describe "File Persistence" do
     data_dir = "test_data_board"
-    notes_dir = File.join(data_dir, ".notes")
 
     before_each do
-      FileUtils.mkdir_p(notes_dir)
+      FileUtils.rm_rf(data_dir)
+      FileUtils.mkdir_p(data_dir)
     end
 
     after_each do
-      FileUtils.rm_rf(data_dir) if Dir.exists?(data_dir)
+      FileUtils.rm_rf(data_dir)
     end
 
     it "saves a board and can be loaded back (round-trip)" do
       # 1. Create original board and populate it
-      original_board = ToCry::Board.new(board_data_dir: data_dir)
+      FileUtils.mkdir_p(data_dir)
+      original_board = ToCry::Board.load("foo", data_dir)
 
       lane1 = original_board.lane_add("To Do")
       note1_2 = lane1.note_add("Task 2", ["tag2"], "Content 2") # Added first, will be at index 1
@@ -28,17 +29,16 @@ describe ToCry::Board do
       original_board.lane_add("Done") # An empty lane
 
       # Create an extra directory to test cleanup of orphaned lanes
-      FileUtils.mkdir_p(File.join(data_dir, "9999_Orphaned"))
+      FileUtils.mkdir_p(File.join(data_dir, "lanes", "9999_Orphaned"))
 
       # 2. Save the board
-      original_board.save
+      original_board.save(data_dir)
 
       # Check that the orphaned directory was removed by the save operation
-      Dir.exists?(File.join(data_dir, "9999_Orphaned")).should be_false
+      Dir.exists?(File.join(data_dir, "lanes", "9999_Orphaned")).should be_false
 
       # 3. Create a new board and load from disk
-      loaded_board = ToCry::Board.new(board_data_dir: data_dir)
-      loaded_board.load
+      loaded_board = ToCry::Board.load("foo", data_dir)
 
       # 4. Assertions
       loaded_board.lanes.size.should eq(3)

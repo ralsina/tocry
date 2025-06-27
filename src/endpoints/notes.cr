@@ -78,8 +78,8 @@ module ToCry::Endpoints::Notes
       existing_note.tags = new_note_data.tags
       existing_note.content = new_note_data.content
       existing_note.expanded = new_note_data.expanded
-      existing_note.save(board.board_data_dir) # Save the note to persist changes
-      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.board_data_dir}'." }
+      existing_note.save
+      ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.name}'." }
     end
 
     # Handle moving the note if lane_name or position is provided

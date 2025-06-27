@@ -1,5 +1,5 @@
 name: tocry
-version: 0.8.0
+version: 0.8.1
 
 dependencies:
   baked_file_system:
@@ -19,6 +19,8 @@ dependencies:
     github: msa7/multi_auth
   kemal-session:
     github: kemalcr/kemal-session
+  sepia:
+    github: ralsina/sepia
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>

@@ -88,10 +88,8 @@ describe ToCry::Note do
   end
 
   describe "File Persistence" do
-    notes_dir = File.join(TEST_PATH, ".notes")
-
     before_each do
-      FileUtils.mkdir_p(notes_dir)
+      Sepia::Storage::INSTANCE.path = TEST_PATH
     end
 
     after_each do
@@ -107,10 +105,10 @@ describe ToCry::Note do
       )
 
       # 2. Save the note
-      original_note.save(TEST_PATH)
+      original_note.save
 
       # 3. Load the note back using its ID
-      loaded_note = ToCry::Note.load(original_note.id.to_s, TEST_PATH)
+      loaded_note = ToCry::Note.load(original_note.id.to_s)
 
       # 4. Assert that the loaded note is identical to the original
       loaded_note.id.should eq(original_note.id)
@@ -119,10 +117,44 @@ describe ToCry::Note do
       loaded_note.content.should eq(original_note.content)
     end
 
+    it "deletes a note, its file, and its symlink" do
+      # Setup: Create a board, a lane, and a note
+      board_data_dir = File.join(TEST_PATH, "delete_test_board")
+      FileUtils.mkdir_p(board_data_dir)
+      board = ToCry::Board.load("delete_test_board", board_data_dir)
+      lane = board.lane_add("Test Lane")
+      note = lane.note_add("Note to Delete", ["test"], "Content to delete")
+      board.save(board_data_dir) # Save the board to persist the note and create symlinks
+
+      # Verify initial state
+      note_file_path = File.join(TEST_PATH, "ToCry::Note", note.id)
+      lane_dir = File.join(board_data_dir, "lanes", "0000_Test Lane")     # Assuming first lane
+      note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.id}") # Get the symlink
+
+      File.exists?(note_file_path).should be_true
+      File.symlink?(note_symlink_path).should be_true
+      lane.notes.should_not be_empty
+      lane.notes.includes?(note).should be_true
+
+      # Action: Delete the note
+      note.delete(board)
+
+      # Assertions:
+      # 1. Note is removed from the lane's notes array
+      lane.notes.should be_empty
+      lane.notes.includes?(note).should be_false
+
+      # 2. Note's canonical file is deleted
+      File.exists?(note_file_path).should be_false
+
+      # 3. Symlink to the note is removed from the lane's directory
+      File.exists?(note_symlink_path).should be_false
+    end
+
     describe ".load" do
       it "loads a note from a valid markdown file" do
         note_id = "test-load-id"
-        file_path = File.join(notes_dir, "#{note_id}.md")
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         file_content = <<-MD
         ---
         title: Loaded Note
@@ -132,9 +164,10 @@ describe ToCry::Note do
         ---
         This is the content of the loaded note.
         MD
+        FileUtils.mkdir_p(File.dirname(file_path))
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id, TEST_PATH)
+        note = ToCry::Note.load(note_id)
 
         note.id.should eq(note_id)
         note.title.should eq("Loaded Note")
@@ -143,24 +176,26 @@ describe ToCry::Note do
       end
 
       it "raises FileNotFoundError if the note file does not exist" do
-        expect_raises(File::NotFoundError) do
-          ToCry::Note.load("non-existent-id", TEST_PATH)
+        expect_raises(Exception, /not found in storage/) do
+          ToCry::Note.load("non-existent-id")
         end
       end
 
       it "raises an error for a file with invalid format (no frontmatter)" do
         note_id = "invalid-format-id"
-        file_path = File.join(notes_dir, "#{note_id}.md")
+        FileUtils.mkdir_p(File.join(TEST_PATH, "ToCry::Note"))
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         File.write(file_path, "Just some text without frontmatter.")
 
-        expect_raises(Exception, "Invalid note format in #{file_path}. Could not parse frontmatter.") do
-          ToCry::Note.load(note_id, TEST_PATH)
+        expect_raises(Exception, /Could not parse frontmatter/) do
+          ToCry::Note.load(note_id)
         end
       end
 
       it "raises an error for a file with invalid YAML in frontmatter" do
         note_id = "invalid-yaml-id"
-        file_path = File.join(notes_dir, "#{note_id}.md")
+        FileUtils.mkdir_p(File.join(TEST_PATH, "ToCry::Note"))
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         file_content = <<-MD
         ---
         title: Bad YAML
@@ -170,14 +205,15 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        expect_raises(Exception, /Invalid YAML frontmatter in #{file_path}/) do
-          ToCry::Note.load(note_id, TEST_PATH)
+        expect_raises(Exception, /Invalid YAML frontmatter/) do
+          ToCry::Note.load(note_id)
         end
       end
 
       it "loads a note with no tags correctly" do
         note_id = "no-tags-id"
-        file_path = File.join(notes_dir, "#{note_id}.md")
+        FileUtils.mkdir_p(File.join(TEST_PATH, "ToCry::Note"))
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         file_content = <<-MD
         ---
         title: Note Without Tags
@@ -186,7 +222,7 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id, TEST_PATH)
+        note = ToCry::Note.load(note_id)
         note.title.should eq("Note Without Tags")
         note.tags.should be_empty
         note.content.strip.should eq("Content here.")
@@ -194,7 +230,8 @@ describe ToCry::Note do
 
       it "loads a note with no content correctly" do
         note_id = "no-content-id"
-        file_path = File.join(notes_dir, "#{note_id}.md")
+        FileUtils.mkdir_p(File.join(TEST_PATH, "ToCry::Note"))
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         file_content = <<-MD
         ---
         title: Note Without Content
@@ -204,10 +241,41 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        note = ToCry::Note.load(note_id, TEST_PATH)
+        note = ToCry::Note.load(note_id)
         note.title.should eq("Note Without Content")
         note.tags.should eq(["no_content"])
         note.content.strip.should be_empty
+      end
+
+      it "deletes itself from lane, board, and disk" do
+        board_data_dir = File.join(TEST_PATH, "delete_test_board")
+        FileUtils.mkdir_p(board_data_dir)
+        board = ToCry::Board.load("delete_test_board", board_data_dir)
+        lane = board.lane_add("Test Lane")
+        note = lane.note_add("Note to Delete", ["test"], "Content to delete")
+        board.save(board_data_dir) # Save the board to persist the note and create symlinks
+
+        # Verify initial state
+        note_file_path = File.join(TEST_PATH, "ToCry::Note", note.id)
+        lane_dir = File.join(board_data_dir, "lanes", "0000_Test Lane")
+        note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.id}")
+
+        File.exists?(note_file_path).should be_true
+        File.symlink?(note_symlink_path).should be_true
+        lane.notes.should_not be_empty
+        lane.notes.includes?(note).should be_true
+
+        # Action: Delete the note
+        note.delete(board)
+
+        # Assertions:
+        # 1. Note is removed from the lane's notes array
+        lane.notes.should be_empty
+        lane.notes.includes?(note).should be_false
+        # 2. Note's canonical file is deleted
+        File.exists?(note_file_path).should be_false
+        # 3. Symlink to the note is removed from the lane's directory
+        File.exists?(note_symlink_path).should be_false
       end
     end
   end

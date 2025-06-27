@@ -64,7 +64,7 @@ export async function initializeLanes (boardName = state.currentBoardName) {
       // addLaneButton.classList.add('pulse-animation') // Removed as new button is primary CTA
       // Ensure the addLaneButton is not pulsing if there are no boards to add lanes to
       addLaneButton.classList.remove('pulse-animation')
-      addLaneButton.style.display = 'none' // Hide it completely
+      
     }
     const createFirstBoardBtn = document.getElementById(
       'create-first-board-btn'
@@ -85,7 +85,10 @@ export async function initializeLanes (boardName = state.currentBoardName) {
 
     // --- Animation Cleanup ---
     // Always remove animations first to reset state on re-render.
-    if (addLaneButton) addLaneButton.classList.remove('pulse-animation')
+    if (addLaneButton) {
+      addLaneButton.style.display = '' // Ensure the button is visible
+      addLaneButton.classList.remove('pulse-animation')
+    }
     document
       .querySelectorAll('.add-note-btn.pulse-animation')
       .forEach((btn) => {
