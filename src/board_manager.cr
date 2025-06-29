@@ -184,7 +184,6 @@ module ToCry
 
       board = get(old_name, user)
       raise "Board '#{old_name}' not found for renaming." unless board
-      uuid = board.sepia_id
 
       # Verify user access to the board before proceeding
       unless get(old_name, user) # Use the user-aware get to check accessibility
@@ -211,6 +210,9 @@ module ToCry
       ToCry.validate_path_within_data_dir(new_board_dir_path)
 
       FileUtils.mv(old_board_dir_path, new_board_dir_path)
+
+      board.name = new_name # Update the board object's name
+      @boards[uuid] = board # Update the cache with the modified board object
 
       Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (canonical directory: '#{old_board_dir_path}' to '#{new_board_dir_path}') by root." }
     end
