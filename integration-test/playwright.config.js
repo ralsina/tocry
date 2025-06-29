@@ -19,5 +19,40 @@ export default defineConfig({
     timeout: 10 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
   },
-  globalSetup: undefined
+  globalSetup: undefined,
+
+  projects: [
+    {
+      name: 'No Auth',
+      use: {
+        ...process.env.CI ? { headless: true } : {},
+        baseURL: 'http://localhost:3000',
+        browserName: 'chromium',
+        headless: true,
+        trace: 'on-first-retry'
+      },
+      webServer: {
+        command: '../bin/tocry --data-path=testdata',
+        url: 'http://localhost:3000',
+        timeout: 10 * 1000,
+        reuseExistingServer: !process.env.CI
+      }
+    },
+    {
+      name: 'Simple Auth',
+      use: {
+        ...process.env.CI ? { headless: true } : {},
+        baseURL: 'http://localhost:3000',
+        browserName: 'chromium',
+        headless: true,
+        trace: 'on-first-retry'
+      },
+      webServer: {
+        command: 'TOCRY_AUTH_USER=testuser TOCRY_AUTH_PASS=testpass ../bin/tocry --data-path=testdata',
+        url: 'http://localhost:3000',
+        timeout: 10 * 1000,
+        reuseExistingServer: !process.env.CI
+      }
+    }
+  ]
 })
