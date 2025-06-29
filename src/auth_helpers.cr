@@ -25,6 +25,23 @@ end
 # Function to set up Google Auth mode
 # This function defines Kemal routes and filters specific to Google OAuth.
 def setup_google_auth_mode
+  fake_user_email = ENV["TOCRY_FAKE_AUTH_USER"]
+  if fake_user_email && !fake_user_email.to_s.empty?
+    ToCry::Log.warn { "Google Authentication running in fake mode for user: #{fake_user_email}" }
+    before_all do |env|
+      unless current_user(env)
+        user = User.find_by_email(fake_user_email) ||
+               User.new(
+                 email: fake_user_email,
+                 name: "Fake User",
+                 provider: "fake_google"
+               ).save
+        env.session.string("user_id", user.id)
+        ToCry::Log.info { "Fake user session created for #{fake_user_email}" }
+      end
+    end
+    return
+  end
   ToCry::Log.info { "Authentication Mode: Google OAuth" }
   ToCry::Log.info { "Google Authentication enabled." }
 
