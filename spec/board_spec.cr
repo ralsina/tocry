@@ -5,12 +5,12 @@ describe ToCry::Board do
   describe "File Persistence" do
     data_dir = "test_data_board"
 
-    before_each do
+    Spec.before_each do
       FileUtils.rm_rf(data_dir)
       FileUtils.mkdir_p(data_dir)
     end
 
-    after_each do
+    Spec.after_each do
       FileUtils.rm_rf(data_dir)
     end
 
