@@ -32,7 +32,7 @@ module ToCry::Endpoints::Boards
     board_names = ToCry.board_manager.list(user).map { |uuid|
       ToCry.board_manager.@boards[uuid].name
     }
-    pp! board_names, user, ToCry.board_manager.@boards.keys
+
     board_names.to_json
   end
 

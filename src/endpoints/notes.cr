@@ -135,10 +135,10 @@ module ToCry::Endpoints::Notes
     if find_result
       note_to_delete, _ = find_result
       note_to_delete.delete(board) # Pass the board object to the note's delete method
-
-      env.response.status_code = 200
-      env.response.content_type = "application/json"
-      note_to_delete.to_json # Return the deleted note's data
     end
+
+    env.response.status_code = 200
+    env.response.content_type = "application/json"
+    {success: "Note '#{note_id}' deleted (or did not exist)."}.to_json
   end
 end

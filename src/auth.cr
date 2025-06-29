@@ -13,8 +13,7 @@ MultiAuth.config("google", ENV.fetch("GOOGLE_CLIENT_ID", "YOUR_ID"), ENV.fetch("
 # Gets the currently logged-in user from the session, if any.
 def current_user(env)
   if user_id = env.session.string?("user_id")
-    # In a real app, you'd fetch from the database.
-    USERS.values.find { |user| user.id == user_id }
+    User.find_by_id(user_id)
   else
     nil
   end

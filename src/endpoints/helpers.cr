@@ -21,16 +21,22 @@ module ToCry::Endpoints::Helpers
   end
 
   # Helper function to validate a string as a safe path component.
-  # Rejects empty strings, '.', '..', strings containing path separators, or strings starting with '.'.
-  def self.validate_path_component(name : String)
+  # Rejects empty strings, '.', '..', strings containing path separators.
+  # Optionally allows names starting with a dot (e.g., for hidden files/directories).
+  def self.validate_path_component(name : String, allow_dots : Bool = false)
     if name.empty?
       raise MissingBodyError.new("Name cannot be empty.")
     end
     if name == "." || name == ".."
-      raise MissingBodyError.new("Invalid name: '.' and '..' are not allowed.")
+      raise MissingBodyError.new("Name cannot be '.' or '..'.")
     end
-    if name.includes?('/') || name.includes?('\\') || name.starts_with?('.')
-      raise MissingBodyError.new("Invalid name: It cannot contain path separators or start with a dot.")
+    if name.includes?('/') || name.includes?('\\')
+      raise MissingBodyError.new("Name cannot contain path separators ('/' or '\\').")
+    end
+    unless allow_dots
+      if name.starts_with?('.')
+        raise MissingBodyError.new("Name cannot start with a dot ('.').")
+      end
     end
   end
 

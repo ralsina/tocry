@@ -1,8 +1,5 @@
 require "kemal"
 require "./tocry"
-require "uuid"
-require "file_utils"
-require "uri"
 require "ecr"
 
 # Import the refactored endpoint modules
