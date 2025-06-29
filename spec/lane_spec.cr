@@ -74,7 +74,7 @@ describe ToCry::Lane do
   describe "File Persistence" do
     board_data_dir = File.join(TEST_PATH, "default")
 
-    after_each do
+    Spec.after_each do
       FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
     end
 

@@ -5,8 +5,8 @@ require "file_utils"
 TEST_PATH = "test_data_note" # Use a unique path to avoid conflicts with other specs
 
 describe ToCry::Note do
-  after_each do
-    FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
+  Spec.after_each do
+    FileUtils.rm_rf(TEST_PATH)
   end
 
   describe "JSON Serialization" do
@@ -92,11 +92,11 @@ describe ToCry::Note do
   end
 
   describe "File Persistence" do
-    before_each do
+    Spec.before_each do
       Sepia::Storage::INSTANCE.path = TEST_PATH
     end
 
-    after_each do
+    Spec.after_each do
       FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
     end
 
