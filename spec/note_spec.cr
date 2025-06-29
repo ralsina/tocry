@@ -5,6 +5,10 @@ require "file_utils"
 TEST_PATH = "test_data_note" # Use a unique path to avoid conflicts with other specs
 
 describe ToCry::Note do
+  after_each do
+    FileUtils.rm_rf(TEST_PATH) if Dir.exists?(TEST_PATH)
+  end
+
   describe "JSON Serialization" do
     it "serializes a note to JSON correctly" do
       note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.")
