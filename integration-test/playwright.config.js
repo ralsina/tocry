@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
@@ -57,14 +57,13 @@ export default defineConfig({
     {
       name: 'Google Auth',
       use: {
-        ...process.env.CI ? { headless: true } : {},
-        baseURL: 'http://localhost:3000',
-        browserName: 'chromium',
-        headless: true,
-        trace: 'on-first-retry'
+        ...devices['Desktop Chrome'],
+        env: {
+          TOCRY_FAKE_AUTH_USER: 'test@example.com'
+        }
       },
       webServer: {
-        command: 'TOCRY_FAKE_AUTH_USER=foo GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata',
+        command: 'TOCRY_FAKE_AUTH_USER=test@example.com GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata',
         url: 'http://localhost:3000',
         timeout: 10 * 1000,
         reuseExistingServer: !process.env.CI
