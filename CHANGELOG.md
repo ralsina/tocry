@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2025-06-29
+
+### 🚀 Features
+
+- Migrate to Sepia and fix data loading bugs
+
+### 🐛 Bug Fixes
+
+- Board renaming
+
+### 🚜 Refactor
+
+- Improve backend code quality and idempotency
+
+### 🧪 Testing
+
+- Run tests with simple auth too
+- Integration tests for google auth mode
+- Implement fake Google Auth for integration tests
+
 ## [0.8.0] - 2025-06-26
 
 ### 🚀 Features
@@ -20,6 +40,10 @@ All notable changes to this project will be documented in this file.
 - Simpler 400 on auth issues
 - Use the email as user_id instead of a random string
 - Prevent crash when dropping files outside a valid note area
+
+### 💼 Other
+
+- Release v0.8.0
 
 ### 🚜 Refactor
 
