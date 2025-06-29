@@ -131,6 +131,11 @@ body {
     border-right: 1px solid var(--pico-form-element-border-color);
 }
 
+.theme-and-color-switcher #theme-switcher:focus,
+.theme-and-color-switcher #theme-switcher:focus-visible {
+    outline: none;
+}
+
 .color-swatch {
     width: 1.2em; /* Smaller square */
     height: 1.2em;

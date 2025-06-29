@@ -172,8 +172,9 @@ async function handleRenameBoardButtonClick (boardSelector) {
       const response = await renameBoard(currentBoardName, trimmedNewBoardName)
       if (response.ok) {
         showNotification(`Board "${currentBoardName}" renamed to "${trimmedNewBoardName}" successfully.`, 'info')
-        await initializeBoardSelector() // Re-populate selector
-        await selectBoard(trimmedNewBoardName) // Then select the new name
+        state.setBoardName(trimmedNewBoardName) // Update state BEFORE calling selectBoard
+        await selectBoard(trimmedNewBoardName) // Update UI and URL
+        await initializeBoardSelector() // Re-populate selector options
       } else {
         // Revert the selector immediately to the previous valid board
         boardSelector.value = state.previousBoardSelection // Revert on failure
