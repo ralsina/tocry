@@ -82,4 +82,9 @@ module ToCry::Endpoints::Helpers
     property note : ToCry::Note # The note data (id will be ignored/overwritten as a new one is generated)
     property lane_name : String
   end
+
+  struct ShareBoardPayload
+    include JSON::Serializable
+    property to_user_email : String
+  end
 end

@@ -25,19 +25,24 @@ end
 # Function to set up Google Auth mode
 # This function defines Kemal routes and filters specific to Google OAuth.
 def setup_google_auth_mode
-  fake_user_email = ENV["TOCRY_FAKE_AUTH_USER"]
-  if fake_user_email && !fake_user_email.to_s.empty?
-    ToCry::Log.warn { "Google Authentication running in fake mode for user: #{fake_user_email}" }
+  fake_user_env = ENV["TOCRY_FAKE_AUTH_USER"]?
+  if fake_user_env && !fake_user_env.to_s.empty?
+    ToCry::Log.warn { "Google Authentication running in fake mode. Impersonation via X-TOCRY-FAKE-USER header is enabled." }
     before_all do |env|
-      unless current_user(env)
+      # Allow impersonation via header. Fallback to ENV var for existing tests.
+      fake_user_email = env.request.headers["X-TOCRY-FAKE-USER"]? || fake_user_env
+
+      # Only create a new session if the user is not logged in or is changing.
+      current_user_in_session = current_user(env)
+      if current_user_in_session.nil? || current_user_in_session.email != fake_user_email
         user = User.find_by_email(fake_user_email) ||
                User.new(
                  email: fake_user_email,
-                 name: "Fake User",
+                 name: fake_user_email, # Use email as name for uniqueness
                  provider: "fake_google"
                ).save
         env.session.string("user_id", user.id)
-        ToCry::Log.info { "Fake user session created for #{fake_user_email}" }
+        ToCry::Log.info { "Impersonating user via fake session: #{fake_user_email}" }
       end
     end
     return

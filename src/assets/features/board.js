@@ -1,5 +1,5 @@
 /* global history */
-import { fetchBoards, createBoard, renameBoard, deleteBoard } from '../api.js' // Keep createBoard for the new addBoard function
+import { fetchBoards, createBoard, renameBoard, deleteBoard, shareBoard, fetchAuthMode } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
@@ -28,6 +28,8 @@ const setupBoardSelectorListener = () => {
       await handleRenameBoardButtonClick(boardSelector)
     } else if (selectedValue === BOARD_SELECTOR_OPTIONS.DELETE_BOARD) {
       await handleDeleteBoardButtonClick(boardSelector)
+    } else if (selectedValue === BOARD_SELECTOR_OPTIONS.SHARE_BOARD) {
+      await handleShareBoardButtonClick(boardSelector)
     } else if (selectedValue) { // A regular board was selected, and it's not the separator
       await selectBoard(selectedValue)
     } else {
@@ -64,7 +66,17 @@ export async function initializeBoardSelector () {
     deleteBoardOption.textContent = 'Delete current board...'
     boardSelector.appendChild(deleteBoardOption)
 
-    // Add a separator
+    const authMode = await fetchAuthMode()
+    console.log('Fetched auth mode:', authMode) // Add this line for debugging
+
+    if (authMode.auth_mode === 'google') {
+      // Add "Share current board..." option only if in Google Auth mode
+      const shareBoardOption = document.createElement('option')
+      shareBoardOption.value = BOARD_SELECTOR_OPTIONS.SHARE_BOARD
+      shareBoardOption.textContent = 'Share current board...'
+      boardSelector.appendChild(shareBoardOption)
+    }
+
     const separatorOption = document.createElement('option')
     separatorOption.value = '' // No value
     separatorOption.textContent = '---' // Visual separator
@@ -101,7 +113,6 @@ export async function initializeBoardSelector () {
     console.error('Error initializing board selector:', error)
     showNotification('Failed to load boards. Please try again.', 'error')
     state.setBoardName(null) // Ensure state is clear on error
-    await initializeLanes(null) // Attempt to show welcome message even on error fetching boards
     boardSelector.disabled = true
   }
 }
@@ -248,3 +259,34 @@ async function selectBoard (boardName) {
   history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
 }
 export { selectBoard }
+
+async function handleShareBoardButtonClick (boardSelector) {
+  const currentBoardName = state.currentBoardName
+  if (!currentBoardName) {
+    boardSelector.value = state.previousBoardSelection
+    showNotification('No board selected to share.', 'error')
+    return
+  }
+
+  const toUserEmail = await showPrompt(
+    `Share board "${currentBoardName}" with:`,
+    'Share Board',
+    ''
+  )
+
+  if (toUserEmail !== null && toUserEmail.trim() !== '') {
+    try {
+      const response = await shareBoard(currentBoardName, toUserEmail.trim())
+      if (response.ok) {
+        showNotification(`Board "${currentBoardName}" shared with "${toUserEmail}" successfully.`, 'success')
+      } else {
+        await handleApiError(response, 'Failed to share board.')
+      }
+    } catch (error) {
+      console.error('Error sharing board:', error)
+      handleUIError(error, 'An unexpected error occurred while trying to share the board.')
+    }
+  } else {
+    boardSelector.value = state.previousBoardSelection
+  }
+}

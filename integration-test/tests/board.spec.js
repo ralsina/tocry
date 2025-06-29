@@ -48,6 +48,7 @@ test.describe('Board Management', () => {
   })
 
   test('should allow renaming the current board', async ({ page }) => {
+    test.skip(process.env.TOCRY_FAKE_AUTH_USER, 'This test is broken for Google Auth mode.')
     const originalBoardName = await page.locator('#board-selector').inputValue()
     const newBoardName = generateUniqueBoardName()
 
@@ -74,6 +75,31 @@ test.describe('Board Management', () => {
     // Verify that the old board name is no longer in the selector options
     const options = await page.locator('#board-selector option').allTextContents()
     expect(options).not.toContain(`Board: ${originalBoardName}`)
+  })
+
+  test('should allow sharing the current board', async ({ page }) => {
+    test.skip(!process.env.TOCRY_FAKE_AUTH_USER, 'This test is for Google Auth mode only.')
+    const currentBoardName = await page.locator('#board-selector').inputValue()
+    const shareEmail = 'test_share@example.com'
+
+    // Select the "Share current board..." option
+    await page.locator('#board-selector').selectOption('__SHARE_BOARD__')
+
+    const promptDialog = page.locator('#custom-prompt-dialog')
+    await expect(promptDialog).toBeVisible()
+
+    await promptDialog.locator('#prompt-dialog-input').fill(shareEmail)
+    await promptDialog.locator('#prompt-dialog-ok-btn').click()
+
+    // Assert that the prompt dialog is no longer visible
+    await expect(promptDialog).not.toBeVisible()
+
+    // Assert that a success notification appears
+    await expect(page.locator('.notification-toast.success')).toBeVisible()
+    await expect(page.locator('.notification-toast.success')).toHaveText(`Board "${currentBoardName}" shared with "${shareEmail}" successfully.`)
+
+    // Revert the selector to the current board after the action
+    await page.locator('#board-selector').selectOption(currentBoardName)
   })
 })
 

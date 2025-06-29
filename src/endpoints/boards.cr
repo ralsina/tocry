@@ -92,4 +92,23 @@ module ToCry::Endpoints::Boards
     env.response.content_type = "application/json"
     {success: "Board '#{board_name}' deleted."}.to_json
   end
+
+  # API Endpoint to share a board with another user
+  # Expects the board name in the URL path, e.g.:
+  # POST /boards/My%20Board/share
+  # Expects a JSON body like:
+  # { "to_user_email": "another_user@example.com" }
+  post "/boards/:board_name/share" do |env|
+    board_name = env.params.url["board_name"].as(String)
+    json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+    payload = ToCry::Endpoints::Helpers::ShareBoardPayload.from_json(json_body)
+    to_user_email = payload.to_user_email
+    from_user = ToCry.get_current_user_id(env)
+
+    ToCry.board_manager.share_board(board_name, from_user, to_user_email)
+
+    env.response.status_code = 200 # OK
+    env.response.content_type = "application/json"
+    {success: "Board '#{board_name}' shared with '#{to_user_email}'."}.to_json
+  end
 end

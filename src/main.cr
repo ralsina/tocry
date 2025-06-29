@@ -1,3 +1,4 @@
+require "./initialization" # New: Import the initialization helper
 require "./tocry"
 require "baked_file_handler"
 require "./migrations"
@@ -18,7 +19,7 @@ ToCry, a list of things To Do. Or Cry.
 Usage:
   tocry [options]
   tocry (-h | --help)
-  tocry [--data-path=PATH]
+  tocry [--data-path=PATH] [--safe-mode]
   tocry --version
 
 Options:
@@ -27,6 +28,7 @@ Options:
   -h --help                     Show this screen.
   --version                     Show version.
   --data-path=PATH              Path to the data directory [default: data].
+  --safe-mode                   Enable safe mode (checks data integrity).
 DOCOPT
 
 class Assets
@@ -43,15 +45,17 @@ def main
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
   ARGV.clear                                            # Clear ARGV to prevent further processing by Crystal
   data_path = args["--data-path"]?.as(String) || "data" # Default to "data"
+  safe_mode = args["--safe-mode"] == true               # Safely parse --safe-mode argument as boolean
+
+  # Initialize data environment using the helper
+  ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true)
+
   ToCry::Log.info { "Using data path: #{data_path}" }
+  ToCry::Log.info { "Safe mode enabled: #{safe_mode}" }
 
   # Port and binding address are important
   port = args["--port"].as(String).to_i32
   bind_address = args["--bind"].as(String)
-
-  # Configure the global data directory for the ToCry application
-  ToCry.data_directory = data_path
-  Sepia::Storage::INSTANCE.path = data_path
 
   # Add a handler to serve user-uploaded images from the configured data path.
   # This replaces the `public_folder` macro.
@@ -68,9 +72,6 @@ def main
   Log.setup(:debug) # Or use Log.setup_from_env for more flexibility
   ToCry::Log.info { "Starting ToCry server on #{bind_address}:#{port}" }
   # Start kemal listening on the right address
-
-  # Run any pending data migrations before loading the board.
-  ToCry::Migration.run
 
   # On every request, ensure the current user's data directory exists.
   before_all do |env|
