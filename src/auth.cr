@@ -35,15 +35,8 @@ end
 # API Endpoint to get current user's session info.
 get "/me" do |env|
   env.response.content_type = "application/json"
-  if ENV["TOCRY_FAKE_AUTH_USER"]?
-    # If fake auth is enabled, always return a logged-in user for /me
-    {
-      logged_in: true,
-      name:      "Fake User",
-      email:     ENV["TOCRY_FAKE_AUTH_USER"].as(String),
-    }.to_json
-  elsif user = current_user(env)
-    ToCry::Log.info { "User '#{user.name}' (#{user.email}) requested their session info." }
+  if user = current_user(env)
+    ToCry::Log.info { "User '#{user.name}' ('#{user.email}') requested their session info." }
     {
       logged_in: true,
       name:      user.name,

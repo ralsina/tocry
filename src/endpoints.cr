@@ -3,11 +3,7 @@ require "./tocry"
 require "ecr"
 
 # Import the refactored endpoint modules
-require "./endpoints/helpers"
-require "./endpoints/boards"
-require "./endpoints/lanes"
-require "./endpoints/notes"
-require "./endpoints/uploads"
+require "./endpoints/*"
 
 # Global error handler for missing request bodies or invalid JSON.
 error ToCry::Endpoints::Helpers::MissingBodyError | JSON::ParseException do |env, ex|

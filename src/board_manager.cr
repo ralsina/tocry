@@ -28,8 +28,9 @@ module ToCry
     # { board_name => { uuid: "...", board: Board_instance } }
     @boards = {} of String => Board
     property board_base_dir : String = File.join(ToCry.data_directory, "boards")
+    property safe_mode_enabled : Bool
 
-    def initialize
+    def initialize(@safe_mode_enabled : Bool)
       # Ensure the base data directory for boards exists
       FileUtils.mkdir_p(board_base_dir)
 
@@ -69,7 +70,7 @@ module ToCry
       end
 
       user_accessible_board_uuids = [] of String
-      Dir.glob(File.join(user_boards_path, "*/"), follow_symlinks: true).each do |entry|
+      Dir.glob(File.join(user_boards_path, "*"), follow_symlinks: true).each do |entry|
         entry = File.basename(entry) # Get just the entry name, not the full path
         # Symlinks are in the format {UUID}.{name}
         if match = entry.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(.+)$/)
@@ -104,12 +105,20 @@ module ToCry
       board_path = File.join(board_base_dir, board_full_name)
 
       ToCry.validate_path_within_data_dir(board_path)
+      source_path = Path[board.canonical_path].relative_to(Path[board_path].parent)
 
       FileUtils.ln_s(
-        Path[board.canonical_path].relative_to(Path[board_path].parent),
-        board_path
+        source_path,
+        board_path,
       )
       @boards[uuid] = board
+
+      if @safe_mode_enabled
+        broken_links = ToCry.find_broken_symlinks
+        unless broken_links.empty?
+          raise "Operation blocked: Broken symlinks detected after creating canonical board. Please fix: #{broken_links.join(", ")}"
+        end
+      end
 
       Log.info { "Board '#{name}' created at '#{board_path}'." }
 
@@ -129,7 +138,15 @@ module ToCry
       ToCry.validate_path_within_data_dir(user_board_symlink_path)
       FileUtils.mkdir_p(File.dirname(user_board_symlink_path)) # Ensure user's boards directory exists
       # Create a secondary symlink in the user's boards directory
-      FileUtils.ln_s(board_path, user_board_symlink_path) # Create the symlink
+      source_path = Path[board.canonical_path].relative_to(Path[user_board_symlink_path].parent)
+      FileUtils.ln_s(source_path, user_board_symlink_path) # Create the symlink
+
+      if @safe_mode_enabled
+        broken_links = ToCry.find_broken_symlinks
+        unless broken_links.empty?
+          raise "Operation blocked: Broken symlinks detected after creating user symlink. Please fix: #{broken_links.join(", ")}"
+        end
+      end
       Log.info { "Symlink created for user '#{user}' from '#{board_path}' to '#{user_board_symlink_path}'." }
 
       board
@@ -159,6 +176,13 @@ module ToCry
         @boards.delete(uuid)                                       # remove from the cache
         FileUtils.rm(File.join(board_base_dir, "#{uuid}.#{name}")) # Remove from boards/uuid.name
         board.delete                                               # remove from disk totally
+
+        if @safe_mode_enabled
+          broken_links = ToCry.find_broken_symlinks
+          unless broken_links.empty?
+            raise "Operation blocked: Broken symlinks detected after deleting canonical board. Please fix: #{broken_links.join(", ")}"
+          end
+        end
         Log.info { "Board '#{name}' and its canonical directory '#{board.canonical_path}' deleted by root." }
       else
         # Non-root user deletes only their symlink because other
@@ -167,6 +191,13 @@ module ToCry
         ToCry.validate_path_within_data_dir(user_board_symlink_path)
         if File.symlink?(user_board_symlink_path)
           FileUtils.rm(user_board_symlink_path)
+
+          if @safe_mode_enabled
+            broken_links = ToCry.find_broken_symlinks
+            unless broken_links.empty?
+              raise "Operation blocked: Broken symlinks detected after deleting user symlink. Please fix: #{broken_links.join(", ")}"
+            end
+          end
           Log.info { "Symlink for board '#{name}' at '#{user_board_symlink_path}' deleted by user '#{user}'." }
         else
           Log.warn { "User '#{user}' attempted to delete symlink for board '#{name}' at '#{user_board_symlink_path}', but it was not found or not a symlink." }
@@ -211,6 +242,13 @@ module ToCry
 
       FileUtils.mv(old_board_dir_path, new_board_dir_path)
 
+      if @safe_mode_enabled
+        broken_links = ToCry.find_broken_symlinks
+        unless broken_links.empty?
+          raise "Operation blocked: Broken symlinks detected after renaming canonical board directory. Please fix: #{broken_links.join(", ")}"
+        end
+      end
+
       board.name = new_name # Update the board object's name
       @boards[uuid] = board # Update the cache with the modified board object
 
@@ -226,8 +264,54 @@ module ToCry
       ToCry.validate_path_within_data_dir(new_user_board_symlink_path)
 
       FileUtils.mv(old_user_board_symlink_path, new_user_board_symlink_path)
+
+      if @safe_mode_enabled
+        broken_links = ToCry.find_broken_symlinks
+        unless broken_links.empty?
+          raise "Operation blocked: Broken symlinks detected after renaming user symlink. Please fix: #{broken_links.join(", ")}"
+        end
+      end
       Log.info { "Symlink for board '#{old_name}' renamed to '#{new_name}' at '#{old_user_board_symlink_path}' to '#{new_user_board_symlink_path}' by user '#{user}'." }
       board
+    end
+
+    # Shares a board from one user to another by creating a symlink.
+    def share_board(board_name : String, from_user : String, to_user : String)
+      # 1. Find the board for the `from_user`.
+      board = get(board_name, from_user)
+      raise "Board '#{board_name}' not found for user '#{from_user}'." unless board
+
+      # 2. Check if the `to_user` already has access.
+      if get(board_name, to_user)
+        Log.info { "Board '#{board_name}' is already shared with user '#{to_user}'." }
+        return
+      end
+
+      # 3. Create the symlink for the `to_user`.
+      uuid = board.sepia_id
+      board_full_name = "#{uuid}.#{board.name}"
+
+      user_board_symlink_path = File.join(
+        ToCry.users_base_directory,
+        to_user,
+        "boards",
+        board_full_name
+      )
+      board_path = Path[board.canonical_path].relative_to(Path[user_board_symlink_path].parent)
+
+      ToCry.validate_path_within_data_dir(user_board_symlink_path)
+      FileUtils.mkdir_p(File.dirname(user_board_symlink_path))
+
+      # The symlink in the user's dir should point to the canonical board symlink in `data/boards/`
+      FileUtils.ln_s(board_path, user_board_symlink_path)
+
+      if @safe_mode_enabled
+        broken_links = ToCry.find_broken_symlinks
+        unless broken_links.empty?
+          raise "Operation blocked: Broken symlinks detected after sharing board. Please fix: #{broken_links.join(", ")}"
+        end
+      end
+      Log.info { "Shared board '#{board_name}' from user '#{from_user}' to user '#{to_user}'." }
     end
   end
 end

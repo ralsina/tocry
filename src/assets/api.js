@@ -146,3 +146,23 @@ export async function uploadImage (formData) {
   }
   return await response.json() // Should contain { "url": "..." }
 }
+
+export async function shareBoard (boardName, toUserEmail) {
+  const encodedBoardName = encodeURIComponent(boardName)
+  const response = await fetch(`${API_BASE_URL}/boards/${encodedBoardName}/share`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ to_user_email: toUserEmail })
+  })
+  return response
+}
+
+export async function fetchAuthMode () {
+  const response = await fetch(`${API_BASE_URL}/auth_mode`)
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to fetch auth mode.')
+  }
+  return await response.json()
+}
