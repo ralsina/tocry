@@ -64,7 +64,6 @@ export async function initializeLanes (boardName = state.currentBoardName) {
       // addLaneButton.classList.add('pulse-animation') // Removed as new button is primary CTA
       // Ensure the addLaneButton is not pulsing if there are no boards to add lanes to
       addLaneButton.classList.remove('pulse-animation')
-      
     }
     const createFirstBoardBtn = document.getElementById(
       'create-first-board-btn'
