@@ -53,6 +53,23 @@ export default defineConfig({
         timeout: 10 * 1000,
         reuseExistingServer: !process.env.CI
       }
+    },
+    {
+      name: 'Google Auth',
+      use: {
+        ...process.env.CI ? { headless: true } : {},
+        baseURL: 'http://localhost:3000',
+        browserName: 'chromium',
+        headless: true,
+        trace: 'on-first-retry'
+      },
+      webServer: {
+        command: 'TOCRY_FAKE_AUTH_USER=foo GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata',
+        url: 'http://localhost:3000',
+        timeout: 10 * 1000,
+        reuseExistingServer: !process.env.CI
+      }
     }
+
   ]
 })
