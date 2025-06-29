@@ -24,4 +24,9 @@ class User
   def self.find_by_email(email)
     USERS[email]?
   end
+
+  # Finds a user by their ID
+  def self.find_by_id(id)
+    USERS.values.find { |user| user.id == id }
+  end
 end

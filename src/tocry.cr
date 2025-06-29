@@ -37,17 +37,6 @@ module ToCry
     @@data_directory = path
   end
 
-  # Helper function to validate a string as a safe filename component.
-  # Rejects empty strings, '.', '..', strings containing path separators, or strings starting with '.'.
-  def self.validate_filename_component(name : String)
-    if name.empty?
-      raise "Name cannot be empty."
-    end
-    if name == "." || name == ".." || name.includes?('/') || name.includes?('\\') || name.starts_with?('.')
-      raise "Invalid name: It cannot be '.' or '..', contain path separators, or start with a dot."
-    end
-  end
-
   # --- User Directory Management ---
 
   # Returns the base directory for all user data.
@@ -64,7 +53,7 @@ module ToCry
       # Replace characters that are invalid in some filesystems.
       sanitized_id = user.email.gsub(/[^a-zA-Z0-9_.-@]/, "_")
       begin
-        validate_filename_component(sanitized_id)
+        ToCry::Endpoints::Helpers.validate_path_component(sanitized_id, allow_dots: true) # Use generalized helper
         return sanitized_id
       rescue ex
         Log.warn(exception: ex) { "Could not use sanitized email '#{sanitized_id}' as user directory name. Falling back to 'invalid_user'." }

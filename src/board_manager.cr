@@ -178,11 +178,11 @@ module ToCry
     # If the user is 'root', the canonical board directory is renamed.
     # Otherwise, only the user's symlink to the board is renamed.
     def rename(old_name : String, new_name : String, user : String) : Board
-      if @boards.has_key?(new_name)
+      if get(new_name, user)
         raise "Board with name '#{new_name}' already exists."
       end
 
-      board = @boards[old_name]?
+      board = get(old_name, user)
       raise "Board '#{old_name}' not found for renaming." unless board
       uuid = board.sepia_id
 
@@ -192,30 +192,39 @@ module ToCry
       end
 
       if user == "root"
-        # Root user renames the canonical board directory
-        old_board_dir_name = "#{uuid}.#{old_name}"
-        new_board_dir_name = "#{uuid}.#{new_name}"
-
-        old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
-        new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
-
-        ToCry.validate_path_within_data_dir(old_board_dir_path)
-        ToCry.validate_path_within_data_dir(new_board_dir_path)
-
-        FileUtils.mv(old_board_dir_path, new_board_dir_path)
-
-        Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (canonical directory: '#{old_board_dir_path}' to '#{new_board_dir_path}') by root." }
+        rename_canonical_board_directory(board, old_name, new_name)
       else
-        # Non-root user renames only their symlink
-        old_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{old_name}")
-        new_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{new_name}")
-
-        ToCry.validate_path_within_data_dir(old_user_board_symlink_path)
-        ToCry.validate_path_within_data_dir(new_user_board_symlink_path)
-
-        FileUtils.mv(old_user_board_symlink_path, new_user_board_symlink_path)
-        Log.info { "Symlink for board '#{old_name}' renamed to '#{new_name}' at '#{old_user_board_symlink_path}' to '#{new_user_board_symlink_path}' by user '#{user}'." }
+        rename_user_board_symlink(board, old_name, new_name, user)
       end
+      board
+    end
+
+    private def rename_canonical_board_directory(board : Board, old_name : String, new_name : String)
+      uuid = board.sepia_id
+      old_board_dir_name = "#{uuid}.#{old_name}"
+      new_board_dir_name = "#{uuid}.#{new_name}"
+
+      old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
+      new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
+
+      ToCry.validate_path_within_data_dir(old_board_dir_path)
+      ToCry.validate_path_within_data_dir(new_board_dir_path)
+
+      FileUtils.mv(old_board_dir_path, new_board_dir_path)
+
+      Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (canonical directory: '#{old_board_dir_path}' to '#{new_board_dir_path}') by root." }
+    end
+
+    private def rename_user_board_symlink(board : Board, old_name : String, new_name : String, user : String)
+      uuid = board.sepia_id
+      old_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{old_name}")
+      new_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{new_name}")
+
+      ToCry.validate_path_within_data_dir(old_user_board_symlink_path)
+      ToCry.validate_path_within_data_dir(new_user_board_symlink_path)
+
+      FileUtils.mv(old_user_board_symlink_path, new_user_board_symlink_path)
+      Log.info { "Symlink for board '#{old_name}' renamed to '#{new_name}' at '#{old_user_board_symlink_path}' to '#{new_user_board_symlink_path}' by user '#{user}'." }
       board
     end
   end

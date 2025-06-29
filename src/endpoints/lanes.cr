@@ -34,7 +34,7 @@ module ToCry::Endpoints::Lanes
     if final_name != requested_name
       ToCry::Log.info { "Lane '#{requested_name}' requested, added as '#{final_name}' to board '#{board.name}' via POST /lane due to name collision." }
     else
-      ToCry::Log.info { "Lane '#{new_lane.name}' added to board '#{board}' via POST /lane." }
+      ToCry::Log.info { "Lane '#{new_lane.name}' added to board '#{board.name}' via POST /lane." }
     end
     board.save
 
