@@ -83,6 +83,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })
 
+  // Global '/' key listener to focus search bar
+  document.addEventListener('keydown', (event) => {
+    if (event.key === '/') {
+      const activeElement = document.activeElement
+      // Only focus search if not already typing in an input field
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
+        return
+      }
+      event.preventDefault() // Prevent default browser behavior (e.g., quick find)
+      const searchInput = document.getElementById('search')
+      if (searchInput) {
+        searchInput.focus()
+      }
+    }
+  })
+
   // --- Scroll Button Setup ---
   const mainContent = document.querySelector('.main-content')
   const scrollLeftBtn = document.querySelector('.scroll-btn--left')
