@@ -11,7 +11,7 @@ describe ToCry::Note do
 
   describe "JSON Serialization" do
     it "serializes a note to JSON correctly" do
-      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.", public: true)
+      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.", public: true, attachments: ["file1.txt", "image.png"])
       # We need to know the ID to compare, so let's grab it
       known_id = note.id
       json_output = note.to_json
@@ -23,6 +23,7 @@ describe ToCry::Note do
       parsed_json["tags"].should eq ["tag1", "tag2"]
       parsed_json["content"].should eq "Test content."
       parsed_json["public"].should eq true
+      parsed_json["attachments"].should eq ["file1.txt", "image.png"]
     end
 
     it "serializes a note with empty tags and content correctly" do
@@ -37,12 +38,13 @@ describe ToCry::Note do
       parsed_json["tags"].should eq [] of String # Ensure it's an empty array of strings
       parsed_json["content"].should eq ""
       parsed_json["public"].should eq false
+      parsed_json["attachments"].should eq [] of String
     end
   end
 
   describe "JSON Deserialization" do
     it "deserializes a JSON string to a Note object correctly" do
-      json_string = %({"id":"test-uuid-123","title":"From JSON","tags":["json_tag"],"content":"JSON content","public":true})
+      json_string = %({"id":"test-uuid-123","title":"From JSON","tags":["json_tag"],"content":"JSON content","public":true,"attachments":["doc.pdf"]})
       note = ToCry::Note.from_json(json_string)
 
       note.id.should eq "test-uuid-123"
@@ -50,6 +52,7 @@ describe ToCry::Note do
       note.tags.should eq ["json_tag"]
       note.content.should eq "JSON content"
       note.public.should eq true
+      note.attachments.should eq ["doc.pdf"]
     end
 
     it "deserializes a JSON without id" do
@@ -95,6 +98,7 @@ describe ToCry::Note do
       note.tags.should eq [] of String # Default for Array(String) is an empty array
       note.content.should eq ""        # Default for String is an empty string
       note.public.should eq false
+      note.attachments.should eq [] of String
     end
   end
 
@@ -113,7 +117,8 @@ describe ToCry::Note do
         "Round Trip Test",
         ["save", "load"],
         "This note will be saved and then loaded.",
-        public: true
+        public: true,
+        attachments: ["report.pdf", "data.zip"]
       )
 
       # 2. Save the note
@@ -128,6 +133,7 @@ describe ToCry::Note do
       loaded_note.tags.should eq(original_note.tags)
       loaded_note.content.should eq(original_note.content)
       loaded_note.public.should eq(original_note.public)
+      loaded_note.attachments.should eq(original_note.attachments)
     end
 
     it "deletes a note, its file, and its symlink" do
@@ -297,6 +303,28 @@ describe ToCry::Note do
         note.title.should eq("Note Without Content")
         note.tags.should eq(["no_content"])
         note.content.strip.should be_empty
+      end
+
+      it "loads a note with attachments correctly" do
+        note_id = "attachments-id"
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
+        file_content = <<-MD
+        ---
+        title: Note With Attachments
+        attachments:
+        - file_a.txt
+        - image_b.jpg
+        ---
+        Content with attachments.
+        MD
+        FileUtils.mkdir_p(File.dirname(file_path))
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+
+        note.title.should eq("Note With Attachments")
+        note.attachments.should eq(["file_a.txt", "image_b.jpg"])
+        note.content.strip.should eq("Content with attachments.")
       end
 
       it "deletes itself from lane, board, and disk" do

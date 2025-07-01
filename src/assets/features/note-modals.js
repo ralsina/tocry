@@ -7,6 +7,7 @@ import { initializeLanes } from './lane.js'
 import { state } from './state.js'
 import { noteDragAndDropCallbacks } from '../dnd/note.js'
 import { handleDeleteNoteRequest, handleUpdateNoteTitleRequest, handleToggleNoteRequest } from './note-crud.js'
+import { handleAttachFileRequest } from './note-attachments.js'
 
 let toastuiEditor = null
 
@@ -54,6 +55,12 @@ export function handleEditNoteRequest (note) {
       }
     }
   })
+
+  const attachBtn = document.getElementById('edit-note-attach-btn')
+  attachBtn.onclick = (e) => {
+    e.stopPropagation()
+    handleAttachFileRequest(note)
+  }
 
   modal.showModal()
 }

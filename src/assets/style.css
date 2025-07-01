@@ -132,8 +132,19 @@ body {
 }
 
 .theme-and-color-switcher #theme-switcher:focus,
-.theme-and-color-switcher #theme-switcher:focus-visible {
+.theme-and-color-switcher #theme-switcher:focus-visible,
+.theme-and-color-switcher #theme-switcher:focus-within {
     outline: none;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.theme-and-color-switcher #theme-switcher:active {
+    outline: none;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
 }
 
 .color-swatch {
@@ -401,6 +412,18 @@ html[data-test-mode] .pulse-animation {
     /* Use the existing pulse animation, but run it only once to draw attention */
     animation: pulse 2s ease-in-out 1;
 }
+
+html[data-test-mode] .add-note-btn.pulse-animation {
+    animation: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+html[data-test-mode] .pulse-animation {
+    animation: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
 /* --- Custom Collapsible Note --- */
 
 /* 1. Set up the container as a grid for smooth animation.
@@ -631,6 +654,45 @@ html[data-test-mode] .pulse-animation {
     padding-left: 1em;
     margin-left: 0;
     color: var(--pico-muted-color);
+}
+
+/* Note Attachments Styling */
+.note-attachments {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+}
+
+.note-attachments .attachments-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.note-attachments .attachments-items a {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--pico-form-element-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: calc(var(--pico-border-radius) * 0.75);
+    text-decoration: none;
+    color: var(--pico-color);
+    transition: all 0.2s ease-in-out;
+    font-size: 0.9rem;
+}
+
+.note-attachments .attachments-items a:hover {
+    background-color: var(--pico-form-element-active-background-color);
+    border-color: var(--pico-form-element-active-border-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.note-attachments .attachments-items a:focus {
+    outline: 2px solid var(--pico-primary);
+    outline-offset: 2px;
 }
 
 /* Container for tags, now inside the note header */
@@ -872,7 +934,8 @@ html[data-test-mode] .pulse-animation {
 
 /* Permalink Modal Styling */
 .permalink-modal-header,
-.edit-note-modal-header {
+.edit-note-modal-header,
+.attach-file-modal-header {
     display: flex;
     align-items: center;
     gap: 1rem; /* Space between elements in the header */
@@ -919,42 +982,196 @@ html[data-test-mode] .pulse-animation {
 #custom-prompt-dialog footer button {
     width: auto;
 }
-#notification-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000; /* Higher than Pico's modal z-index (9999) */
+
+/* Attachments Modal Styling */
+#modal-attach-file[open] {
+    max-height: 90vh;
+    height: 90vh;
     display: flex;
-    flex-direction: column-reverse; /* New toasts appear on top */
-    gap: 10px;
+    flex-direction: column;
 }
 
-.notification-toast {
+#modal-attach-file article {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#modal-attach-file form {
+    flex-shrink: 0; /* Prevent form from growing */
+    display: flex;
+    flex-direction: column;
+    gap: var(--pico-spacing);
+    padding-top: var(--pico-spacing);
+    border-top: 1px solid var(--pico-form-element-border-color);
+}
+
+#modal-attach-file footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pico-spacing);
+}
+
+#modal-attach-file footer button {
+    width: auto;
+}
+
+.attachments-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--pico-spacing);
     background-color: var(--pico-card-background-color);
-    color: var(--pico-color);
-    padding: 15px 20px;
     border-radius: var(--pico-border-radius);
-    box-shadow: var(--pico-card-box-shadow);
-    border-left: 5px solid var(--pico-primary);
-    opacity: 0;
-    transform: translateX(110%);
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    min-width: 250px;
-    max-width: 350px;
+    border: 1px solid var(--pico-form-element-border-color);
 }
 
-.notification-toast.show {
-    opacity: 1;
-    transform: translateX(0);
+.attachments-list p {
+    text-align: center;
+    color: var(--pico-muted-color);
+    font-style: italic;
+    margin: 2rem 0;
 }
 
-.notification-toast.error {
-    border-left-color: var(--pico-del-color);
+.attachment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background-color: var(--pico-form-element-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: calc(var(--pico-border-radius) * 0.75);
+    transition: all 0.2s ease-in-out;
 }
 
-dialog .notification-toast {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000; /* Ensure it's above other dialog content */
+.attachment-item:first-child {
+    margin-top: 0;
+}
+
+.attachment-item:last-child {
+    margin-bottom: 0;
+}
+
+.attachment-item:hover {
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(var(--color-rgb), 0.1);
+}
+
+.attachment-item span,
+.attachment-item .attachment-download-link {
+    flex-grow: 1;
+    word-break: break-all;
+    padding-right: 0.75rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.attachment-item .delete-attachment-btn {
+    background-color: var(--pico-del-background-color);
+    border: 1px solid var(--pico-del-color);
+    color: var(--pico-del-color);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.4rem 0.6rem;
+    border-radius: calc(var(--pico-border-radius) * 0.5);
+    flex-shrink: 0;
+    transition: all 0.2s ease-in-out;
+    min-width: 2rem;
+}
+
+.attachment-item .delete-attachment-btn:hover {
+    background-color: var(--pico-del-color);
+    color: var(--pico-del-inverse);
+    transform: scale(1.05);
+}
+
+.attachment-download-link {
+    text-decoration: none;
+    color: var(--pico-color);
+    font-size: 0.875rem;
+    transition: color 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.attachment-download-link:hover {
+    color: var(--pico-primary);
+    text-decoration: underline;
+}
+
+/* Enhanced modal header styling */
+#modal-attach-file .attach-file-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--pico-spacing);
+}
+
+#modal-attach-file .attach-file-modal-header strong {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--pico-color);
+}
+
+#modal-attach-file form {
+    margin-top: var(--pico-spacing);
+}
+
+/* File Drop Zone Styling */
+.file-drop-zone {
+    margin: var(--pico-spacing) 0;
+    padding: 2rem;
+    border: 2px dashed var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+    background-color: var(--pico-card-background-color);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+}
+
+.file-drop-zone:hover {
+    border-color: var(--pico-primary);
+    background-color: var(--pico-primary-background);
+    transform: translateY(-1px);
+}
+
+.file-drop-zone.drag-over {
+    border-color: var(--pico-primary);
+    background-color: var(--pico-primary-background);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.drop-zone-content svg {
+    color: var(--pico-muted-color);
+    margin-bottom: 1rem;
+    transition: color 0.3s ease-in-out;
+}
+
+.file-drop-zone:hover .drop-zone-content svg,
+.file-drop-zone.drag-over .drop-zone-content svg {
+    color: var(--pico-primary);
+}
+
+.drop-zone-text {
+    margin: 0.5rem 0 0.25rem 0;
+    font-weight: 600;
+    color: var(--pico-color);
+}
+
+.drop-zone-subtext {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--pico-muted-color);
+}
+
+.file-drop-zone.drag-over .drop-zone-text {
+    color: var(--pico-primary);
 }

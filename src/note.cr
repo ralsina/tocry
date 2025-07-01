@@ -9,11 +9,12 @@ module ToCry
   struct FrontMatter
     include YAML::Serializable
     property title : String
-    property tags : Array(String) = [] of String # Default to empty array
-    property expanded : Bool = false             # Default to false
-    property public : Bool = false               # Default to false
+    property tags : Array(String) = [] of String        # Default to empty array
+    property expanded : Bool = false                    # Default to false
+    property public : Bool = false                      # Default to false
+    property attachments : Array(String) = [] of String # New: Default to empty array
 
-    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false)
+    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false, @attachments : Array(String) = [] of String)
     end
   end
 
@@ -41,6 +42,7 @@ module ToCry
     property content : String = ""
     property expanded : Bool = false
     property public : Bool = false
+    property attachments : Array(String) = [] of String # New: Default to empty array
 
     # Reimplement sepia_id to use the id property
     def sepia_id
@@ -58,7 +60,8 @@ module ToCry
       tags : Array(String) = [] of String,
       content : String = "",
       expanded : Bool = false,
-      public : Bool = false
+      public : Bool = false,
+      attachments : Array(String) = [] of String,
     )
       @sepia_id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
       self.title = title
@@ -66,6 +69,7 @@ module ToCry
       @content = content
       @expanded = expanded
       @public = public
+      @attachments = attachments
     end
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
@@ -87,7 +91,7 @@ module ToCry
         raise "Invalid YAML frontmatter in provided data: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public)
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments)
       note
     end
 
@@ -95,7 +99,7 @@ module ToCry
     def to_sepia
       data = String.build do |builder|
         # Use the new FrontMatter struct for serialization
-        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public)
+        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public, attachments: self.attachments)
         builder << frontmatter_struct.to_yaml
         builder << "---\n\n" # YAML frontmatter separator
         builder << self.content
@@ -129,6 +133,22 @@ module ToCry
     rescue ex
       Log.error(exception: ex) { "An error occurred while deleting note '#{self.title}' (ID: #{note_id_str})." }
       raise ex
+    end
+
+    # Adds an attachment filename to the note's attachments list.
+    def add_attachment(filename : String)
+      @attachments << filename
+      Log.info { "Added attachment '#{filename}' to note '#{self.id}'." }
+    end
+
+    # Removes an attachment filename from the note's attachments list.
+    def remove_attachment(filename : String) : Nil
+      if @attachments.delete(filename)
+        Log.info { "Removed attachment '#{filename}' from note '#{self.id}'." }
+      else
+        Log.warn { "Attempted to remove non-existent attachment '#{filename}' from note '#{self.id}'." }
+      end
+      nil
     end
   end
 end

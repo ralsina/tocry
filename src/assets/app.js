@@ -8,6 +8,7 @@ import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListene
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
 import { handleSearchInput } from './features/search.js' // This line was already correct
 import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
+import { handleAttachmentDelete } from './features/note-attachments.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -133,6 +134,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (permalinkCloseBtn) {
     permalinkCloseBtn.addEventListener('click', () => {
       document.getElementById('modal-permalink').close()
+    })
+  }
+
+  // Wire up the attachment modal's buttons
+  const closeAttachFileBtn = document.getElementById('attach-file-close-btn')
+  const attachmentsList = document.getElementById('attachments-list')
+
+  if (closeAttachFileBtn) {
+    closeAttachFileBtn.addEventListener('click', () => {
+      document.getElementById('modal-attach-file').close()
+    })
+  }
+  if (attachmentsList) {
+    attachmentsList.addEventListener('click', (event) => {
+      if (event.target.classList.contains('delete-attachment-btn')) {
+        handleAttachmentDelete(event)
+      }
     })
   }
 

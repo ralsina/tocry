@@ -1,3 +1,5 @@
+import { getOriginalFileName } from './utils/constants.js'
+
 /**
  * @module render
  * Makes a DOM element's text content editable in-place.
@@ -125,11 +127,21 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     if (callbacks.onPermalink) callbacks.onPermalink(note)
   })
 
+  const attachFileButton = document.createElement('button')
+  attachFileButton.className = 'attach-file-btn edit-note-btn' // Inherit common styles
+  attachFileButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" ><path d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"/></svg>'
+  attachFileButton.setAttribute('aria-label', `Attach file to note ${note.title}`)
+  attachFileButton.addEventListener('click', (e) => {
+    e.stopPropagation()
+    if (callbacks.onAttachFile) callbacks.onAttachFile(note)
+  })
+
   const noteActions = document.createElement('div')
   noteActions.className = 'note-actions'
   if (note.public) {
     noteActions.appendChild(permalinkButton)
   }
+  noteActions.appendChild(attachFileButton)
   noteActions.appendChild(editNoteButton)
   noteActions.appendChild(deleteNoteButton)
 
@@ -153,6 +165,28 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     collapsibleContainer.appendChild(noteContent)
   } else {
     collapsibleContainer.classList.add('note-card--no-content')
+  }
+
+  // Attachments section
+  if (note.attachments && note.attachments.length > 0) {
+    const attachmentsContainer = document.createElement('div')
+    attachmentsContainer.className = 'note-attachments'
+
+    const attachmentsList = document.createElement('div')
+    attachmentsList.className = 'attachments-items'
+    
+    note.attachments.forEach(attachment => {
+      const attachmentLink = document.createElement('a')
+      attachmentLink.href = `/attachments/${note.id}/${attachment}`
+      attachmentLink.textContent = getOriginalFileName(attachment)
+      attachmentLink.download = getOriginalFileName(attachment)
+      attachmentLink.target = '_blank'
+      attachmentLink.rel = 'noopener noreferrer'
+      attachmentsList.appendChild(attachmentLink)
+    })
+    
+    attachmentsContainer.appendChild(attachmentsList)
+    collapsibleContainer.appendChild(attachmentsContainer)
   }
 
   noteCard.appendChild(collapsibleContainer)
