@@ -1,5 +1,5 @@
 import { addNote, updateNote, deleteNote } from '../api.js'
-import { showPrompt, showConfirmation } from '../ui/dialogs.js'
+import { showPrompt, showConfirmation, showNotification } from '../ui/dialogs.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { initializeLanes } from './lane.js'
 import { state } from './state.js'
@@ -52,9 +52,7 @@ export async function handleAddNoteRequest (laneName) {
         []
       )
       if (response.ok) {
-        console.log(
-          `Note "${noteTitle}" added successfully to lane "${laneName}".`
-        )
+        showNotification(`Note "${noteTitle}" added successfully to lane "${laneName}".`, 'success')
         await initializeLanes()
       } else {
         await handleApiError(
@@ -94,9 +92,7 @@ export async function handleDeleteNoteRequest (noteId, noteTitle) {
       }
       const response = await deleteNote(state.currentBoardName, noteId)
       if (response.ok) {
-        console.log(
-          `Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`
-        )
+        showNotification(`Note "${noteTitle}" (ID: ${noteId}) deleted successfully.`, 'success')
         await initializeLanes()
       } else {
         await handleApiError(response, `Failed to delete note "${noteTitle}".`)

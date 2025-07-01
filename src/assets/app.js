@@ -67,6 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wire up keyboard shortcuts for scrolling
   document.addEventListener('keydown', handleKeyDown)
 
+  // Global Escape key listener to close dialogs
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      const openDialogs = document.querySelectorAll('dialog[open]')
+      openDialogs.forEach(dialog => {
+        // Prevent closing dialogs if the Escape key was pressed within an input field
+        // where it might have a different intended behavior (e.g., clearing input)
+        const activeElement = document.activeElement
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
+          return // Do not close dialog if typing in an input
+        }
+        dialog.close()
+      })
+    }
+  })
+
   // --- Scroll Button Setup ---
   const mainContent = document.querySelector('.main-content')
   const scrollLeftBtn = document.querySelector('.scroll-btn--left')

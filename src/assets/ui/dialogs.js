@@ -103,14 +103,32 @@ export function showPrompt (message, title, defaultValue = '') {
  * @param {string} type The type of notification ('info' or 'error'). Defaults to 'error'.
  */
 export function showNotification (message, type = 'error') {
-  const container = document.getElementById('notification-container')
-  if (!container) return
+  const editModal = document.getElementById('modal-edit-note')
+  let targetContainer
+
+  if (editModal && editModal.open) {
+    // If the edit modal is open, append the notification inside it
+    // We'll append to the article element within the dialog for now.
+    // A more specific container might be added later for better positioning.
+    targetContainer = editModal.querySelector('article')
+    if (!targetContainer) {
+      console.error('Could not find article element inside edit modal.')
+      return
+    }
+  } else {
+    // Otherwise, append to the global notification container
+    targetContainer = document.getElementById('notification-container')
+    if (!targetContainer) {
+      console.error('Global notification container not found.')
+      return
+    }
+  }
 
   const toast = document.createElement('div')
   toast.className = `notification-toast ${type}`
   toast.textContent = message
 
-  container.appendChild(toast)
+  targetContainer.appendChild(toast)
 
   // Trigger the animation
   setTimeout(() => {
