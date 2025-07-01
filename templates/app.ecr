@@ -91,9 +91,13 @@
     <!-- Modal for Editing a Note -->
     <dialog id="modal-edit-note">
       <article>
-        <header>
+        <header class="edit-note-modal-header">
           <a href="#close" aria-label="Close" class="close" id="edit-note-close-btn"></a>
           <strong>Edit Note</strong>
+          <label for="edit-note-public" class="edit-note-public-switch-label">
+            <input type="checkbox" id="edit-note-public" name="public" role="switch">
+            Public
+          </label>
         </header>
         <form id="edit-note-form">
           <label for="edit-note-title">Title</label>
@@ -150,6 +154,26 @@
 
     <!-- Container for toast notifications -->
     <div id="notification-container"></div>
+
+    <!-- Modal for Permalink -->
+    <dialog id="modal-permalink">
+      <article>
+        <header class="permalink-modal-header">
+          <a href="#close" aria-label="Close" class="close" id="permalink-close-btn"></a>
+          <strong>Permalink</strong>
+          <label for="permalink-public-switch" class="permalink-public-switch-label">
+            <input type="checkbox" id="permalink-public-switch" name="public" role="switch">
+            Public
+          </label>
+        </header>
+        <p>Share this link to give others access to this note:</p>
+        <div class="permalink-url-group">
+          <input type="text" id="permalink-url" readonly>
+          <button id="permalink-copy-btn">Copy</button>
+        </div>
+      </article>
+    </dialog>
+
     <script type="module" src="/app.js" defer></script>
   </body>
 </html>

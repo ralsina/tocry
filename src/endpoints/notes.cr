@@ -32,7 +32,7 @@ module ToCry::Endpoints::Notes
     end
 
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
-    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content)
+    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content, public: note_data.public)
 
     # Save the board to persist the new note (this will save the note file and create symlink for this board)
     board.save
@@ -71,13 +71,15 @@ module ToCry::Endpoints::Notes
     note_data_changed = (existing_note.title != new_note_data.title) ||
                         (existing_note.tags != new_note_data.tags) ||
                         (existing_note.content != new_note_data.content) ||
-                        (existing_note.expanded != new_note_data.expanded)
+                        (existing_note.expanded != new_note_data.expanded) ||
+                        (existing_note.public != new_note_data.public)
 
     if note_data_changed
       existing_note.title = new_note_data.title
       existing_note.tags = new_note_data.tags
       existing_note.content = new_note_data.content
       existing_note.expanded = new_note_data.expanded
+      existing_note.public = new_note_data.public
       existing_note.save
       ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.name}'." }
     end
@@ -140,5 +142,17 @@ module ToCry::Endpoints::Notes
     env.response.status_code = 200
     env.response.content_type = "application/json"
     {success: "Note '#{note_id}' deleted (or did not exist)."}.to_json
+  end
+
+  get "/n/:id" do |env|
+    note_id = env.params.url["id"].as(String)
+    note = ToCry::Note.load(note_id)
+
+    if note.public
+      render "templates/note.ecr"
+    else
+      env.response.status_code = 404
+      ""
+    end
   end
 end

@@ -31,8 +31,8 @@ module ToCry
       @sepia_id = @name = "Untitled Lane" # Default name if not provided
     end
 
-    def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0) : Note
-      new_note = Note.new(title: title, tags: tags, content: content)
+    def note_add(title : String, tags : Array(String) = [] of String, content : String = "", position : Int = 0, public : Bool = false) : Note
+      new_note = Note.new(title: title, tags: tags, content: content, public: public)
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
