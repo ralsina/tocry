@@ -508,7 +508,8 @@ html[data-test-mode] .pulse-animation {
 }
 
 .delete-note-btn,
-.edit-note-btn {
+.edit-note-btn,
+.permalink-btn {
     background: none;
     border: none;
     color: var(--pico-muted-color, #6c757d);
@@ -834,6 +835,46 @@ html[data-test-mode] .pulse-animation {
 .scroll-btn--right { right: 15px; }
 
 /* --- Custom Confirmation Dialog --- */
+
+/* Permalink Modal Styling */
+.permalink-modal-header,
+.edit-note-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* Space between elements in the header */
+}
+
+.permalink-modal-header strong,
+.edit-note-modal-header strong {
+    flex-grow: 1; /* Allow the title to take up available space */
+    text-align: center; /* Center the title */
+}
+
+.permalink-public-switch-label,
+.edit-note-public-switch-label {
+    margin-left: auto; /* Push the switch to the right */
+    margin-bottom: 0; /* Remove default margin from Pico.css */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.permalink-url-group {
+    display: flex;
+    gap: 0.5rem; /* Space between input and button */
+    align-items: center;
+}
+
+.permalink-url-group input[type="text"] {
+    flex-grow: 1; /* Allow the input to take up available space */
+    margin-bottom: 0; /* Remove default margin from Pico.css */
+}
+
+.permalink-url-group button {
+    flex-shrink: 0; /* Prevent the button from shrinking */
+    margin-bottom: 0; /* Remove default margin from Pico.css */
+}
+
 #custom-confirm-dialog footer {
     display: flex;
     justify-content: flex-end;

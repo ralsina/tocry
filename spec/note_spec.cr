@@ -11,7 +11,7 @@ describe ToCry::Note do
 
   describe "JSON Serialization" do
     it "serializes a note to JSON correctly" do
-      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.")
+      note = ToCry::Note.new("Test Title", ["tag1", "tag2"], "Test content.", public: true)
       # We need to know the ID to compare, so let's grab it
       known_id = note.id
       json_output = note.to_json
@@ -22,6 +22,7 @@ describe ToCry::Note do
       parsed_json["title"].should eq "Test Title"
       parsed_json["tags"].should eq ["tag1", "tag2"]
       parsed_json["content"].should eq "Test content."
+      parsed_json["public"].should eq true
     end
 
     it "serializes a note with empty tags and content correctly" do
@@ -35,18 +36,20 @@ describe ToCry::Note do
       parsed_json["title"].should eq "Simple Title"
       parsed_json["tags"].should eq [] of String # Ensure it's an empty array of strings
       parsed_json["content"].should eq ""
+      parsed_json["public"].should eq false
     end
   end
 
   describe "JSON Deserialization" do
     it "deserializes a JSON string to a Note object correctly" do
-      json_string = %({"id":"test-uuid-123","title":"From JSON","tags":["json_tag"],"content":"JSON content"})
+      json_string = %({"id":"test-uuid-123","title":"From JSON","tags":["json_tag"],"content":"JSON content","public":true})
       note = ToCry::Note.from_json(json_string)
 
       note.id.should eq "test-uuid-123"
       note.title.should eq "From JSON" # Title setter should handle this
       note.tags.should eq ["json_tag"]
       note.content.should eq "JSON content"
+      note.public.should eq true
     end
 
     it "deserializes a JSON without id" do
@@ -57,6 +60,7 @@ describe ToCry::Note do
       note.title.should eq "No ID Note"
       note.tags.should eq ["tag1"]
       note.content.should eq "Content without ID"
+      note.public.should eq false
     end
 
     it "deserializes and slug normalizes title with leading/trailing spaces" do
@@ -65,6 +69,7 @@ describe ToCry::Note do
 
       note.id.should eq "test-uuid-456"
       note.slug.should eq "Spaced_Title" # Title setter should strip spaces
+      note.public.should eq false
     end
 
     it "deserializes and slug normalizes an empty/whitespace title to 'Untitled'" do
@@ -73,9 +78,10 @@ describe ToCry::Note do
 
       note.id.should eq "test-uuid-789"
       note.slug.should eq "untitled" # Title setter should set to "Untitled"
+      note.public.should eq false
     end
 
-    it "deserializes a note with missing optional fields (tags, content)" do
+    it "deserializes a note with missing optional fields (tags, content, public)" do
       # JSON::Serializable handles missing fields by using default values or nil if nillable
       # For Note, tags and content have defaults in initialize, but from_json might behave differently
       # Let's test with JSON that only has id and title
@@ -88,6 +94,7 @@ describe ToCry::Note do
       # and no default is specified in `JSON::Field(default: ...)`
       note.tags.should eq [] of String # Default for Array(String) is an empty array
       note.content.should eq ""        # Default for String is an empty string
+      note.public.should eq false
     end
   end
 
@@ -105,7 +112,8 @@ describe ToCry::Note do
       original_note = ToCry::Note.new(
         "Round Trip Test",
         ["save", "load"],
-        "This note will be saved and then loaded."
+        "This note will be saved and then loaded.",
+        public: true
       )
 
       # 2. Save the note
@@ -119,6 +127,7 @@ describe ToCry::Note do
       loaded_note.title.should eq(original_note.title)
       loaded_note.tags.should eq(original_note.tags)
       loaded_note.content.should eq(original_note.content)
+      loaded_note.public.should eq(original_note.public)
     end
 
     it "deletes a note, its file, and its symlink" do
@@ -165,6 +174,7 @@ describe ToCry::Note do
         tags:
         - loaded
         - from_file
+        public: true
         ---
         This is the content of the loaded note.
         MD
@@ -177,6 +187,44 @@ describe ToCry::Note do
         note.title.should eq("Loaded Note")
         note.tags.should eq(["loaded", "from_file"])
         note.content.strip.should eq("This is the content of the loaded note.")
+        note.public.should eq(true)
+      end
+
+      it "loads a note with public: false correctly" do
+        note_id = "not-public-id"
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
+        file_content = <<-MD
+        ---
+        title: Not Public Note
+        public: false
+        ---
+        This note is not public.
+        MD
+        FileUtils.mkdir_p(File.dirname(file_path))
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+
+        note.title.should eq("Not Public Note")
+        note.public.should eq(false)
+      end
+
+      it "loads a note with no public attribute (defaults to false)" do
+        note_id = "default-public-id"
+        file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
+        file_content = <<-MD
+        ---
+        title: Default Public Note
+        ---
+        This note has no public attribute.
+        MD
+        FileUtils.mkdir_p(File.dirname(file_path))
+        File.write(file_path, file_content)
+
+        note = ToCry::Note.load(note_id)
+
+        note.title.should eq("Default Public Note")
+        note.public.should eq(false)
       end
 
       it "raises FileNotFoundError if the note file does not exist" do

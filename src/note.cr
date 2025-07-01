@@ -11,8 +11,9 @@ module ToCry
     property title : String
     property tags : Array(String) = [] of String # Default to empty array
     property expanded : Bool = false             # Default to false
+    property public : Bool = false               # Default to false
 
-    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false)
+    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false)
     end
   end
 
@@ -39,6 +40,7 @@ module ToCry
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
     property expanded : Bool = false
+    property public : Bool = false
 
     # Reimplement sepia_id to use the id property
     def sepia_id
@@ -56,12 +58,14 @@ module ToCry
       tags : Array(String) = [] of String,
       content : String = "",
       expanded : Bool = false,
+      public : Bool = false
     )
       @sepia_id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
       self.title = title
       @tags = tags
       @content = content
       @expanded = expanded
+      @public = public
     end
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
@@ -83,7 +87,7 @@ module ToCry
         raise "Invalid YAML frontmatter in provided data: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded)
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public)
       note
     end
 
@@ -91,7 +95,7 @@ module ToCry
     def to_sepia
       data = String.build do |builder|
         # Use the new FrontMatter struct for serialization
-        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded)
+        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public)
         builder << frontmatter_struct.to_yaml
         builder << "---\n\n" # YAML frontmatter separator
         builder << self.content

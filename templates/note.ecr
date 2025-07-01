@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= note.title %></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        body { padding: 2em; max-width: 800px; margin: auto; }
+        .tags { margin-bottom: 1em; }
+        .tag {
+            display: inline-block;
+            background-color: var(--pico-muted-background-color);
+            color: var(--pico-muted-color);
+            padding: 0.2em 0.7em;
+            border-radius: 9999px;
+            font-size: 0.9em;
+            margin-right: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <article>
+            <header>
+                <h1><%= note.title %></h1>
+                <% if note.tags.any? %>
+                <div class="tags">
+                    <% note.tags.each do |tag| %>
+                        <span class="tag"><%= tag %></span>
+                    <% end %>
+                </div>
+                <% end %>
+            </header>
+            <div id="note-content"></div>
+        </article>
+    </main>
+    <script>
+        const markdownContent = <%= note.content.to_json %>;
+        document.getElementById('note-content').innerHTML = marked.parse(markdownContent);
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    </script>
+</body>
+</html>

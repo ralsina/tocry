@@ -96,6 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelEditBtn.addEventListener('click', closeEditModal)
   closeEditBtn.addEventListener('click', closeEditModal)
 
+  // Wire up the permalink modal's close button
+  const permalinkCloseBtn = document.getElementById('permalink-close-btn')
+  if (permalinkCloseBtn) {
+    permalinkCloseBtn.addEventListener('click', () => {
+      document.getElementById('modal-permalink').close()
+    })
+  }
+
   // --- Click-to-show for color scheme selector ---
   const themeSwitcherContainer = document.querySelector(
     '.theme-and-color-switcher'

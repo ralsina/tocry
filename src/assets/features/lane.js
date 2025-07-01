@@ -15,7 +15,8 @@ import {
   handleUpdateNoteTitleRequest,
   handlePasteAsNoteRequest,
   handlePasteAsImageNoteRequest,
-  handleToggleNoteRequest
+  handleToggleNoteRequest,
+  handlePermalinkRequest
 } from './note.js'
 import { laneDragAndDropCallbacks } from '../dnd/lane.js'
 import { noteDragAndDropCallbacks } from '../dnd/note.js'
@@ -120,7 +121,8 @@ export async function initializeLanes (boardName = state.currentBoardName) {
         onUpdateNoteTitle: handleUpdateNoteTitleRequest,
         onPasteAsNote: handlePasteAsNoteRequest,
         onPasteAsImageNote: handlePasteAsImageNoteRequest,
-        onToggleNote: handleToggleNoteRequest
+        onToggleNote: handleToggleNoteRequest,
+        onPermalink: handlePermalinkRequest
       }
       renderLanes(lanes, callbacks, {
         lane: laneDragAndDropCallbacks,

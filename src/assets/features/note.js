@@ -15,6 +15,83 @@ import { noteDragAndDropCallbacks } from '../dnd/note.js'
 let toastuiEditor = null
 
 // Handler for persisting the expanded/collapsed state of a note
+// Handler for showing the permalink modal
+export async function handlePermalinkRequest (note) {
+  const modal = document.getElementById('modal-permalink')
+  if (!modal) return
+
+  const permalinkUrlInput = document.getElementById('permalink-url')
+  const permalinkCopyBtn = document.getElementById('permalink-copy-btn')
+  const permalinkPublicSwitch = document.getElementById('permalink-public-switch')
+  const permalinkCloseBtn = document.getElementById('permalink-close-btn')
+
+  const noteUrl = `${window.location.origin}/n/${note.id}`
+  permalinkUrlInput.value = noteUrl
+  permalinkPublicSwitch.checked = note.public
+
+  // Clear previous listeners to prevent multiple bindings
+  permalinkCopyBtn.onclick = null
+  permalinkPublicSwitch.onchange = null
+  permalinkCloseBtn.onclick = null
+
+  permalinkCopyBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(noteUrl)
+      showNotification('Permalink copied to clipboard!', 'success')
+    } catch (err) {
+      console.error('Failed to copy permalink: ', err)
+      showNotification('Failed to copy permalink.', 'error')
+    }
+  }
+
+  permalinkPublicSwitch.onchange = async (event) => {
+    const isPublic = event.target.checked
+    const updatedNoteData = { ...note, public: isPublic }
+    try {
+      const response = await updateNote(state.currentBoardName, note.id, {
+        note: updatedNoteData,
+        lane_name: null,
+        position: null
+      })
+      if (response.ok) {
+        showNotification(`Note visibility updated to ${isPublic ? 'public' : 'private'}.`, 'success')
+        // Update the note in the local cache
+        const lane = state.currentLanes.find((l) => l.notes.some((n) => n.id === note.id))
+        if (lane) {
+          const noteInCache = lane.notes.find((n) => n.id === note.id)
+          if (noteInCache) {
+            noteInCache.public = isPublic
+          }
+        }
+        // Re-render the note card to show/hide the permalink button
+        await initializeLanes()
+      } else {
+        await handleApiError(response, 'Failed to update note visibility.')
+        // Revert the switch state on API error
+        event.target.checked = !isPublic
+      }
+    } catch (error) {
+      handleUIError(error, 'An unexpected error occurred while updating note visibility.')
+      // Revert the switch state on UI error
+      event.target.checked = !isPublic
+    }
+  }
+
+  permalinkCloseBtn.onclick = () => {
+    modal.close()
+  }
+
+  modal.showModal()
+
+  // Close modal when clicking outside
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.close()
+    }
+  })
+}
+
+// Handler for persisting the expanded/collapsed state of a note
 export async function handleToggleNoteRequest (noteToUpdate, isExpanded) {
   const updatedNoteData = { ...noteToUpdate, expanded: isExpanded }
 
@@ -222,6 +299,7 @@ export function handleEditNoteRequest (note) {
   form.dataset.noteId = note.id // Store the ID for submission
   document.getElementById('edit-note-title').value = note.title
   document.getElementById('edit-note-tags').value = note.tags.join(', ')
+  document.getElementById('edit-note-public').checked = note.public
 
   const contentTextarea = document.getElementById('edit-note-content')
   // Toast UI Editor takes the element directly and initialValue in options
@@ -282,7 +360,8 @@ export async function handleEditNoteSubmit (event) {
       .value.split(',')
       .map((t) => t.trim())
       .filter(Boolean),
-    content: toastuiEditor.getMarkdown() // Get markdown content from Toast UI Editor
+    content: toastuiEditor.getMarkdown(), // Get markdown content from Toast UI Editor
+    public: document.getElementById('edit-note-public').checked
   }
 
   // Find the note in the cache and its lane
@@ -314,7 +393,8 @@ export async function handleEditNoteSubmit (event) {
       onDeleteNote: handleDeleteNoteRequest,
       onEditNote: handleEditNoteRequest,
       onUpdateNoteTitle: handleUpdateNoteTitleRequest,
-      onToggleNote: handleToggleNoteRequest
+      onToggleNote: handleToggleNoteRequest,
+      onPermalink: handlePermalinkRequest
     }
     const newNoteCardElement = createNoteCardElement(
       noteInCache,
