@@ -11,13 +11,17 @@ import { state } from './state.js'
 import {
   handleAddNoteRequest,
   handleDeleteNoteRequest,
-  handleEditNoteRequest,
-  handleUpdateNoteTitleRequest,
-  handlePasteAsNoteRequest,
-  handlePasteAsImageNoteRequest,
   handleToggleNoteRequest,
+  handleUpdateNoteTitleRequest
+} from './note-crud.js'
+import {
+  handleEditNoteRequest,
   handlePermalinkRequest
-} from './note.js'
+} from './note-modals.js'
+import {
+  handlePasteAsNoteRequest,
+  handlePasteAsImageNoteRequest
+} from './note-paste.js'
 import { laneDragAndDropCallbacks } from '../dnd/lane.js'
 import { noteDragAndDropCallbacks } from '../dnd/note.js'
 import { initializeBoardSelector, addBoard, selectBoard } from './board.js' // Import selectBoard
