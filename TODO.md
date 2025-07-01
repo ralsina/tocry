@@ -15,5 +15,5 @@
   * Create a socket to get notification of changes in the backend
   * ✅ Implement board sharing
 * ✅ Paste notes
-* Attachments?
+* ✅ Attachments
 * Test on mobile

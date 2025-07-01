@@ -20,6 +20,77 @@
             font-size: 0.9em;
             margin-right: 0.5em;
         }
+        
+        /* Note Attachments Styling */
+        .note-attachments {
+            margin-top: var(--pico-spacing);
+            padding: var(--pico-spacing);
+            background-color: var(--pico-form-element-background-color);
+            border: 1px solid var(--pico-form-element-border-color);
+            border-radius: var(--pico-border-radius);
+        }
+        
+        .note-attachments h5 {
+            margin: 0 0 0.75rem 0;
+            color: var(--pico-muted-color);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .note-attachments .attachments-items {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .note-attachments a {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            margin: 0.25rem 0;
+            background-color: var(--pico-card-background-color);
+            border: 1px solid var(--pico-card-border-color);
+            border-radius: calc(var(--pico-border-radius) * 0.75);
+            text-decoration: none;
+            color: var(--pico-color);
+            transition: all 0.2s ease-in-out;
+            word-break: break-all;
+            font-size: 0.875rem;
+            gap: 0.5rem;
+        }
+        
+        .note-attachments a::before {
+            content: "🔗";
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+        
+        .note-attachments a:hover {
+            background-color: var(--pico-primary-background);
+            border-color: var(--pico-primary);
+            color: var(--pico-primary);
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(51, 59, 69, 0.1);
+        }
+        
+        .note-attachments a:hover::before {
+            opacity: 1;
+        }
+        
+        .note-attachments a:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(51, 59, 69, 0.1);
+        }
+        
+        /* When there are multiple attachments, add some visual separation */
+        .note-attachments a + a {
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -36,13 +107,44 @@
                 <% end %>
             </header>
             <div id="note-content"></div>
+            <% if note.attachments.any? %>
+            <div class="note-attachments">
+                <h5>Attachments</h5>
+                <div class="attachments-items">
+                    <% note.attachments.each do |attachment| %>
+                        <a href="/attachments/<%= note.id %>/<%= attachment %>" target="_blank" rel="noopener noreferrer">
+                            <%= attachment %>
+                        </a>
+                    <% end %>
+                </div>
+            </div>
+            <% end %>
         </article>
     </main>
     <script>
+        // Helper function to extract original filename from UUID-prefixed filename
+        function getOriginalFileName(uuidPrefixedFilename) {
+            const parts = uuidPrefixedFilename.split('_');
+            // Check if the first part looks like a UUID and if there's more than one part
+            if (parts.length > 1 && parts[0].match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                return parts.slice(1).join('_');
+            }
+            return uuidPrefixedFilename; // Return as is if not in the expected format
+        }
+        
         const markdownContent = <%= note.content.to_json %>;
         document.getElementById('note-content').innerHTML = marked.parse(markdownContent);
         document.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
+        });
+        
+        // Update attachment link text to show original filenames
+        document.querySelectorAll('.note-attachments a').forEach((link) => {
+            const href = link.getAttribute('href');
+            const filename = href.split('/').pop();
+            const originalFilename = getOriginalFileName(filename);
+            link.textContent = originalFilename;
+            link.setAttribute('download', originalFilename);
         });
     </script>
 </body>

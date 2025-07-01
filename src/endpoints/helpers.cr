@@ -48,6 +48,18 @@ module ToCry::Endpoints::Helpers
     body.gets_to_end
   end
 
+  # Helper function to sanitize a string for use as a filename component.
+  # Replaces invalid characters with underscores and removes leading/trailing underscores.
+  def self.sanitize_filename(filename : String) : String
+    # Replace any character that is not alphanumeric, a hyphen, an underscore, or a dot with an underscore
+    sanitized = filename.gsub(/[^a-zA-Z0-9\-_.]/, "_")
+    # Remove leading/trailing underscores or hyphens
+    sanitized = sanitized.gsub(/^[_-]+|[_-]+$/, "")
+    # Replace multiple consecutive underscores/hyphens with a single underscore
+    sanitized = sanitized.gsub(/[_-]{2,}/, "_")
+    sanitized.empty? ? "untitled" : sanitized # Fallback for empty string after sanitization
+  end
+
   # Payload Structs (moved here for shared access)
   struct NewLanePayload
     include JSON::Serializable

@@ -18,6 +18,7 @@ import {
   handleEditNoteRequest,
   handlePermalinkRequest
 } from './note-modals.js'
+import { handleAttachFileRequest } from './note.js'
 import {
   handlePasteAsNoteRequest,
   handlePasteAsImageNoteRequest
@@ -126,7 +127,8 @@ export async function initializeLanes (boardName = state.currentBoardName) {
         onPasteAsNote: handlePasteAsNoteRequest,
         onPasteAsImageNote: handlePasteAsImageNoteRequest,
         onToggleNote: handleToggleNoteRequest,
-        onPermalink: handlePermalinkRequest
+        onPermalink: handlePermalinkRequest,
+        onAttachFile: handleAttachFileRequest
       }
       renderLanes(lanes, callbacks, {
         lane: laneDragAndDropCallbacks,

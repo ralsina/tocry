@@ -2,6 +2,8 @@
 require "kemal"
 require "../tocry"
 require "./helpers"
+require "uuid"
+require "file_utils"
 
 module ToCry::Endpoints::Notes
   # API Endpoint to add a new note to a lane
@@ -154,5 +156,114 @@ module ToCry::Endpoints::Notes
       env.response.status_code = 404
       ""
     end
+  end
+
+  post "/n/:note_id/attach" do |env|
+    note_id = env.params.url["note_id"].as(String)
+    user = ToCry.get_current_user_id(env)
+
+    # Find the note and its containing board, only among those accessible to the user
+    found_note_and_lane = nil
+    containing_board = nil
+
+    ToCry.board_manager.list(user).each do |board_uuid|
+      board = ToCry.board_manager.@boards[board_uuid]
+      found_note_and_lane = board.note(note_id)
+      if found_note_and_lane
+        containing_board = board
+        break # Break out of the loop once the note is found
+      end
+    end
+
+    unless found_note_and_lane
+      env.response.status_code = 404
+      env.response.content_type = "application/json"
+      next {error: "Note with ID '#{note_id}' not found or not accessible."}.to_json
+    end
+    existing_note, _ = found_note_and_lane
+
+    # At this point, containing_board is guaranteed to be non-nil and accessible to the user
+    # No further access check is needed here as it was done by BoardManager.list(user)
+
+    uploaded_file = env.params.files.values.first?
+
+    if uploaded_file.nil?
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      next {error: "No file uploaded."}.to_json
+    end
+
+    # Create a directory for attachments specific to this note
+    attachments_dir = File.join(ToCry.data_directory, "uploads", "attachments", note_id)
+    FileUtils.mkdir_p(attachments_dir)
+
+    # Generate a unique filename for the uploaded file
+    original_filename = uploaded_file.filename.as(String)
+    base_filename = File.basename(original_filename, File.extname(original_filename))
+    extension = File.extname(original_filename)
+    sanitized_base_filename = ToCry::Endpoints::Helpers.sanitize_filename(base_filename)
+    unique_filename = "#{UUID.random}_#{sanitized_base_filename}#{extension}"
+    save_path = File.join(attachments_dir, unique_filename)
+
+    # Save the file
+    File.open(save_path, "w") do |outf|
+      IO.copy(uploaded_file.tempfile, outf)
+    end
+
+    # Update the note's attachments field
+    existing_note.add_attachment(unique_filename)
+    existing_note.save
+
+    env.response.status_code = 200
+    env.response.content_type = "application/json"
+    {success: "File '#{original_filename}' attached to note '#{note_id}'.", filename: unique_filename}.to_json
+  end
+
+  delete "/n/:note_uuid/:attachment_uuid" do |env|
+    note_uuid = env.params.url["note_uuid"].as(String)
+    attachment_uuid = env.params.url["attachment_uuid"].as(String)
+    user = ToCry.get_current_user_id(env)
+
+    # Find the note and its containing board, only among those accessible to the user
+    found_note_and_lane = nil
+    containing_board = nil
+
+    ToCry.board_manager.list(user).each do |board_uuid|
+      board = ToCry.board_manager.@boards[board_uuid]
+      found_note_and_lane = board.note(note_uuid)
+      if found_note_and_lane
+        containing_board = board
+        break # Break out of the loop once the note is found
+      end
+    end
+
+    unless found_note_and_lane
+      env.response.status_code = 404
+      env.response.content_type = "application/json"
+      next {error: "Note with ID '#{note_uuid}' not found or not accessible."}.to_json
+    end
+    existing_note, _ = found_note_and_lane
+
+    # At this point, containing_board is guaranteed to be non-nil and accessible to the user
+    # No further access check is needed here as it was done by BoardManager.list(user)
+
+    # Remove the attachment from the note's attachments list
+    existing_note.remove_attachment(attachment_uuid)
+
+    # Delete the actual attachment file from the filesystem
+    attachment_file_path = File.join(ToCry.data_directory, "uploads", "attachments", note_uuid, attachment_uuid)
+    if File.exists?(attachment_file_path)
+      FileUtils.rm(attachment_file_path)
+      ToCry::Log.info { "Deleted attachment file: '#{attachment_file_path}'" }
+    else
+      ToCry::Log.warn { "Attachment file not found on disk: '#{attachment_file_path}'. Removing from note's attachments list anyway." }
+    end
+
+    # Save the updated note
+    existing_note.save
+
+    env.response.status_code = 200
+    env.response.content_type = "application/json"
+    {success: "Attachment '#{attachment_uuid}' removed from note '#{note_uuid}'."}.to_json
   end
 end

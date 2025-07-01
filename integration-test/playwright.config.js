@@ -19,7 +19,7 @@ export default defineConfig({
     timeout: 10 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
   },
-  globalSetup: undefined,
+  globalSetup: require.resolve('./tests/global-setup.js'),
 
   projects: [
     {
@@ -57,7 +57,10 @@ export default defineConfig({
     {
       name: 'Google Auth',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--enable-blink-features=HTMLImports']
+        }
       },
       webServer: {
         command: 'TOCRY_FAKE_AUTH_USER=test@example.com GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata --safe-mode',
