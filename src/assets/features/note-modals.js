@@ -28,8 +28,8 @@ export function handleEditNoteRequest (note) {
   const contentTextarea = document.getElementById('edit-note-content')
   toastuiEditor = new toastui.Editor({
     el: contentTextarea,
+    height: '100%',
     initialValue: note.content,
-    height: '300px',
     previewStyle: 'vertical',
     toolbarItems: [
       ['heading', 'bold', 'italic', 'strike'],

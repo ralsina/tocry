@@ -657,7 +657,41 @@ html[data-test-mode] .pulse-animation {
 }
 
 /* The footer of the modal should have buttons side-by-side on the right */
+#modal-edit-note[open] {
+    max-height: 90vh; /* Set max-height to 90% of viewport height */
+    height: 90vh; /* Attempt to set height to 90% */
+    display: flex; /* Use flexbox for internal layout */
+    flex-direction: column; /* Stack children vertically */
+}
+
+#modal-edit-note article {
+    flex-grow: 1; /* Allow article content to grow */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Hide overflow of content */
+}
+
+#modal-edit-note form {
+    flex-grow: 1; /* Allow form to take available space */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Hide overflow of form content */
+}
+
+#modal-edit-note .toastui-editor-defaultUI {
+    flex-grow: 1; /* Allow editor to take remaining space */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Allow editor to shrink */
+}
+
+#modal-edit-note .toastui-editor-main {
+    flex-grow: 1; /* Allow editor main area to grow */
+    min-height: 0; /* Allow editor main area to shrink */
+}
+
 #modal-edit-note footer {
+    flex-shrink: 0; /* Prevent footer from shrinking */
     display: flex;
     justify-content: flex-end;
     gap: var(--pico-spacing);
@@ -882,16 +916,9 @@ html[data-test-mode] .pulse-animation {
 }
 
 /* --- Custom Prompt Dialog --- */
-#custom-prompt-dialog footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--pico-spacing);
+#custom-prompt-dialog footer button {
+    width: auto;
 }
-#custom-prompt-dialog form {
-    margin-bottom: 0;
-}
-
-/* --- Notification Toasts --- */
 #notification-container {
     position: fixed;
     bottom: 20px;
@@ -923,4 +950,11 @@ html[data-test-mode] .pulse-animation {
 
 .notification-toast.error {
     border-left-color: var(--pico-del-color);
+}
+
+dialog .notification-toast {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000; /* Ensure it's above other dialog content */
 }

@@ -245,7 +245,7 @@ export async function handleDeleteLaneRequest (laneName) {
 
       const response = await deleteLane(state.currentBoardName, laneName)
       if (response.ok) {
-        console.log(`Lane "${laneName}" deleted successfully.`)
+        showNotification(`Lane "${laneName}" deleted successfully.`, 'success')
         await initializeLanes() // Re-fetch and render all lanes
       } else {
         // API call failed

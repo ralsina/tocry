@@ -100,13 +100,9 @@
           </label>
         </header>
         <form id="edit-note-form">
-          <label for="edit-note-title">Title</label>
-          <input type="text" id="edit-note-title" name="title" required />
+          <input type="text" id="edit-note-title" name="title" required placeholder="Title" />
 
-          <label for="edit-note-tags">Tags (comma-separated)</label>
-          <input type="text" id="edit-note-tags" name="tags" />
-
-          <label for="edit-note-content">Content (Markdown)</label>
+          <input type="text" id="edit-note-tags" name="tags" placeholder="Tags (comma-separated)" />
           <!-- Toast UI Editor needs a div to render into, not a textarea -->
           <div id="edit-note-content"></div>
         </form>
