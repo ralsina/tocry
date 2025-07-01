@@ -2,11 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2025-07-01
+
+### 🚀 Features
+
+- Support for public notes
+
 ## [0.10.0] - 2025-07-01
 
 ### 🚀 Features
 
 - Board sharing between users in multi user mode
+
+### 💼 Other
+
+- Release v0.10.0
 
 ## [0.9.0] - 2025-06-29
 
