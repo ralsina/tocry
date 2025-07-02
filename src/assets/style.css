@@ -1247,3 +1247,91 @@ html[data-test-mode] .pulse-animation {
 .title-container:hover .particle {
     animation-duration: 1.5s;
 }
+
+/* --- Dialog Animations --- */
+/* Base styles for all dialogs */
+dialog {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* When dialog is open */
+dialog[open] {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Animation keyframes for dialogs */
+@keyframes dialogFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes dialogFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+}
+
+/* Apply entrance animation */
+dialog.dialog-enter {
+    animation: dialogFadeIn 0.3s ease-out;
+}
+
+/* Apply exit animation */
+dialog.dialog-exit {
+    animation: dialogFadeOut 0.2s ease-in;
+}
+
+/* Backdrop animation */
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0);
+    transition: background-color 0.3s ease-out;
+}
+
+dialog[open]::backdrop {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Disable animations in test mode */
+html[data-test-mode] dialog {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+html[data-test-mode] dialog::backdrop {
+    transition: none !important;
+}
+
+/* Disable note collapsible animations in test mode */
+html[data-test-mode] .note-collapsible {
+    transition: none !important;
+}
+
+html[data-test-mode] .note-toggle-btn .toggle-arrow {
+    transition: none !important;
+}
+
+/* Disable all transitions and animations in test mode */
+html[data-test-mode] *,
+html[data-test-mode] *::before,
+html[data-test-mode] *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+}

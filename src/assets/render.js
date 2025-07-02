@@ -183,37 +183,45 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
 
   collapsibleContainer.appendChild(summaryDiv)
 
-  if (hasContent) {
-    const noteContent = createElement('div', 'note-content')
-    noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content
+  // Create noteContent container - always create it if there's content OR attachments
+  const hasAttachments = note.attachments && note.attachments.length > 0
 
-    if (window.hljs) {
-      noteContent.querySelectorAll('pre code').forEach((block) => {
-        window.hljs.highlightElement(block)
-      })
+  if (hasContent || hasAttachments) {
+    const noteContent = createElement('div', 'note-content')
+
+    // Add parsed content if it exists
+    if (hasContent) {
+      noteContent.innerHTML = window.marked ? window.marked.parse(note.content) : note.content
+
+      if (window.hljs) {
+        noteContent.querySelectorAll('pre code').forEach((block) => {
+          window.hljs.highlightElement(block)
+        })
+      }
     }
+
+    // Add attachments section if they exist
+    if (hasAttachments) {
+      const attachmentsContainer = createElement('div', 'note-attachments')
+      const attachmentsList = createElement('div', 'attachments-items')
+
+      note.attachments.forEach(attachment => {
+        const originalFileName = getOriginalFileName(attachment)
+        const attachmentLink = createDownloadLink(
+          `/attachments/${note.id}/${attachment}`,
+          originalFileName,
+          originalFileName
+        )
+        attachmentsList.appendChild(attachmentLink)
+      })
+
+      attachmentsContainer.appendChild(attachmentsList)
+      noteContent.appendChild(attachmentsContainer)
+    }
+
     collapsibleContainer.appendChild(noteContent)
   } else {
     collapsibleContainer.classList.add('note-card--no-content')
-  }
-
-  // Attachments section
-  if (note.attachments && note.attachments.length > 0) {
-    const attachmentsContainer = createElement('div', 'note-attachments')
-    const attachmentsList = createElement('div', 'attachments-items')
-
-    note.attachments.forEach(attachment => {
-      const originalFileName = getOriginalFileName(attachment)
-      const attachmentLink = createDownloadLink(
-        `/attachments/${note.id}/${attachment}`,
-        originalFileName,
-        originalFileName
-      )
-      attachmentsList.appendChild(attachmentLink)
-    })
-
-    attachmentsContainer.appendChild(attachmentsList)
-    collapsibleContainer.appendChild(attachmentsContainer)
   }
 
   noteCard.appendChild(collapsibleContainer)

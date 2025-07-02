@@ -52,6 +52,11 @@ export function handleAttachFileRequest (note) {
   setupDropZone()
 
   modal.showModal()
+
+  const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+  if (!isTestMode) {
+    modal.classList.add('dialog-enter')
+  }
 }
 
 function setupDropZone () {

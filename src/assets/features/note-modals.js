@@ -63,6 +63,11 @@ export function handleEditNoteRequest (note) {
   }
 
   modal.showModal()
+
+  const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+  if (!isTestMode) {
+    modal.classList.add('dialog-enter')
+  }
 }
 
 export function closeEditModal () {
@@ -72,7 +77,18 @@ export function closeEditModal () {
     toastuiEditor = null
   }
   if (modal) {
-    modal.close()
+    const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+    if (isTestMode) {
+      // Skip animation in test mode
+      modal.close()
+    } else {
+      modal.classList.add('dialog-exit')
+      setTimeout(() => {
+        modal.close()
+        modal.classList.remove('dialog-exit', 'dialog-enter')
+      }, 200) // Match the exit animation duration
+    }
   }
 }
 
@@ -201,10 +217,26 @@ export async function handlePermalinkRequest (note) {
   }
 
   permalinkCloseBtn.onclick = () => {
-    modal.close()
+    const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+    if (isTestMode) {
+      // Skip animation in test mode
+      modal.close()
+    } else {
+      modal.classList.add('dialog-exit')
+      setTimeout(() => {
+        modal.close()
+        modal.classList.remove('dialog-exit', 'dialog-enter')
+      }, 200)
+    }
   }
 
   modal.showModal()
+
+  const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+  if (!isTestMode) {
+    modal.classList.add('dialog-enter')
+  }
 
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
