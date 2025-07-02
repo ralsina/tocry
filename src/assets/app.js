@@ -21,9 +21,25 @@ function setupEventListener (selector, event, handler) {
   return false
 }
 
-// Utility function to close modal dialogs
+// Utility function to close modal dialogs with animation
 function closeModal (modalId) {
-  return () => document.getElementById(modalId).close()
+  return () => {
+    const modal = document.getElementById(modalId)
+    if (modal) {
+      const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+      if (isTestMode) {
+        // Skip animation in test mode
+        modal.close()
+      } else {
+        modal.classList.add('dialog-exit')
+        setTimeout(() => {
+          modal.close()
+          modal.classList.remove('dialog-exit', 'dialog-enter')
+        }, 200) // Match the exit animation duration
+      }
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -81,7 +97,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
           return // Do not close dialog if typing in an input
         }
-        dialog.close()
+
+        // Close dialog with animation
+        const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+        if (isTestMode) {
+          // Skip animation in test mode
+          dialog.close()
+        } else {
+          dialog.classList.add('dialog-exit')
+          setTimeout(() => {
+            dialog.close()
+            dialog.classList.remove('dialog-exit', 'dialog-enter')
+          }, 200) // Match the exit animation duration
+        }
       })
     }
   })
@@ -206,8 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create initial burst of particles
     function createParticleBurst () {
       const numParticles = 12
-      const titleRect = titleElement.getBoundingClientRect()
-      const containerRect = particlesContainer.getBoundingClientRect()
 
       for (let i = 0; i < numParticles; i++) {
         createParticle()
@@ -225,10 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
       particle.style.height = `${size}px`
 
       // Random position around the title
-      const titleRect = titleElement.getBoundingClientRect()
-      const containerRect = particlesContainer.getBoundingClientRect()
-
-      // Position relative to the container
       const x = Math.random() * 100 // Random percentage across the width
       const y = Math.random() * 100 // Random percentage across the height
 

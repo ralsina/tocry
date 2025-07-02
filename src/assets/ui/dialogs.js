@@ -26,20 +26,37 @@ export function showConfirmation (message, title = 'Confirm Action') {
     titleElement.textContent = title
     messageElement.textContent = message
 
+    // Function to close dialog with animation
+    const closeDialog = (result) => {
+      const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+      if (isTestMode) {
+        // Skip animation in test mode
+        dialog.close()
+        resolve(result)
+      } else {
+        dialog.classList.add('dialog-exit')
+        setTimeout(() => {
+          dialog.close()
+          dialog.classList.remove('dialog-exit', 'dialog-enter')
+          resolve(result)
+        }, 200) // Match the exit animation duration
+      }
+    }
+
     // Clear previous listeners to prevent multiple calls
     okButton.onclick = null
     cancelButton.onclick = null
 
-    okButton.onclick = () => {
-      dialog.close()
-      resolve(true)
-    }
-    cancelButton.onclick = () => {
-      dialog.close()
-      resolve(false)
-    }
+    okButton.onclick = () => closeDialog(true)
+    cancelButton.onclick = () => closeDialog(false)
 
     dialog.showModal()
+
+    const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+    if (!isTestMode) {
+      dialog.classList.add('dialog-enter')
+    }
   })
 }
 
@@ -77,21 +94,39 @@ export function showPrompt (message, title, defaultValue = '') {
     messageElement.textContent = message
     input.value = defaultValue
 
-    const closeDialog = () => {
-      dialog.close()
+    // Function to close dialog with animation
+    const closeDialog = (result) => {
+      const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+
+      if (isTestMode) {
+        // Skip animation in test mode
+        dialog.close()
+        resolve(result)
+      } else {
+        dialog.classList.add('dialog-exit')
+        setTimeout(() => {
+          dialog.close()
+          dialog.classList.remove('dialog-exit', 'dialog-enter')
+          resolve(result)
+        }, 200) // Match the exit animation duration
+      }
     }
 
     form.onsubmit = (e) => {
       e.preventDefault()
-      closeDialog()
-      resolve(input.value)
+      closeDialog(input.value)
     }
     cancelButton.onclick = () => {
-      closeDialog()
-      resolve(null)
+      closeDialog(null)
     }
 
     dialog.showModal()
+
+    const isTestMode = document.documentElement.hasAttribute('data-test-mode')
+    if (!isTestMode) {
+      dialog.classList.add('dialog-enter')
+    }
+
     input.focus()
     input.select()
   })

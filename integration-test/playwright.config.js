@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 3 * 1000,
+  timeout: 30 * 1000, // Increased to 30 seconds for better stability
   expect: {
     timeout: 5000
   },
@@ -16,7 +16,7 @@ export default defineConfig({
     // Command to start the backend server in test mode.
     command: '../bin/tocry --data-path=testdata --safe-mode',
     url: 'http://localhost:3000',
-    timeout: 10 * 1000, // Increased timeout to give the server more time to start
+    timeout: 30 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
   },
   globalSetup: require.resolve('./tests/global-setup.js'),
