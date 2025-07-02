@@ -6,9 +6,8 @@ require "./helpers"
 module ToCry::Endpoints::Lanes
   # API Endpoint to get all lanes
   get "/boards/:board_name/lanes" do |env|
-    env.response.content_type = "application/json"
     board = ToCry::Endpoints::Helpers.get_board_from_context(env)
-    board.lanes.to_json
+    ToCry::Endpoints::Helpers.success_response(env, board.lanes)
   end
 
   # API Endpoint to add a new lane
@@ -38,9 +37,7 @@ module ToCry::Endpoints::Lanes
     end
     board.save
 
-    env.response.status_code = 201 # Created
-    env.response.content_type = "application/json"
-    new_lane.to_json
+    ToCry::Endpoints::Helpers.created_response(env, new_lane)
   end
 
   # API Endpoint to update a lane's name and/or position
@@ -63,9 +60,7 @@ module ToCry::Endpoints::Lanes
     existing_lane = board.lane(current_lane_name)
 
     unless existing_lane
-      env.response.status_code = 404 # Not Found
-      env.response.content_type = "application/json"
-      next {error: "Lane with name '#{current_lane_name}' not found."}.to_json
+      next ToCry::Endpoints::Helpers.not_found_response(env, "Lane with name '#{current_lane_name}' not found.")
     end
 
     # Update the lane's name if it has changed
@@ -79,9 +74,7 @@ module ToCry::Endpoints::Lanes
 
     board.save # Save the board to persist changes (renaming and reordering directories)
 
-    env.response.status_code = 200 # OK
-    env.response.content_type = "application/json"
-    existing_lane.to_json # Return the updated lane data
+    ToCry::Endpoints::Helpers.success_response(env, existing_lane)
   end
 
   # API Endpoint to delete a lane by name
@@ -91,8 +84,6 @@ module ToCry::Endpoints::Lanes
     lane_name = env.params.url["name"].as(String)
     board = ToCry::Endpoints::Helpers.get_board_from_context(env)
     board.lane_del(lane_name)
-    env.response.status_code = 200
-    env.response.content_type = "application/json"
-    {success: "Lane '#{lane_name}' deleted."}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Lane '#{lane_name}' deleted."})
   end
 end

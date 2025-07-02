@@ -28,9 +28,7 @@ module ToCry::Endpoints::Notes
     target_lane = board.lane(target_lane_name)
 
     unless target_lane
-      env.response.status_code = 404 # Not Found
-      env.response.content_type = "application/json"
-      next {error: "Lane with name '#{target_lane_name}' not found."}.to_json
+      next ToCry::Endpoints::Helpers.not_found_response(env, "Lane with name '#{target_lane_name}' not found.")
     end
 
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
@@ -39,9 +37,7 @@ module ToCry::Endpoints::Notes
     # Save the board to persist the new note (this will save the note file and create symlink for this board)
     board.save
 
-    env.response.status_code = 201 # Created
-    env.response.content_type = "application/json"
-    new_note.to_json # Return the newly created note with its generated ID
+    ToCry::Endpoints::Helpers.created_response(env, new_note)
   end
 
   # API Endpoint to update a note's content and/or move it.
@@ -63,9 +59,7 @@ module ToCry::Endpoints::Notes
     # Find the note and its current lane on the board
     find_result = board.note(note_id)
     unless find_result
-      env.response.status_code = 404
-      env.response.content_type = "application/json"
-      next {error: "Note with ID '#{note_id}' not found on the board."}.to_json
+      next ToCry::Endpoints::Helpers.not_found_response(env, "Note with ID '#{note_id}' not found on the board.")
     end
     existing_note, current_lane = find_result
 
@@ -95,9 +89,7 @@ module ToCry::Endpoints::Notes
     if target_lane_name && target_lane_name != current_lane.name
       target_lane = board.lane(target_lane_name)
       unless target_lane
-        env.response.status_code = 404
-        env.response.content_type = "application/json"
-        next {error: "Target lane '#{target_lane_name}' not found."}.to_json
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Target lane '#{target_lane_name}' not found.")
       end
 
       current_lane.notes.delete(existing_note)
@@ -121,9 +113,7 @@ module ToCry::Endpoints::Notes
     # Save the entire board if the structure was modified
     board.save if structure_changed
 
-    env.response.status_code = 200
-    env.response.content_type = "application/json"
-    existing_note.to_json
+    ToCry::Endpoints::Helpers.success_response(env, existing_note)
   end
 
   # API Endpoint to delete a note by its ID
@@ -141,9 +131,7 @@ module ToCry::Endpoints::Notes
       note_to_delete.delete(board) # Pass the board object to the note's delete method
     end
 
-    env.response.status_code = 200
-    env.response.content_type = "application/json"
-    {success: "Note '#{note_id}' deleted (or did not exist)."}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Note '#{note_id}' deleted (or did not exist)."})
   end
 
   get "/n/:id" do |env|
@@ -163,24 +151,12 @@ module ToCry::Endpoints::Notes
     user = ToCry.get_current_user_id(env)
 
     # Find the note and its containing board, only among those accessible to the user
-    found_note_and_lane = nil
-    containing_board = nil
+    found_result = ToCry::Endpoints::Helpers.find_note_for_user(note_id, user)
 
-    ToCry.board_manager.list(user).each do |board_uuid|
-      board = ToCry.board_manager.@boards[board_uuid]
-      found_note_and_lane = board.note(note_id)
-      if found_note_and_lane
-        containing_board = board
-        break # Break out of the loop once the note is found
-      end
+    unless found_result
+      next ToCry::Endpoints::Helpers.not_found_response(env, "Note with ID '#{note_id}' not found or not accessible.")
     end
-
-    unless found_note_and_lane
-      env.response.status_code = 404
-      env.response.content_type = "application/json"
-      next {error: "Note with ID '#{note_id}' not found or not accessible."}.to_json
-    end
-    existing_note, _ = found_note_and_lane
+    existing_note, _, containing_board = found_result
 
     # At this point, containing_board is guaranteed to be non-nil and accessible to the user
     # No further access check is needed here as it was done by BoardManager.list(user)
@@ -188,9 +164,7 @@ module ToCry::Endpoints::Notes
     uploaded_file = env.params.files.values.first?
 
     if uploaded_file.nil?
-      env.response.status_code = 400
-      env.response.content_type = "application/json"
-      next {error: "No file uploaded."}.to_json
+      next ToCry::Endpoints::Helpers.error_response(env, "No file uploaded.")
     end
 
     # Create a directory for attachments specific to this note
@@ -214,9 +188,7 @@ module ToCry::Endpoints::Notes
     existing_note.add_attachment(unique_filename)
     existing_note.save
 
-    env.response.status_code = 200
-    env.response.content_type = "application/json"
-    {success: "File '#{original_filename}' attached to note '#{note_id}'.", filename: unique_filename}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "File '#{original_filename}' attached to note '#{note_id}'.", filename: unique_filename})
   end
 
   delete "/n/:note_uuid/:attachment_uuid" do |env|
@@ -225,24 +197,12 @@ module ToCry::Endpoints::Notes
     user = ToCry.get_current_user_id(env)
 
     # Find the note and its containing board, only among those accessible to the user
-    found_note_and_lane = nil
-    containing_board = nil
+    found_result = ToCry::Endpoints::Helpers.find_note_for_user(note_uuid, user)
 
-    ToCry.board_manager.list(user).each do |board_uuid|
-      board = ToCry.board_manager.@boards[board_uuid]
-      found_note_and_lane = board.note(note_uuid)
-      if found_note_and_lane
-        containing_board = board
-        break # Break out of the loop once the note is found
-      end
+    unless found_result
+      next ToCry::Endpoints::Helpers.not_found_response(env, "Note with ID '#{note_uuid}' not found or not accessible.")
     end
-
-    unless found_note_and_lane
-      env.response.status_code = 404
-      env.response.content_type = "application/json"
-      next {error: "Note with ID '#{note_uuid}' not found or not accessible."}.to_json
-    end
-    existing_note, _ = found_note_and_lane
+    existing_note, _, containing_board = found_result
 
     # At this point, containing_board is guaranteed to be non-nil and accessible to the user
     # No further access check is needed here as it was done by BoardManager.list(user)
@@ -262,8 +222,6 @@ module ToCry::Endpoints::Notes
     # Save the updated note
     existing_note.save
 
-    env.response.status_code = 200
-    env.response.content_type = "application/json"
-    {success: "Attachment '#{attachment_uuid}' removed from note '#{note_uuid}'."}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Attachment '#{attachment_uuid}' removed from note '#{note_uuid}'."})
   end
 end

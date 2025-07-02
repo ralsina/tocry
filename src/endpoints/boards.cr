@@ -27,12 +27,11 @@ module ToCry::Endpoints::Boards
   # API Endpoint to get all boards
   get "/boards" do |env|
     user = ToCry.get_current_user_id(env)
-    env.response.content_type = "application/json"
     board_names = ToCry.board_manager.list(user).map { |uuid|
       ToCry.board_manager.@boards[uuid].name
     }
 
-    board_names.to_json
+    ToCry::Endpoints::Helpers.success_response(env, board_names)
   end
 
   # API Endpoint to create a new board
@@ -49,9 +48,7 @@ module ToCry::Endpoints::Boards
     user = ToCry.get_current_user_id(env)
     ToCry.board_manager.create(new_board_name, user)
 
-    env.response.status_code = 201 # Created
-    env.response.content_type = "application/json"
-    {success: "Board '#{new_board_name}' created."}.to_json
+    ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
   end
 
   # API Endpoint to rename a board
@@ -72,9 +69,7 @@ module ToCry::Endpoints::Boards
       user = ToCry.get_current_user_id(env)
       ToCry.board_manager.rename(old_board_name, new_board_name, user)
 
-      env.response.status_code = 200 # OK
-      env.response.content_type = "application/json"
-      {success: "Board '#{old_board_name}' renamed to '#{new_board_name}'."}.to_json
+      ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{old_board_name}' renamed to '#{new_board_name}'."})
     rescue ex
       ToCry::Log.error(exception: ex) { "Error renaming board '#{old_board_name}' to '#{new_board_name}'" }
       raise ex
@@ -88,9 +83,7 @@ module ToCry::Endpoints::Boards
     board_name = env.params.url["board_name"].as(String)
     user = ToCry.get_current_user_id(env)
     ToCry.board_manager.delete(board_name, user)
-    env.response.status_code = 200 # OK
-    env.response.content_type = "application/json"
-    {success: "Board '#{board_name}' deleted."}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
   end
 
   # API Endpoint to share a board with another user
@@ -107,8 +100,6 @@ module ToCry::Endpoints::Boards
 
     ToCry.board_manager.share_board(board_name, from_user, to_user_email)
 
-    env.response.status_code = 200 # OK
-    env.response.content_type = "application/json"
-    {success: "Board '#{board_name}' shared with '#{to_user_email}'."}.to_json
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' shared with '#{to_user_email}'."})
   end
 end

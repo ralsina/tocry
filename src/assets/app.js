@@ -11,10 +11,22 @@ import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
 import { handleAttachmentDelete } from './features/note-attachments.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
 
-document.addEventListener('DOMContentLoaded', () => {
-  // --- Theme & Color Scheme Setup ---
-  const themeSwitcher = document.getElementById('theme-switcher')
+// Utility function to simplify event listener setup
+function setupEventListener (selector, event, handler) {
+  const element = document.getElementById(selector) || document.querySelector(selector)
+  if (element) {
+    element.addEventListener(event, handler)
+    return true
+  }
+  return false
+}
 
+// Utility function to close modal dialogs
+function closeModal (modalId) {
+  return () => document.getElementById(modalId).close()
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   // Initialize auth status display
   initializeAuthStatus()
 
@@ -29,10 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'light')
   applyTheme(savedTheme)
 
-  // Add event listeners
-  if (themeSwitcher) {
-    themeSwitcher.addEventListener('click', handleThemeSwitch)
-  }
+  // Add event listeners using utility function
+  setupEventListener('theme-switcher', 'click', handleThemeSwitch)
+  setupEventListener('add-lane-btn', 'click', handleAddLaneButtonClick)
+  setupEventListener('search', 'input', handleSearchInput)
 
   // Set up the board selector event listener once.
   setupBoardSelectorListener();
@@ -54,16 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
     //    load the lanes for that board.
     await initializeLanes(state.currentBoardName)
   })()
-
-  const addLaneButton = document.getElementById('add-lane-btn')
-  if (addLaneButton) {
-    addLaneButton.addEventListener('click', handleAddLaneButtonClick)
-  }
-
-  const searchInput = document.getElementById('search')
-  if (searchInput) {
-    searchInput.addEventListener('input', handleSearchInput)
-  }
 
   // Wire up keyboard shortcuts for scrolling
   document.addEventListener('keydown', handleKeyDown)
@@ -102,50 +104,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Scroll Button Setup ---
   const mainContent = document.querySelector('.main-content')
-  const scrollLeftBtn = document.querySelector('.scroll-btn--left')
-  const scrollRightBtn = document.querySelector('.scroll-btn--right')
 
   if (mainContent) {
     mainContent.addEventListener('scroll', updateScrollButtonsVisibility)
     window.addEventListener('resize', updateScrollButtonsVisibility)
   }
-  if (scrollLeftBtn) {
-    scrollLeftBtn.addEventListener('click', () =>
-      handleScrollButtonClick('left')
-    )
-  }
-  if (scrollRightBtn) {
-    scrollRightBtn.addEventListener('click', () =>
-      handleScrollButtonClick('right')
-    )
-  }
 
-  // Wire up the edit modal's form and buttons
-  const editNoteForm = document.getElementById('edit-note-form')
-  const cancelEditBtn = document.getElementById('edit-note-cancel-btn')
-  const closeEditBtn = document.getElementById('edit-note-close-btn')
+  setupEventListener('.scroll-btn--left', 'click', () => handleScrollButtonClick('left'))
+  setupEventListener('.scroll-btn--right', 'click', () => handleScrollButtonClick('right'))
 
-  editNoteForm.addEventListener('submit', handleEditNoteSubmit)
-  cancelEditBtn.addEventListener('click', closeEditModal)
-  closeEditBtn.addEventListener('click', closeEditModal)
-
-  // Wire up the permalink modal's close button
-  const permalinkCloseBtn = document.getElementById('permalink-close-btn')
-  if (permalinkCloseBtn) {
-    permalinkCloseBtn.addEventListener('click', () => {
-      document.getElementById('modal-permalink').close()
-    })
-  }
-
-  // Wire up the attachment modal's buttons
-  const closeAttachFileBtn = document.getElementById('attach-file-close-btn')
+  // Wire up modal forms and close buttons
+  setupEventListener('edit-note-form', 'submit', handleEditNoteSubmit)
+  setupEventListener('edit-note-cancel-btn', 'click', closeEditModal)
+  setupEventListener('edit-note-close-btn', 'click', closeEditModal)
+  setupEventListener('permalink-close-btn', 'click', closeModal('modal-permalink'))
+  setupEventListener('attach-file-close-btn', 'click', closeModal('modal-attach-file'))
+  // Wire up attachment deletion
   const attachmentsList = document.getElementById('attachments-list')
-
-  if (closeAttachFileBtn) {
-    closeAttachFileBtn.addEventListener('click', () => {
-      document.getElementById('modal-attach-file').close()
-    })
-  }
   if (attachmentsList) {
     attachmentsList.addEventListener('click', (event) => {
       if (event.target.classList.contains('delete-attachment-btn')) {

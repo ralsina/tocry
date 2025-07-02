@@ -7,6 +7,34 @@ module ToCry::Endpoints::Helpers
   # Custom error for when a request body is expected but not provided.
   class MissingBodyError < Exception; end
 
+  # Helper functions for standardized API responses
+  def self.json_response(env : HTTP::Server::Context, status_code : Int32, data)
+    env.response.status_code = status_code
+    env.response.content_type = "application/json"
+    case data
+    when String
+      data
+    else
+      data.to_json
+    end
+  end
+
+  def self.success_response(env : HTTP::Server::Context, data, status_code : Int32 = 200)
+    json_response(env, status_code, data)
+  end
+
+  def self.error_response(env : HTTP::Server::Context, message : String, status_code : Int32 = 400)
+    json_response(env, status_code, {error: message})
+  end
+
+  def self.not_found_response(env : HTTP::Server::Context, message : String = "Resource not found")
+    error_response(env, message, 404)
+  end
+
+  def self.created_response(env : HTTP::Server::Context, data)
+    success_response(env, data, 201)
+  end
+
   # Helper function to retrieve the Board instance from the request context.
   def self.get_board_from_context(env : HTTP::Server::Context) : ToCry::Board
     board_name = env.get("board_name").as(String)
@@ -98,5 +126,19 @@ module ToCry::Endpoints::Helpers
   struct ShareBoardPayload
     include JSON::Serializable
     property to_user_email : String
+  end
+
+  # Helper function to find a note across all user-accessible boards
+  # Returns a tuple of (note, lane, board) if found, nil otherwise
+  def self.find_note_for_user(note_id : String, user : String)
+    ToCry.board_manager.list(user).each do |board_uuid|
+      board = ToCry.board_manager.@boards[board_uuid]
+      found_note_and_lane = board.note(note_id)
+      if found_note_and_lane
+        note, lane = found_note_and_lane
+        return {note, lane, board}
+      end
+    end
+    nil
   end
 end

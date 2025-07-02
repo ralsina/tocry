@@ -7,6 +7,30 @@ const API_BASE_URL = ''
 
 let currentNoteForAttachments = null
 
+// Helper function to create attachment DOM elements
+function createAttachmentElement (noteId, attachment) {
+  const originalFileName = getOriginalFileName(attachment)
+  const attachmentElement = document.createElement('div')
+  attachmentElement.className = 'attachment-item'
+
+  // Create downloadable link for the attachment
+  const downloadLink = document.createElement('a')
+  downloadLink.href = `/attachments/${noteId}/${attachment}`
+  downloadLink.textContent = originalFileName
+  downloadLink.download = originalFileName
+  downloadLink.className = 'attachment-download-link'
+
+  // Create delete button
+  const deleteButton = document.createElement('button')
+  deleteButton.className = 'delete-attachment-btn'
+  deleteButton.textContent = 'X'
+  deleteButton.setAttribute('data-attachment-id', attachment)
+
+  attachmentElement.appendChild(downloadLink)
+  attachmentElement.appendChild(deleteButton)
+  return attachmentElement
+}
+
 export function handleAttachFileRequest (note) {
   currentNoteForAttachments = note
   const modal = document.getElementById('modal-attach-file')
@@ -17,25 +41,7 @@ export function handleAttachFileRequest (note) {
 
   if (note.attachments && note.attachments.length > 0) {
     note.attachments.forEach(attachment => {
-      const originalFileName = getOriginalFileName(attachment)
-      const attachmentElement = document.createElement('div')
-      attachmentElement.className = 'attachment-item'
-      
-      // Create downloadable link for the attachment
-      const downloadLink = document.createElement('a')
-      downloadLink.href = `/attachments/${note.id}/${attachment}`
-      downloadLink.textContent = originalFileName
-      downloadLink.download = originalFileName
-      downloadLink.className = 'attachment-download-link'
-      
-      // Create delete button
-      const deleteButton = document.createElement('button')
-      deleteButton.className = 'delete-attachment-btn'
-      deleteButton.textContent = 'X'
-      deleteButton.setAttribute('data-attachment-id', attachment)
-      
-      attachmentElement.appendChild(downloadLink)
-      attachmentElement.appendChild(deleteButton)
+      const attachmentElement = createAttachmentElement(note.id, attachment)
       attachmentsList.appendChild(attachmentElement)
     })
   } else {
@@ -48,10 +54,10 @@ export function handleAttachFileRequest (note) {
   modal.showModal()
 }
 
-function setupDropZone() {
+function setupDropZone () {
   const dropZone = document.getElementById('file-drop-zone')
   const fileInput = document.getElementById('attach-file-input')
-  
+
   if (!dropZone || !fileInput) return
 
   // Click to browse files
@@ -75,18 +81,18 @@ function setupDropZone() {
   dropZone.addEventListener('drop', handleDrop)
 }
 
-function handleDragEnter(e) {
+function handleDragEnter (e) {
   e.preventDefault()
   e.stopPropagation()
   e.target.closest('.file-drop-zone').classList.add('drag-over')
 }
 
-function handleDragOver(e) {
+function handleDragOver (e) {
   e.preventDefault()
   e.stopPropagation()
 }
 
-function handleDragLeave(e) {
+function handleDragLeave (e) {
   e.preventDefault()
   e.stopPropagation()
   // Only remove drag-over if we're leaving the drop zone itself, not its children
@@ -95,20 +101,20 @@ function handleDragLeave(e) {
   }
 }
 
-function handleDrop(e) {
+function handleDrop (e) {
   e.preventDefault()
   e.stopPropagation()
-  
+
   const dropZone = e.target.closest('.file-drop-zone')
   dropZone.classList.remove('drag-over')
-  
+
   const files = e.dataTransfer.files
   if (files.length > 0) {
     handleFileSelection(files[0])
   }
 }
 
-async function handleFileSelection(file) {
+async function handleFileSelection (file) {
   if (!currentNoteForAttachments) {
     showNotification('No note selected for attachment.', 'error')
     return
@@ -145,10 +151,9 @@ async function handleFileSelection(file) {
     // Update the attachments list in the modal
     currentNoteForAttachments.attachments = currentNoteForAttachments.attachments || []
     currentNoteForAttachments.attachments.push(result.filename)
-    
+
     // Refresh the modal content
     handleAttachFileRequest(currentNoteForAttachments)
-
   } catch (error) {
     console.error('Error uploading attachment:', error)
     handleUIError(error, 'Failed to upload attachment')

@@ -24,9 +24,7 @@ module ToCry::Endpoints::Uploads
 
     # Check if the file size exceeds the limit
     if uploaded_file.tempfile.size > MAX_IMAGE_SIZE
-      env.response.status_code = 413 # Payload Too Large
-      env.response.content_type = "application/json"
-      next {error: "Image size exceeds the 1MB limit."}.to_json
+      next ToCry::Endpoints::Helpers.error_response(env, "Image size exceeds the 1MB limit.", 413)
     end
 
     # Generate a unique filename to prevent overwrites, while keeping the original extension
@@ -44,8 +42,6 @@ module ToCry::Endpoints::Uploads
     ToCry::Log.info { "Image uploaded successfully: #{public_url}" }
 
     # Respond with the URL so the frontend can use it
-    env.response.status_code = 201 # Created
-    env.response.content_type = "application/json"
-    {url: public_url}.to_json
+    ToCry::Endpoints::Helpers.created_response(env, {url: public_url})
   end
 end
