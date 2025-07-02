@@ -6,6 +6,15 @@ import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
 
+// Helper function to create option elements
+function createOption (value, textContent, disabled = false) {
+  const option = document.createElement('option')
+  option.value = value
+  option.textContent = textContent
+  if (disabled) option.disabled = true
+  return option
+}
+
 // Function to get the board name from the URL path (e.g., /b/my_board)
 export function getBoardNameFromURL () {
   const pathParts = window.location.pathname.split('/')
@@ -49,21 +58,15 @@ export async function initializeBoardSelector () {
     boardSelector.innerHTML = '' // Clear existing options
 
     // Add the "New board..." option first
-    const newBoardOption = document.createElement('option')
-    newBoardOption.value = BOARD_SELECTOR_OPTIONS.NEW_BOARD
-    newBoardOption.textContent = 'New board...'
+    const newBoardOption = createOption(BOARD_SELECTOR_OPTIONS.NEW_BOARD, 'New board...')
     boardSelector.appendChild(newBoardOption)
 
     // Add "Rename current board..." option
-    const renameBoardOption = document.createElement('option')
-    renameBoardOption.value = BOARD_SELECTOR_OPTIONS.RENAME_BOARD
-    renameBoardOption.textContent = 'Rename current board...'
+    const renameBoardOption = createOption(BOARD_SELECTOR_OPTIONS.RENAME_BOARD, 'Rename current board...')
     boardSelector.appendChild(renameBoardOption)
 
     // Add "Delete current board..." option
-    const deleteBoardOption = document.createElement('option')
-    deleteBoardOption.value = BOARD_SELECTOR_OPTIONS.DELETE_BOARD
-    deleteBoardOption.textContent = 'Delete current board...'
+    const deleteBoardOption = createOption(BOARD_SELECTOR_OPTIONS.DELETE_BOARD, 'Delete current board...')
     boardSelector.appendChild(deleteBoardOption)
 
     const authMode = await fetchAuthMode()
@@ -71,23 +74,16 @@ export async function initializeBoardSelector () {
 
     if (authMode.auth_mode === 'google') {
       // Add "Share current board..." option only if in Google Auth mode
-      const shareBoardOption = document.createElement('option')
-      shareBoardOption.value = BOARD_SELECTOR_OPTIONS.SHARE_BOARD
-      shareBoardOption.textContent = 'Share current board...'
+      const shareBoardOption = createOption(BOARD_SELECTOR_OPTIONS.SHARE_BOARD, 'Share current board...')
       boardSelector.appendChild(shareBoardOption)
     }
 
-    const separatorOption = document.createElement('option')
-    separatorOption.value = '' // No value
-    separatorOption.textContent = '---' // Visual separator
-    separatorOption.disabled = true // Make it unselectable
+    const separatorOption = createOption('', '---', true)
     boardSelector.appendChild(separatorOption)
 
     if (boards.length === 0) {
       // Handle case where no boards exist (e.g., first run)
-      const option = document.createElement('option')
-      option.value = ''
-      option.textContent = 'No boards available'
+      const option = createOption('', 'No boards available')
       boardSelector.appendChild(option)
       boardSelector.disabled = true
       // No notification here, as initializeLanes will show the main welcome message
@@ -96,9 +92,7 @@ export async function initializeBoardSelector () {
       return // Exit early, no boards to select
     }
     boards.forEach((boardName) => {
-      const option = document.createElement('option')
-      option.value = boardName
-      option.textContent = `Board: ${boardName}`
+      const option = createOption(boardName, `Board: ${boardName}`)
       boardSelector.appendChild(option)
     })
 

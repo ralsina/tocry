@@ -194,6 +194,14 @@ export function handleThemeSwitch () {
   applyTheme(newTheme)
 }
 
+// Helper function to create option elements
+function createOption (value, textContent) {
+  const option = document.createElement('option')
+  option.value = value
+  option.textContent = textContent
+  return option
+}
+
 /**
  * Populates the color scheme selector dropdown, sets its initial value from
  * localStorage, and adds an event listener to handle changes.
@@ -204,10 +212,7 @@ export function initializeColorSchemeSelector () {
 
   // Populate with schemes from the colorSchemes object
   Object.keys(colorSchemes).forEach(schemeName => {
-    const option = document.createElement('option')
-    option.value = schemeName
-    option.textContent = schemeName
-    colorSchemeSwitcher.appendChild(option)
+    colorSchemeSwitcher.appendChild(createOption(schemeName, schemeName))
   })
 
   // Set initial value from localStorage or default

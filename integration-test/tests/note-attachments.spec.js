@@ -140,7 +140,7 @@ test.describe('Note Attachments', () => {
         buffer: Buffer.from(fileContent)
       }
     ])
-    
+
     // Upload happens automatically, wait for success notification
     await expect(page.locator('.notification-toast.success').last()).toBeVisible()
     await expect(
