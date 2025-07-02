@@ -2,11 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2025-07-02
+
+### 🚀 Features
+
+- Note attachments
+- Animated lane add/remove
+
+### 🐛 Bug Fixes
+
+- / shortcut for search
+
+### 🚜 Refactor
+
+- Remove unused apiErrorHandler.js
+- Split note.js
+- Major simplification of code
+- Css simplification
+
+### 🎨 Styling
+
+- Improvements in notifications and dialogs
+- Title animation
+- Animated dialogs
+
 ## [0.11.0] - 2025-07-01
 
 ### 🚀 Features
 
 - Support for public notes
+
+### 💼 Other
+
+- Release v0.11.0
 
 ## [0.10.0] - 2025-07-01
 
