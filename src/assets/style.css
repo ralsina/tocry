@@ -1248,6 +1248,74 @@ html[data-test-mode] .pulse-animation {
     animation-duration: 1.5s;
 }
 
+/* --- Lane Animations --- */
+/* Keyframes for lane slide-in animation */
+@keyframes laneSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-100px) scale(0.9);
+        max-width: 0;
+        min-width: 0;
+        margin-right: 0;
+        border-width: 0;
+        padding: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        max-width: 40em;
+        min-width: 25em;
+        margin-right: 20px;
+        border-width: 2px;
+        padding: initial;
+    }
+}
+
+/* Keyframes for lane slide-out animation */
+@keyframes laneSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        max-width: 40em;
+        min-width: 25em;
+        margin-right: 20px;
+        border-width: 2px;
+        padding: initial;
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-100px) scale(0.9);
+        max-width: 0;
+        min-width: 0;
+        margin-right: 0;
+        border-width: 0;
+        padding: 0;
+    }
+}
+
+/* Apply entrance animation to new lanes */
+.lane.lane-enter {
+    animation: laneSlideIn 0.5s ease-out forwards;
+}
+
+/* Apply exit animation to deleted lanes */
+.lane.lane-exit {
+    animation: laneSlideOut 0.3s ease-in forwards;
+}
+
+/* Disable lane animations in test mode */
+html[data-test-mode] .lane.lane-enter,
+html[data-test-mode] .lane.lane-exit {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    max-width: 40em !important;
+    min-width: 25em !important;
+    margin-right: 20px !important;
+    border-width: 2px !important;
+    padding: initial !important;
+}
+
 /* --- Dialog Animations --- */
 /* Base styles for all dialogs */
 dialog {

@@ -186,6 +186,17 @@ export async function handleAddLaneButtonClick () {
         // Check the response status code
         console.log('Lane created successfully')
         await initializeLanes() // Re-fetch and render all lanes
+
+        // Animate the newly created lane
+        const newLaneElement = document.querySelector(`.lane[data-lane-name="${laneName.trim()}"]`)
+        if (newLaneElement) {
+          newLaneElement.classList.add('lane-enter')
+          // Remove the animation class after animation completes
+          newLaneElement.addEventListener('animationend', () => {
+            newLaneElement.classList.remove('lane-enter')
+          }, { once: true })
+        }
+
         // --- Onboarding for first note ---
         // Check if this is the very first note created on this board.
         const totalNotes = state.currentLanes.reduce(
@@ -231,13 +242,32 @@ export async function handleDeleteLaneRequest (laneName) {
     )
   ) {
     try {
-      // OPTIMISTIC UI UPDATE: Remove the lane from the DOM and cache immediately.
+      // Find the lane element to animate
       const laneElement = document.querySelector(
         `.lane[data-lane-name="${laneName}"]`
       )
+
       if (laneElement) {
-        laneElement.remove()
+        // Start the exit animation
+        laneElement.classList.add('lane-exit')
+
+        // Wait for animation to complete before removing from DOM
+        await new Promise((resolve) => {
+          laneElement.addEventListener('animationend', () => {
+            laneElement.remove()
+            resolve()
+          }, { once: true })
+
+          // Fallback timeout in case animation doesn't fire
+          setTimeout(() => {
+            if (laneElement.parentNode) {
+              laneElement.remove()
+            }
+            resolve()
+          }, 400) // Slightly longer than animation duration
+        })
       }
+
       // Update cache: Filter out the deleted lane
       state.setCurrentLanes(
         state.currentLanes.filter((lane) => lane.name !== laneName)
@@ -248,15 +278,17 @@ export async function handleDeleteLaneRequest (laneName) {
       const response = await deleteLane(state.currentBoardName, laneName)
       if (response.ok) {
         showNotification(`Lane "${laneName}" deleted successfully.`, 'success')
-        await initializeLanes() // Re-fetch and render all lanes
+        // Don't re-render since we've already updated the UI optimistically
       } else {
-        // API call failed
+        // API call failed - re-render to restore the lane
         await handleApiError(response, `Failed to delete lane: ${laneName}.`)
+        await initializeLanes() // Re-fetch and render all lanes to restore state
       }
     } catch (error) {
       // This catch is for network errors or if deleteLane itself throws
       console.error('Error during delete lane operation:', error)
       showNotification('An error occurred while trying to delete the lane.')
+      await initializeLanes() // Re-fetch and render all lanes to restore state
     }
   }
 }
