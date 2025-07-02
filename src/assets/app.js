@@ -195,4 +195,102 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     }, 10000) // 10 seconds
   }
+
+  // Particle Animation for ToCry Title
+  function createParticleAnimation () {
+    const particlesContainer = document.getElementById('particles-container')
+    const titleElement = document.getElementById('tocry-title')
+
+    if (!particlesContainer || !titleElement) return
+
+    // Create initial burst of particles
+    function createParticleBurst () {
+      const numParticles = 12
+      const titleRect = titleElement.getBoundingClientRect()
+      const containerRect = particlesContainer.getBoundingClientRect()
+
+      for (let i = 0; i < numParticles; i++) {
+        createParticle()
+      }
+    }
+
+    // Create a single particle
+    function createParticle () {
+      const particle = document.createElement('div')
+      particle.className = 'particle'
+
+      // Random size between 3px and 8px
+      const size = Math.random() * 5 + 3
+      particle.style.width = `${size}px`
+      particle.style.height = `${size}px`
+
+      // Random position around the title
+      const titleRect = titleElement.getBoundingClientRect()
+      const containerRect = particlesContainer.getBoundingClientRect()
+
+      // Position relative to the container
+      const x = Math.random() * 100 // Random percentage across the width
+      const y = Math.random() * 100 // Random percentage across the height
+
+      particle.style.left = `${x}%`
+      particle.style.top = `${y}%`
+
+      // Random animation delay
+      const delay = Math.random() * 2000 // 0-2 seconds delay
+      particle.style.animationDelay = `${delay}ms`
+
+      // Random animation duration between 2-4 seconds
+      const duration = Math.random() * 2000 + 2000
+      particle.style.animationDuration = `${duration}ms`
+
+      particlesContainer.appendChild(particle)
+
+      // Remove particle after animation completes
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle)
+        }
+      }, delay + duration)
+    }
+
+    // Create continuous particles on hover
+    function startContinuousParticles () {
+      const interval = setInterval(() => {
+        if (titleElement.matches(':hover')) {
+          createParticle()
+        } else {
+          clearInterval(interval)
+        }
+      }, 200)
+    }
+
+    // Initial particle burst on page load (after a short delay for title animation)
+    setTimeout(() => {
+      createParticleBurst()
+    }, 500)
+
+    // Add hover effect for continuous particles
+    titleElement.addEventListener('mouseenter', () => {
+      startContinuousParticles()
+    })
+
+    // Add click effect for extra particles
+    titleElement.addEventListener('click', (e) => {
+      e.preventDefault()
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => createParticle(), i * 50)
+      }
+      // Still allow the link to work after animation
+      setTimeout(() => {
+        window.open(titleElement.href, '_blank')
+      }, 300)
+    })
+  }
+
+  // Initialize particle animation when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', createParticleAnimation)
+  } else {
+    createParticleAnimation()
+  }
 })
