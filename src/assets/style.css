@@ -337,21 +337,17 @@ body {
     line-height: 1;
 }
 
-.delete-lane-btn,
-.add-note-btn {
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0.1em 0.3em;
-    line-height: 1;
-    /* Use flexbox to perfectly center the glyphs inside the buttons */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+
+
+/* Container for note action buttons */
+.note-actions {
+    display: flex;
+    gap: 4px; /* Make buttons tighter */
+    margin-left: auto; /* Push buttons to the right */
+    margin-right: -8px; /* Pull buttons closer to the right edge, counteracting some of the parent's padding */
 }
 
+/* Specific button color overrides */
 .delete-lane-btn {
     color: var(--pico-muted-color, #6c757d);
 }
@@ -372,7 +368,8 @@ body {
     outline: none;
 }
 
-.add-note-btn.pulse-animation {
+.add-note-btn.pulse-animation,
+#add-lane-btn.pulse-animation {
     animation: pulse 2s infinite;
     background-color: var(--pico-primary);
     color: var(--pico-primary-inverse);
@@ -394,35 +391,10 @@ body {
     }
 }
 
-#add-lane-btn.pulse-animation {
-    animation: pulse 2s infinite;
-    background-color: var(--pico-primary);
-    color: var(--pico-primary-inverse);
-    border-radius: var(--pico-border-radius);
-}
-
 /* --- Test Mode Overrides --- */
-/* Disable animations for elements with .pulse-animation when in test mode */
-html[data-test-mode] .pulse-animation {
-    animation: none !important; /* Override any animation */
-    transform: none !important; /* Reset any transforms applied by the animation */
-}
-
 .note-card.pulse-animation-once {
     /* Use the existing pulse animation, but run it only once to draw attention */
     animation: pulse 2s ease-in-out 1;
-}
-
-html[data-test-mode] .add-note-btn.pulse-animation {
-    animation: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-html[data-test-mode] .pulse-animation {
-    animation: none !important;
-    transform: none !important;
-    box-shadow: none !important;
 }
 /* --- Custom Collapsible Note --- */
 
@@ -522,29 +494,36 @@ html[data-test-mode] .pulse-animation {
     cursor: default;    /* Prevent pointer cursor on the invisible button */
 }
 
-/* Container for note action buttons */
-.note-actions {
-    display: flex;
-    gap: 4px; /* Make buttons tighter */
-    margin-left: auto; /* Push buttons to the right */
-    margin-right: -8px; /* Pull buttons closer to the right edge, counteracting some of the parent's padding */
-}
-
+/* Base styles for action buttons */
+.delete-lane-btn,
+.add-note-btn,
 .delete-note-btn,
 .edit-note-btn,
 .permalink-btn {
     background: none;
     border: none;
-    color: var(--pico-muted-color, #6c757d);
     cursor: pointer;
     line-height: 1;
-    flex-shrink: 0; /* Prevent the button from shrinking */
-    /* Use flexbox to perfectly center the SVG icon */
-    opacity: 0.6;
-    transition: opacity 0.2s ease-in-out;
+    /* Use flexbox to perfectly center the glyphs inside the buttons */
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+.delete-lane-btn,
+.add-note-btn {
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 0.1em 0.3em;
+}
+
+.delete-note-btn,
+.edit-note-btn,
+.permalink-btn {
+    color: var(--pico-muted-color, #6c757d);
+    flex-shrink: 0; /* Prevent the button from shrinking */
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out;
     padding-left: 0.25em;
     padding-right: 0.25em;
 }
@@ -932,7 +911,7 @@ html[data-test-mode] .pulse-animation {
 
 /* --- Custom Confirmation Dialog --- */
 
-/* Permalink Modal Styling */
+/* Modal Header Styling */
 .permalink-modal-header,
 .edit-note-modal-header,
 .attach-file-modal-header {
@@ -942,9 +921,14 @@ html[data-test-mode] .pulse-animation {
 }
 
 .permalink-modal-header strong,
-.edit-note-modal-header strong {
+.edit-note-modal-header strong,
+#modal-attach-file .attach-file-modal-header strong {
     flex-grow: 1; /* Allow the title to take up available space */
     text-align: center; /* Center the title */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--pico-color);
 }
 
 .permalink-public-switch-label,
@@ -1005,6 +989,7 @@ html[data-test-mode] .pulse-animation {
     gap: var(--pico-spacing);
     padding-top: var(--pico-spacing);
     border-top: 1px solid var(--pico-form-element-border-color);
+    margin-top: var(--pico-spacing);
 }
 
 #modal-attach-file footer {
@@ -1105,24 +1090,7 @@ html[data-test-mode] .pulse-animation {
     text-decoration: underline;
 }
 
-/* Enhanced modal header styling */
-#modal-attach-file .attach-file-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--pico-spacing);
-}
 
-#modal-attach-file .attach-file-modal-header strong {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--pico-color);
-}
-
-#modal-attach-file form {
-    margin-top: var(--pico-spacing);
-}
 
 /* File Drop Zone Styling */
 .file-drop-zone {
