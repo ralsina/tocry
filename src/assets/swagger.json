@@ -1,0 +1,418 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ToCry Kanban API",
+    "version": "1.0.0"
+  },
+    "components": {
+      "schemas": {
+        "Note": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "tags": { "type": "array", "items": { "type": "string" } },
+            "content": { "type": "string" }
+          },
+          "required": ["title"]
+        },
+        "Lane": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "notes": { 
+              "type": "array", 
+              "items": { "$ref": "#/components/schemas/Note" } 
+            }
+          }
+        }
+      },
+      "responses": {
+        "NoteCreated": {
+          "description": "Note created successfully",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Note" }
+            }
+          }
+        },
+        "LaneCreated": {
+          "description": "Lane created successfully",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Lane" }
+            }
+          }
+        }
+      },
+      "parameters": {
+        "BoardName": {
+          "name": "board_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        "NoteId": {
+          "name": "note_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        "LaneName": {
+          "name": "lane_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      },
+      "requestBodies": {
+        "NoteRequest": {
+          "description": "Note data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Note" }
+            }
+          }
+        },
+        "LaneRequest": {
+          "description": "Lane data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Lane" }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "basicAuth": {
+          "type": "http",
+          "scheme": "basic",
+            "description": "Basic authentication for API access"
+        }
+      }
+    },
+    "security": [
+    {
+        "basicAuth": []
+    }
+    ],
+  "paths": {
+    "/boards/{board_name}/lanes": {
+      "get": {
+        "summary": "Get all lanes and notes for a board",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of lanes",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "type": "object" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{board_name}/note": {
+      "post": {
+        "summary": "Add a note to a lane",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lane_name": { "type": "string" },
+                  "note": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string" },
+                      "tags": { "type": "array", "items": { "type": "string" } },
+                      "content": { "type": "string" }
+                    },
+                    "required": ["title"]
+                  }
+                },
+                "required": ["lane_name", "note"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Note created",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{board_name}/note/{note_id}": {
+      "put": {
+        "summary": "Update a note or move it to a new lane",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string" },
+                      "tags": { "type": "array", "items": { "type": "string" } },
+                      "content": { "type": "string" }
+                    },
+                    "required": ["title"]
+                  },
+                  "lane_name": { "type": "string", "description": "Target lane name" },
+                  "position": { "type": "integer", "description": "Position in the lane" }
+                },
+                "required": ["note"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Note updated or moved",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards": {
+      "post": {
+        "summary": "Create a new board",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Board created"
+          }
+        }
+      },
+      "get": {
+        "summary": "List all boards",
+        "responses": {
+          "200": {
+            "description": "Array of board names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{board_name}": {
+      "put": {
+        "summary": "Rename a board",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "new_name": { "type": "string" }
+                },
+                "required": ["new_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Board renamed"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a board",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Board deleted"
+          }
+        }
+      }
+    },
+    "/boards/{board_name}/lane": {
+      "post": {
+        "summary": "Add a lane to a board",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lane added"
+          }
+        }
+      }
+    },
+    "/boards/{board_name}/lane/{lane_name}": {
+      "delete": {
+        "summary": "Delete a lane from a board",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "lane_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Lane deleted"
+          }
+        }
+      }
+    },
+    "/boards/{board_name}/lane/{old_lane_name}": {
+      "put": {
+        "summary": "Update a lane's name, position or properties",
+        "parameters": [
+          {
+            "name": "board_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "old_lane_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lane": {
+                    "type": "object",
+                    "properties": {
+                      "sepia_id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "notes": {
+                        "type": "array",
+                        "items": { "type": "object" }
+                      }
+                    },
+                    "required": ["sepia_id", "name", "notes"]
+                  },
+                  "position": { "type": "integer" }
+                },
+                "required": ["lane", "position"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lane updated"
+          }
+        }
+      }
+    }
+  }
+}
