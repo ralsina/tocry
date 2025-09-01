@@ -25,6 +25,6 @@ WORKDIR /app
 RUN shards build --static --release
 RUN upx bin/tocry
 
-FROM scratch
+FROM gcr.io/distroless/static-debian12
 COPY --from=build /app/bin/tocry /tocry
 ENTRYPOINT ["/tocry", "-b", "0.0.0.0"]
