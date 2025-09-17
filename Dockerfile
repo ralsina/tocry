@@ -26,5 +26,7 @@ RUN shards build --static --release
 RUN upx bin/tocry
 
 FROM scratch
+COPY --from=build /tmp /tmp
 COPY --from=build /app/bin/tocry /tocry
+
 ENTRYPOINT ["/tocry", "-b", "0.0.0.0"]
