@@ -19,6 +19,18 @@ module ToCry::Endpoints::Notes
     end
   end
 
+  # Helper function to parse priority string to enum
+  private def self.parse_priority(priority : String?) : ToCry::Priority?
+    return nil if priority.nil? || priority.empty?
+
+    case priority.downcase
+    when "high"   then ToCry::Priority::High
+    when "medium" then ToCry::Priority::Medium
+    when "low"    then ToCry::Priority::Low
+    else               nil
+    end
+  end
+
   # API Endpoint to add a new note to a lane
   # Expects a JSON body like:
   # {
@@ -46,6 +58,10 @@ module ToCry::Endpoints::Notes
       next ToCry::Endpoints::Helpers.error_response(env, "Invalid end_date format. Use YYYY-MM-DD format.", 400)
     end
 
+    # Validate priority
+    # Priority is now an enum, so we parse it
+    priority_enum = parse_priority(note_data.priority)
+
     # Validate that start_date is before end_date if both are provided
     if start_date = note_data.start_date
       if end_date = note_data.end_date
@@ -65,7 +81,7 @@ module ToCry::Endpoints::Notes
     end
 
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
-    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content, public: note_data.public, start_date: note_data.start_date, end_date: note_data.end_date)
+    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content, public: note_data.public, start_date: note_data.start_date, end_date: note_data.end_date, priority: priority_enum)
 
     # Save the board to persist the new note (this will save the note file and create symlink for this board)
     board.save
@@ -98,6 +114,9 @@ module ToCry::Endpoints::Notes
       next ToCry::Endpoints::Helpers.error_response(env, "Invalid end_date format. Use YYYY-MM-DD format.", 400)
     end
 
+    # Parse priority to enum
+    priority_enum = parse_priority(new_note_data.priority)
+
     # Validate that start_date is before end_date if both are provided
     if start_date = new_note_data.start_date
       if end_date = new_note_data.end_date
@@ -123,7 +142,8 @@ module ToCry::Endpoints::Notes
                         (existing_note.expanded != new_note_data.expanded) ||
                         (existing_note.public != new_note_data.public) ||
                         (existing_note.start_date != new_note_data.start_date) ||
-                        (existing_note.end_date != new_note_data.end_date)
+                        (existing_note.end_date != new_note_data.end_date) ||
+                        (existing_note.priority != priority_enum)
 
     if note_data_changed
       existing_note.title = new_note_data.title
@@ -133,6 +153,7 @@ module ToCry::Endpoints::Notes
       existing_note.public = new_note_data.public
       existing_note.start_date = new_note_data.start_date
       existing_note.end_date = new_note_data.end_date
+      existing_note.priority = priority_enum
       existing_note.save
       ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.name}'." }
     end
