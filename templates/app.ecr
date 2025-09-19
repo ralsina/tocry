@@ -112,17 +112,14 @@
 
           <input type="text" id="edit-note-tags" name="tags" placeholder="Tags (comma-separated)" />
 
-          <div class="date-inputs">
-            <input type="date" id="edit-note-start-date" name="start_date" placeholder="Start date (YYYY-MM-DD)" />
-            <input type="date" id="edit-note-end-date" name="end_date" placeholder="End date (YYYY-MM-DD)" />
-          </div>
-          <div class="priority-input">
-            <label for="edit-note-priority">Priority:</label>
+          <div class="date-priority-inputs">
+            <input type="date" id="edit-note-start-date" name="start_date" placeholder="Start date" />
+            <input type="date" id="edit-note-end-date" name="end_date" placeholder="End date" />
             <select id="edit-note-priority" name="priority">
-              <option value="">None</option>
-              <option value="high">🔴 High</option>
-              <option value="medium">🟠 Medium</option>
-              <option value="low">🟢 Low</option>
+              <option value="">Priority</option>
+              <option value="high">High Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="low">Low Priority</option>
             </select>
           </div>
           <!-- Toast UI Editor needs a div to render into, not a textarea -->
