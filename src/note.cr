@@ -5,6 +5,38 @@ require "yaml"       # For generating YAML frontmatter
 require "sepia"
 
 module ToCry
+  # Enum for note priority levels
+  enum Priority
+    High
+    Medium
+    Low
+
+    def to_s
+      case self
+      when .high?   then "high"
+      when .medium? then "medium"
+      when .low?    then "low"
+      end
+    end
+
+    def self.new(pull : JSON::PullParser)
+      case pull.read_string
+      when "high"   then High
+      when "medium" then Medium
+      when "low"    then Low
+      else               raise "Invalid priority value"
+      end
+    end
+
+    def to_json(json : JSON::Builder)
+      json.string(self.to_s)
+    end
+
+    def to_yaml(yaml : YAML::Nodes::Builder)
+      yaml.scalar self.to_s
+    end
+  end
+
   # Represents the YAML frontmatter structure for a Note.
   struct FrontMatter
     include YAML::Serializable
@@ -15,8 +47,9 @@ module ToCry
     property attachments : Array(String) = [] of String # New: Default to empty array
     property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
     property end_date : String? = nil                   # Optional end date in YYYY-MM-DD format
+    property priority : Priority? = nil                 # Optional priority enum
 
-    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false, @attachments : Array(String) = [] of String, @start_date : String? = nil, @end_date : String? = nil)
+    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false, @attachments : Array(String) = [] of String, @start_date : String? = nil, @end_date : String? = nil, @priority : Priority? = nil)
     end
   end
 
@@ -47,6 +80,7 @@ module ToCry
     property attachments : Array(String) = [] of String # New: Default to empty array
     property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
     property end_date : String? = nil                   # Optional end date in YYYY-MM-DD format
+    property priority : Priority? = nil                 # Optional priority enum
 
     # Reimplement sepia_id to use the id property
     def sepia_id
@@ -68,6 +102,7 @@ module ToCry
       attachments : Array(String) = [] of String,
       start_date : String? = nil,
       end_date : String? = nil,
+      priority : Priority? = nil,
     )
       @sepia_id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
       self.title = title
@@ -78,6 +113,7 @@ module ToCry
       @attachments = attachments
       @start_date = start_date
       @end_date = end_date
+      @priority = priority
     end
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
@@ -99,7 +135,7 @@ module ToCry
         raise "Invalid YAML frontmatter in provided data: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments, frontmatter.start_date, frontmatter.end_date)
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments, frontmatter.start_date, frontmatter.end_date, frontmatter.priority)
       note
     end
 
@@ -107,7 +143,7 @@ module ToCry
     def to_sepia
       data = String.build do |builder|
         # Use the new FrontMatter struct for serialization
-        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public, attachments: self.attachments, start_date: self.start_date, end_date: self.end_date)
+        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public, attachments: self.attachments, start_date: self.start_date, end_date: self.end_date, priority: self.priority)
         builder << frontmatter_struct.to_yaml
         builder << "---\n\n" # YAML frontmatter separator
         builder << self.content
