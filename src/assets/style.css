@@ -562,6 +562,7 @@ body {
     /* Add padding to create vertical space between note cards */
     padding: 10px 0;
     cursor: grab;
+    position: relative; /* For positioning priority tab */
     /* --- New styles for search animation --- */
     transition: all 0.35s ease-in-out, box-shadow 0.2s ease-in-out;
     box-shadow: 0 2px 5px var(--tocry-note-shadow); /* Subtle shadow for normal state */
@@ -733,6 +734,98 @@ body {
     border: 1px solid var(--pico-form-element-border-color);
     width: 100%;
     box-sizing: border-box;
+}
+
+/* Priority badge styling */
+.note-priority {
+    margin: 0 0.5rem;
+}
+
+.priority-badge {
+    font-size: 0.8em;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--pico-border-radius);
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.priority-high {
+    background-color: rgba(239, 68, 68, 0.1); /* red-500 with opacity */
+    color: rgb(185, 28, 28); /* red-700 */
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.priority-medium {
+    background-color: rgba(251, 146, 60, 0.1); /* orange-500 with opacity */
+    color: rgb(194, 65, 12); /* orange-700 */
+    border-color: rgba(251, 146, 60, 0.3);
+}
+
+.priority-low {
+    background-color: rgba(34, 197, 94, 0.1); /* green-500 with opacity */
+    color: rgb(21, 128, 61); /* green-700 */
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Priority tabs on the right side of notes */
+.priority-tab {
+    position: absolute;
+    top: 5px;
+    right: 0;
+    width: 20px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    cursor: pointer;
+    border-radius: 3px 0 0 3px;
+    z-index: 1;
+}
+
+.priority-high-tab {
+    background-color: rgb(185, 28, 28); /* red-700 */
+    color: white;
+}
+
+.priority-medium-tab {
+    background-color: rgb(194, 65, 12); /* orange-700 */
+    color: white;
+}
+
+.priority-low-tab {
+    background-color: rgb(21, 128, 61); /* green-700 */
+    color: white;
+}
+
+/* Priority input in edit modal */
+.priority-input {
+    margin: 1rem 0;
+}
+
+.priority-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.priority-input select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-form-element-border-color);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    font-size: 1rem;
+}
+
+.priority-input select:focus {
+    outline: 2px solid var(--pico-primary);
+    outline-offset: 2px;
 }
 
 /* Date inputs container in edit modal */

@@ -27,6 +27,7 @@ export function handleEditNoteRequest (note) {
   document.getElementById('edit-note-public').checked = note.public
   document.getElementById('edit-note-start-date').value = note.start_date || ''
   document.getElementById('edit-note-end-date').value = note.end_date || ''
+  document.getElementById('edit-note-priority').value = note.priority || 'medium'
 
   const contentTextarea = document.getElementById('edit-note-content')
   toastuiEditor = new toastui.Editor({
@@ -109,7 +110,8 @@ export async function handleEditNoteSubmit (event) {
     content: toastuiEditor.getMarkdown(),
     public: document.getElementById('edit-note-public').checked,
     start_date: document.getElementById('edit-note-start-date').value || null,
-    end_date: document.getElementById('edit-note-end-date').value || null
+    end_date: document.getElementById('edit-note-end-date').value || null,
+    priority: document.getElementById('edit-note-priority').value
   }
 
   let noteInCache = null

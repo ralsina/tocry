@@ -112,15 +112,30 @@ module ToCry::Endpoints::Helpers
 
   struct UpdateNotePayload
     include JSON::Serializable
-    property note : ToCry::Note
+    property note : NoteData
     property lane_name : String?
     property position : UInt64?
   end
 
   struct NewNotePayload
     include JSON::Serializable
-    property note : ToCry::Note # The note data (id will be ignored/overwritten as a new one is generated)
+    property note : NoteData # The note data (id will be ignored/overwritten as a new one is generated)
     property lane_name : String
+  end
+
+  struct NoteData
+    include JSON::Serializable
+    property title : String
+    property tags : Array(String) = [] of String
+    property content : String = ""
+    # ameba:disable Naming/QueryBoolMethods
+    property expanded : Bool = false
+    # ameba:disable Naming/QueryBoolMethods
+    property public : Bool = false
+    property attachments : Array(String) = [] of String
+    property start_date : String? = nil
+    property end_date : String? = nil
+    property priority : String? = nil
   end
 
   struct ShareBoardPayload
