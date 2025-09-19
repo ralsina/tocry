@@ -421,10 +421,10 @@ body {
 /* Style the note summary container */
 .note-summary {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.5em; /* Space between elements in the summary */
     padding: var(--pico-spacing); /* Use standard Pico padding */
-    flex-wrap: nowrap; /* Prevent items from wrapping */
     min-width: 0; /* Prevents the container from overflowing its parent grid cell */
     /* No cursor: pointer here, as the toggle button handles clicks */
 }
@@ -455,10 +455,26 @@ body {
 }
 
 /* Styles for notes without content to disable the collapsible behavior */
-/* Style the title inside both collapsible and non-collapsible headers */
-.note-summary > h4 {
-    margin: 0;
+/* Row container for header elements */
+.note-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-width: 0;
+}
+
+/* Container for title and tags in note header */
+.note-title-and-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     flex-grow: 1;
+    min-width: 0;
+}
+
+/* Style the title inside both collapsible and non-collapsible headers */
+.note-title-and-meta > h4 {
+    margin: 0;
     font-weight: 500;
     cursor: text;
     padding: 0.1em 0.3em;
@@ -684,6 +700,51 @@ body {
     min-width: 0;
     overflow: hidden;
     flex-shrink: 0; /* Prevent the tags container from shrinking */
+}
+
+/* Container for dates in note header */
+.note-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    margin-left: 0.5rem; /* Space from toggle button */
+    margin-right: 0.5rem; /* Space from actions */
+    align-items: flex-start;
+}
+
+.note-date {
+    font-size: 0.8em;
+    color: var(--pico-muted-color);
+    background-color: var(--pico-background-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-form-element-border-color);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.note-date-range {
+    font-size: 0.8em;
+    color: var(--pico-muted-color);
+    background-color: var(--pico-background-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-form-element-border-color);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Date inputs container in edit modal */
+.date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.date-inputs input[type="date"] {
+    width: 100%;
 }
 
 .note-tags .tag {

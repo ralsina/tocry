@@ -103,7 +103,7 @@ export async function updateLane (boardName, oldName, laneData, position) {
   return response
 }
 
-export async function addNote (boardName, laneName, title, content = '', tags = []) {
+export async function addNote (boardName, laneName, title, content = '', tags = [], startDate = null, endDate = null) {
   // The boardName parameter is passed explicitly from the caller (e.g., note.js)
   const response = await fetch(`${API_BASE_URL}/boards/${boardName}/note`, {
     method: 'POST',
@@ -112,7 +112,13 @@ export async function addNote (boardName, laneName, title, content = '', tags = 
     },
     body: JSON.stringify({
       lane_name: laneName,
-      note: { title, content, tags } // id is omitted, backend generates it
+      note: {
+        title,
+        content,
+        tags,
+        start_date: startDate,
+        end_date: endDate
+      } // id is omitted, backend generates it
     })
   })
   return response
