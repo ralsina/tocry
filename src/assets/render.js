@@ -210,27 +210,23 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
 
   summaryDiv.appendChild(headerRow)
 
-  // Add priority tab - only show if priority is set
+  // Add priority bookmark - only show if priority is set
   if (note.priority) {
-    let priorityEmoji = ''
     let priorityClass = ''
 
     switch (note.priority) {
       case 'high':
-        priorityEmoji = '🔴'
         priorityClass = 'priority-high-tab'
         break
       case 'medium':
-        priorityEmoji = '🟠'
         priorityClass = 'priority-medium-tab'
         break
       case 'low':
-        priorityEmoji = '🟢'
         priorityClass = 'priority-low-tab'
         break
     }
 
-    const priorityTab = createElement('div', `priority-tab ${priorityClass}`, priorityEmoji)
+    const priorityTab = createElement('div', `priority-tab ${priorityClass}`, '')
     priorityTab.title = `${note.priority.charAt(0).toUpperCase() + note.priority.slice(1)} Priority`
     noteCard.appendChild(priorityTab)
   }
