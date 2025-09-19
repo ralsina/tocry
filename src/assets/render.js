@@ -125,6 +125,26 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     })
   }
 
+  // Create date info container if dates exist
+  let datesContainer = null
+  if (note.start_date || note.end_date) {
+    datesContainer = createElement('div', 'note-dates')
+
+    if (note.start_date && note.end_date) {
+      // Show both dates with an arrow between them
+      const dateRangeSpan = createElement('span', 'note-date-range', `📅 ${note.start_date} → ${note.end_date}`)
+      datesContainer.appendChild(dateRangeSpan)
+    } else if (note.start_date) {
+      // Show only start date
+      const startDateSpan = createElement('span', 'note-date', `📅 ${note.start_date}`)
+      datesContainer.appendChild(startDateSpan)
+    } else if (note.end_date) {
+      // Show only end date
+      const endDateSpan = createElement('span', 'note-date', `📅 ${note.end_date}`)
+      datesContainer.appendChild(endDateSpan)
+    }
+  }
+
   const hasContent = note.content && note.content.trim() !== ''
 
   const collapsibleContainer = createElement('div', 'note-collapsible')
@@ -176,10 +196,24 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
   noteActions.appendChild(editNoteButton)
   noteActions.appendChild(deleteNoteButton)
 
-  summaryDiv.appendChild(toggleButton)
-  summaryDiv.appendChild(noteTitle)
-  if (tagsContainer) summaryDiv.appendChild(tagsContainer)
-  summaryDiv.appendChild(noteActions)
+  // Create a row container for the main header elements
+  const headerRow = createElement('div', 'note-header-row')
+  headerRow.appendChild(toggleButton)
+
+  // Create a container for title and metadata
+  const titleAndMetaContainer = createElement('div', 'note-title-and-meta')
+  titleAndMetaContainer.appendChild(noteTitle)
+  if (tagsContainer) titleAndMetaContainer.appendChild(tagsContainer)
+
+  headerRow.appendChild(titleAndMetaContainer)
+  headerRow.appendChild(noteActions)
+
+  summaryDiv.appendChild(headerRow)
+
+  // Add dates inside the summary but as a separate element
+  if (datesContainer) {
+    summaryDiv.appendChild(datesContainer)
+  }
 
   collapsibleContainer.appendChild(summaryDiv)
 

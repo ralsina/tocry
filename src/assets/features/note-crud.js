@@ -49,7 +49,9 @@ export async function handleAddNoteRequest (laneName) {
         laneName,
         noteTitle.trim(),
         '',
-        []
+        [],
+        null, // start_date
+        null // end_date
       )
       if (response.ok) {
         showNotification(`Note "${noteTitle}" added successfully to lane "${laneName}".`, 'success')

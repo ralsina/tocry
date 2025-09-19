@@ -4,8 +4,21 @@ require "../tocry"
 require "./helpers"
 require "uuid"
 require "file_utils"
+require "time"
 
 module ToCry::Endpoints::Notes
+  # Helper function to validate date format (YYYY-MM-DD)
+  private def self.validate_date_format(date_string : String?) : Bool
+    return true if date_string.nil? || date_string.empty?
+
+    begin
+      Time.parse(date_string, "%Y-%m-%d", Time::Location::UTC)
+      true
+    rescue
+      false
+    end
+  end
+
   # API Endpoint to add a new note to a lane
   # Expects a JSON body like:
   # {
@@ -24,6 +37,26 @@ module ToCry::Endpoints::Notes
     target_lane_name = payload.lane_name
     note_data = payload.note
 
+    # Validate date formats
+    unless validate_date_format(note_data.start_date)
+      next ToCry::Endpoints::Helpers.error_response(env, "Invalid start_date format. Use YYYY-MM-DD format.", 400)
+    end
+
+    unless validate_date_format(note_data.end_date)
+      next ToCry::Endpoints::Helpers.error_response(env, "Invalid end_date format. Use YYYY-MM-DD format.", 400)
+    end
+
+    # Validate that start_date is before end_date if both are provided
+    if start_date = note_data.start_date
+      if end_date = note_data.end_date
+        start_time = Time.parse(start_date, "%Y-%m-%d", Time::Location::UTC)
+        end_time = Time.parse(end_date, "%Y-%m-%d", Time::Location::UTC)
+        if start_time > end_time
+          next ToCry::Endpoints::Helpers.error_response(env, "Start date must be before end date.", 400)
+        end
+      end
+    end
+
     # Find the target lane
     target_lane = board.lane(target_lane_name)
 
@@ -32,7 +65,7 @@ module ToCry::Endpoints::Notes
     end
 
     # Create a new Note instance and add it to the lane. The Note.initialize will generate a new ID.
-    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content, public: note_data.public)
+    new_note = target_lane.note_add(title: note_data.title, tags: note_data.tags, content: note_data.content, public: note_data.public, start_date: note_data.start_date, end_date: note_data.end_date)
 
     # Save the board to persist the new note (this will save the note file and create symlink for this board)
     board.save
@@ -56,6 +89,26 @@ module ToCry::Endpoints::Notes
     payload = ToCry::Endpoints::Helpers::UpdateNotePayload.from_json(json_body)
     new_note_data = payload.note
 
+    # Validate date formats
+    unless validate_date_format(new_note_data.start_date)
+      next ToCry::Endpoints::Helpers.error_response(env, "Invalid start_date format. Use YYYY-MM-DD format.", 400)
+    end
+
+    unless validate_date_format(new_note_data.end_date)
+      next ToCry::Endpoints::Helpers.error_response(env, "Invalid end_date format. Use YYYY-MM-DD format.", 400)
+    end
+
+    # Validate that start_date is before end_date if both are provided
+    if start_date = new_note_data.start_date
+      if end_date = new_note_data.end_date
+        start_time = Time.parse(start_date, "%Y-%m-%d", Time::Location::UTC)
+        end_time = Time.parse(end_date, "%Y-%m-%d", Time::Location::UTC)
+        if start_time > end_time
+          next ToCry::Endpoints::Helpers.error_response(env, "Start date must be before end date.", 400)
+        end
+      end
+    end
+
     # Find the note and its current lane on the board
     find_result = board.note(note_id)
     unless find_result
@@ -68,7 +121,9 @@ module ToCry::Endpoints::Notes
                         (existing_note.tags != new_note_data.tags) ||
                         (existing_note.content != new_note_data.content) ||
                         (existing_note.expanded != new_note_data.expanded) ||
-                        (existing_note.public != new_note_data.public)
+                        (existing_note.public != new_note_data.public) ||
+                        (existing_note.start_date != new_note_data.start_date) ||
+                        (existing_note.end_date != new_note_data.end_date)
 
     if note_data_changed
       existing_note.title = new_note_data.title
@@ -76,6 +131,8 @@ module ToCry::Endpoints::Notes
       existing_note.content = new_note_data.content
       existing_note.expanded = new_note_data.expanded
       existing_note.public = new_note_data.public
+      existing_note.start_date = new_note_data.start_date
+      existing_note.end_date = new_note_data.end_date
       existing_note.save
       ToCry::Log.info { "Note '#{existing_note.title}' (ID: #{note_id}) data updated for board '#{board.name}'." }
     end
@@ -160,6 +217,7 @@ module ToCry::Endpoints::Notes
 
     # At this point, containing_board is guaranteed to be non-nil and accessible to the user
     # No further access check is needed here as it was done by BoardManager.list(user)
+    _ = containing_board # Mark as used to avoid linter warning
 
     uploaded_file = env.params.files.values.first?
 
@@ -206,6 +264,7 @@ module ToCry::Endpoints::Notes
 
     # At this point, containing_board is guaranteed to be non-nil and accessible to the user
     # No further access check is needed here as it was done by BoardManager.list(user)
+    _ = containing_board # Mark as used to avoid linter warning
 
     # Remove the attachment from the note's attachments list
     existing_note.remove_attachment(attachment_uuid)
