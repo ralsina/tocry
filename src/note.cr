@@ -13,8 +13,10 @@ module ToCry
     property expanded : Bool = false                    # Default to false
     property public : Bool = false                      # Default to false
     property attachments : Array(String) = [] of String # New: Default to empty array
+    property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
+    property end_date : String? = nil                   # Optional end date in YYYY-MM-DD format
 
-    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false, @attachments : Array(String) = [] of String)
+    def initialize(@title : String, @tags : Array(String) = [] of String, @expanded : Bool = false, @public : Bool = false, @attachments : Array(String) = [] of String, @start_date : String? = nil, @end_date : String? = nil)
     end
   end
 
@@ -43,6 +45,8 @@ module ToCry
     property expanded : Bool = false
     property public : Bool = false
     property attachments : Array(String) = [] of String # New: Default to empty array
+    property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
+    property end_date : String? = nil                   # Optional end date in YYYY-MM-DD format
 
     # Reimplement sepia_id to use the id property
     def sepia_id
@@ -62,6 +66,8 @@ module ToCry
       expanded : Bool = false,
       public : Bool = false,
       attachments : Array(String) = [] of String,
+      start_date : String? = nil,
+      end_date : String? = nil,
     )
       @sepia_id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
       self.title = title
@@ -70,6 +76,8 @@ module ToCry
       @expanded = expanded
       @public = public
       @attachments = attachments
+      @start_date = start_date
+      @end_date = end_date
     end
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
@@ -91,7 +99,7 @@ module ToCry
         raise "Invalid YAML frontmatter in provided data: #{ex.message}"
       end
 
-      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments)
+      note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments, frontmatter.start_date, frontmatter.end_date)
       note
     end
 
@@ -99,7 +107,7 @@ module ToCry
     def to_sepia
       data = String.build do |builder|
         # Use the new FrontMatter struct for serialization
-        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public, attachments: self.attachments)
+        frontmatter_struct = FrontMatter.new(title: self.title, tags: self.tags, expanded: self.expanded, public: self.public, attachments: self.attachments, start_date: self.start_date, end_date: self.end_date)
         builder << frontmatter_struct.to_yaml
         builder << "---\n\n" # YAML frontmatter separator
         builder << self.content
