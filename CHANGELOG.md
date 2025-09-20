@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2025-09-20
+
+### 🚀 Features
+
+- Add start and end dates to notes
+- Implement priority labels with enum and side tab styling
+
+### 💼 Other
+
+- Create /tmp in docker image for uploads (Fix #5)
+
 ## [0.12.0] - 2025-07-02
 
 ### 🚀 Features
@@ -12,6 +23,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - / shortcut for search
+
+### 💼 Other
+
+- Release v0.12.0
 
 ### 🚜 Refactor
 
