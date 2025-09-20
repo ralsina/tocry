@@ -210,6 +210,27 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
 
   summaryDiv.appendChild(headerRow)
 
+  // Add priority bookmark - only show if priority is set
+  if (note.priority) {
+    let priorityClass = ''
+
+    switch (note.priority) {
+      case 'high':
+        priorityClass = 'priority-high-tab'
+        break
+      case 'medium':
+        priorityClass = 'priority-medium-tab'
+        break
+      case 'low':
+        priorityClass = 'priority-low-tab'
+        break
+    }
+
+    const priorityTab = createElement('div', `priority-tab ${priorityClass}`, '')
+    priorityTab.title = `${note.priority.charAt(0).toUpperCase() + note.priority.slice(1)} Priority`
+    noteCard.appendChild(priorityTab)
+  }
+
   // Add dates inside the summary but as a separate element
   if (datesContainer) {
     summaryDiv.appendChild(datesContainer)
