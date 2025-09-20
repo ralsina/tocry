@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(shards build:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(ameba)",
+      "Bash(crystal tool format:*)",
+      "Bash(crystal spec)",
+      "Bash(ameba:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
