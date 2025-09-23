@@ -1,4 +1,6 @@
 /* global localStorage */
+import { state } from '../features/state.js'
+
 export const colorSchemes = {
   Amber: {
     // This will load pico.amber.min.css
@@ -219,12 +221,30 @@ export function initializeColorSchemeSelector () {
   const savedScheme = localStorage.getItem('colorScheme') || 'Default'
   if (Object.keys(colorSchemes).includes(savedScheme)) {
     colorSchemeSwitcher.value = savedScheme
+    // Apply the saved color scheme on initialization
+    applyColorScheme(savedScheme)
   }
 
   // Add event listener to handle changes
-  colorSchemeSwitcher.addEventListener('change', (e) => {
+  colorSchemeSwitcher.addEventListener('change', async (e) => {
     const newScheme = e.target.value
-    localStorage.setItem('colorScheme', newScheme)
+
+    // Save to board if we have a current board
+    if (state.currentBoardName) {
+      try {
+        const { updateBoardColorScheme } = await import('../api.js')
+        const response = await updateBoardColorScheme(state.currentBoardName, newScheme)
+        if (!response.ok) {
+          console.warn('Failed to save color scheme to board:', response.status)
+          // Still apply locally even if save fails
+        }
+      } catch (error) {
+        console.warn('Error saving color scheme to board:', error)
+        // Still apply locally even if save fails
+      }
+    }
+
+    // Apply the color scheme
     applyColorScheme(newScheme)
   })
 }

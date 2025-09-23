@@ -124,6 +124,31 @@ module ToCry::Endpoints::Boards
     ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
   end
 
+  # API Endpoint to update board color scheme
+  # Expects the board name in the URL path, e.g.:
+  # PUT /boards/My%20Board/color-scheme
+  # Expects a JSON body like:
+  # { "color_scheme": "Blue" }
+  put "/boards/:board_name/color-scheme" do |env|
+    board_name = env.params.url["board_name"].as(String)
+    json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+    payload = ToCry::Endpoints::Helpers::ColorSchemePayload.from_json(json_body)
+
+    user = ToCry.get_current_user_id(env)
+    board = ToCry.board_manager.get(board_name, user)
+
+    unless board
+      env.response.status_code = 404
+      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+    end
+
+    # Save color scheme
+    color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
+    File.write(color_scheme_file, {color_scheme: payload.color_scheme}.to_json)
+
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Color scheme updated for board '#{board_name}'."})
+  end
+
   # API Endpoint to share a board with another user
   # Expects the board name in the URL path, e.g.:
   # POST /boards/My%20Board/share
