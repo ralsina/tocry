@@ -826,6 +826,10 @@ body {
     background-color: var(--pico-background-color);
     color: var(--pico-color);
     font-size: 1rem;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .date-priority-inputs select {
@@ -860,6 +864,7 @@ body {
     height: 90vh; /* Attempt to set height to 90% */
     display: flex; /* Use flexbox for internal layout */
     flex-direction: column; /* Stack children vertically */
+    z-index: 1000; /* Ensure modal is above other content */
 }
 
 #modal-edit-note article {
