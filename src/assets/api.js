@@ -191,6 +191,18 @@ export async function shareBoard (boardName, toUserEmail) {
   return response
 }
 
+export async function updateBoardColorScheme (boardName, colorScheme) {
+  const encodedBoardName = encodeURIComponent(boardName)
+  const response = await fetch(`${API_BASE_URL}/boards/${encodedBoardName}/color-scheme`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ color_scheme: colorScheme })
+  })
+  return response
+}
+
 export async function fetchAuthMode () {
   const response = await fetch(`${API_BASE_URL}/auth_mode`)
   if (!response.ok) {
