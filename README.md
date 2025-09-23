@@ -11,6 +11,7 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 
 * **Kanban Board:** Organize notes into customizable lanes.
 * **Drag & Drop:** Easily move notes between lanes and reorder lanes themselves
+* **Mobile-Optimized:** Full touch support with mobile-specific drag-and-drop
 * **Rich Text Notes:** Write notes in Markdown, with a comfortable WYSIWYG editor
 * **Priority Labels:** Set High, Medium, or Low priority on tasks with visual indicators
 * **Date Support:** Add start and end dates to tasks, only shown when expanded
@@ -19,9 +20,10 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Live Search:** Instantly filter all notes by title, content, or tags
 * **Collapsible Notes:** Collapse notes with content to keep your board tidy
 * **Light & Dark Modes:** Switch between themes for your viewing comfort
-* **Responsive UI:** A clean interface that works on different screen sizes
+* **Mobile-First Design:** Responsive interface with dedicated mobile menu and controls
+* **Per-Board Color Schemes:** Choose between 20 color schemes, saved per board
+* **Auto-Scroll on Mobile:** Automatically scroll when dragging notes to screen edges
 * **Image Uploading:** Just paste an image and it's uploaded and linked
-* **Color Schemes:** Choose between 20 color schemes
 * **Easy Installation:** One-line install script with system-wide and user options
 
 ## Quick Install (Recommended)
@@ -179,6 +181,7 @@ For an even simpler setup, you can use Docker Compose. Remember to set environme
 
 Once the application is running, you can manage your tasks through the web interface:
 
+### Desktop Interface
 * **Add a Lane:** Click the `+` button in the header to create a new column
 * **Rename a Lane:** Click directly on a lane's title, type the new name,
   and press `Enter` or click away to save
@@ -187,6 +190,14 @@ Once the application is running, you can manage your tasks through the web inter
 * **Move Items:** Click and drag lanes or notes to reorder them
 * **Search:** Use the search bar in the header to filter all visible notes
 * **Switch Theme:** Use the 🌙/☀️ button to toggle between light and dark modes
+* **Change Color Scheme:** Use the color scheme selector to customize the board's appearance
+
+### Mobile Interface
+* **Mobile Menu:** Tap the menu button to access all controls in a mobile-optimized overlay
+* **Touch Drag & Drop:** Long-press and drag notes between lanes with touch gestures
+* **Auto-Scroll:** When dragging notes to screen edges, the board automatically scrolls to reveal adjacent lanes
+* **Color Schemes:** Choose per-board color schemes that persist across sessions
+* **Responsive Controls:** All desktop features are available in a touch-friendly interface
 
 ## Development
 
