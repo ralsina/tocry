@@ -50,6 +50,29 @@ ameba --fix
 ./upload_docker.sh
 ```
 
+### Installation Script
+```bash
+# Install ToCry automatically (one-liner)
+curl -sSL https://github.com/ralsina/tocry/raw/main/install.sh | bash
+
+# Install with custom options
+INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry ./install.sh
+
+# Uninstall ToCry
+curl -sSL https://github.com/ralsina/tocry/raw/main/install.sh | bash -s -- --uninstall
+
+# Show help
+./install.sh --help
+```
+
+The install script provides:
+- Automatic architecture detection (AMD64/ARM64)
+- System-wide or user installation
+- Systemd service creation (for root installations)
+- Data directory setup
+- Clean uninstallation
+- Comprehensive error handling
+
 ## Architecture Overview
 
 ToCry is a Kanban-style TODO application built in Crystal using the Kemal web framework. It's designed as a single-binary, self-hosted application with file-based persistence.

@@ -20,6 +20,22 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Image Uploading:** Just paste an image and it's uploaded and linked
 * **Color Schemes:** Choose between 20 color schemes
 
+## Quick Install (Recommended)
+
+The easiest way to install ToCry is using the automated installation script:
+
+```bash
+curl -sSL https://tocry.ralsina.me/install.sh | bash
+```
+
+This will:
+- Automatically detect your system architecture (AMD64/ARM64)
+- Download the latest binary
+- Install system-wide or in your user directory
+- Set up data directories and systemd service (if run as root)
+
+For more options, see the [Installation Script Documentation](#installation-script-options).
+
 ## Installation From Source
 
 This project is built with the Crystal programming language.
@@ -188,6 +204,42 @@ The server will start on `http://localhost:3000`.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request
+
+## Installation Script Options
+
+The installation script provides several options for customizing your installation:
+
+### Basic Usage
+```bash
+# Install with default settings
+curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Show help
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --help
+```
+
+### Custom Installation Directories
+```bash
+# Install to custom location
+INSTALL_DIR=$HOME/.local/bin curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Use custom data directory
+DATA_DIR=$HOME/.local/share/tocry curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Combine both
+INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry curl -sSL https://tocry.ralsina.me/install.sh | bash
+```
+
+### Uninstall
+```bash
+# Uninstall ToCry
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --uninstall
+```
+
+### Environment Variables
+- `INSTALL_DIR`: Installation directory (default: `/usr/local/bin`)
+- `DATA_DIR`: Data directory (default: `/opt/tocry`)
+- `SERVICE_USER`: System service user (default: `tocry`)
 
 ## Contributors
 
