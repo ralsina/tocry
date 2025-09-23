@@ -199,6 +199,45 @@
         border-radius: var(--border-radius); /* Match other elements */
         box-shadow: var(--card-box-shadow); /* Optional: add a subtle shadow */
       }
+
+      /* Copyable code blocks */
+      .copyable {
+        position: relative;
+        cursor: pointer;
+        user-select: all;
+        transition: background-color 0.2s ease;
+      }
+
+      .copyable:hover {
+        background-color: var(--code-background-color);
+      }
+
+      .copyable.copied {
+        background-color: var(--card-background-color);
+        color: var(--ins-color);
+      }
+
+      .copyable::after {
+        content: 'Click to copy';
+        position: absolute;
+        top: -25px;
+        right: 0;
+        font-size: 0.75rem;
+        color: var(--muted-color);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      }
+
+      .copyable:hover::after {
+        opacity: 1;
+      }
+
+      .copyable.copied::after {
+        content: 'Copied!';
+        color: var(--ins-color);
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
@@ -340,11 +379,21 @@
 
         <article>
           <header>
-            <h3>One-Line Install (System-wide)</h3>
+            <h3>System-wide Install</h3>
           </header>
-          <pre><code>curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code></pre>
+          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code></pre>
           <p>
-            <small>This will install ToCry system-wide with automatic service setup. For user installation (no sudo) or custom options, see the <a href="https://github.com/ralsina/tocry#installation-script-options">full documentation</a>.</small>
+            <small>Installs to <code>/usr/local/bin</code> with systemd service. Requires sudo privileges.</small>
+          </p>
+        </article>
+
+        <article>
+          <header>
+            <h3>User Install</h3>
+          </header>
+          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | bash</code></pre>
+          <p>
+            <small>Installs to <code>~/.local/bin</code> for current user only. No sudo required.</small>
           </p>
         </article>
 
@@ -500,6 +549,35 @@
           if (e.key === 'Escape' && lightbox.style.display === 'block') {
             closeLightbox();
           }
+        });
+
+        // Copy functionality for installation commands
+        const copyableCodes = document.querySelectorAll('code.copyable');
+        copyableCodes.forEach(code => {
+          code.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(code.textContent);
+              code.classList.add('copied');
+
+              // Remove the copied class after 2 seconds
+              setTimeout(() => {
+                code.classList.remove('copied');
+              }, 2000);
+            } catch (err) {
+              // Fallback for older browsers
+              const textArea = document.createElement('textarea');
+              textArea.value = code.textContent;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+
+              code.classList.add('copied');
+              setTimeout(() => {
+                code.classList.remove('copied');
+              }, 2000);
+            }
+          });
         });
       });
     </script>
