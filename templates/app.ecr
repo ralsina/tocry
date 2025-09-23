@@ -52,6 +52,9 @@
               />
             </li>
             <li>
+              <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Mobile menu">☰</button>
+            </li>
+            <li>
               <div class="theme-and-color-switcher">
                 <button id="theme-switcher" aria-label="Switch to dark theme">🌙</button>
                 <div id="current-color-swatch" class="color-swatch"></div>
@@ -75,6 +78,39 @@
         </nav>
       </div>
     </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+      <div class="mobile-menu-panel">
+        <div class="mobile-menu-header">
+          <h3>Menu</h3>
+          <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close mobile menu">✕</button>
+        </div>
+        <div class="mobile-menu-content">
+          <div class="mobile-menu-section">
+            <h3>Board</h3>
+            <select id="mobile-board-selector" class="board-selector" aria-label="Select board"></select>
+          </div>
+          <div class="mobile-menu-section">
+            <h3>Appearance</h3>
+            <div class="theme-and-color-switcher">
+              <button id="mobile-theme-switcher" aria-label="Switch theme">🌙</button>
+              <select id="mobile-color-scheme-switcher" aria-label="Color scheme"></select>
+              <div id="mobile-current-color-swatch" class="color-swatch"></div>
+            </div>
+          </div>
+          <div class="mobile-menu-section">
+            <h3>Search</h3>
+            <input type="search" id="mobile-search" name="search" placeholder="Search notes..." />
+          </div>
+          <div class="mobile-menu-section" id="mobile-user-section" style="display: none;">
+            <h3>User</h3>
+            <div id="mobile-user-info">Logged in as <strong id="mobile-user-name"></strong></div>
+            <a href="/logout" id="mobile-logout-btn" role="button" class="secondary outline">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <main class="main-content container">
       <div id="lanes-container" class="grid">
