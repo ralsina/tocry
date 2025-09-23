@@ -95,13 +95,19 @@ export function syncMobileControls () {
     // Copy options from desktop to mobile
     mobileColorSchemeSelector.innerHTML = desktopColorSchemeSelector.innerHTML
 
-    // Set initial value from desktop
-    mobileColorSchemeSelector.value = desktopColorSchemeSelector.value
+    // Set initial value from localStorage (preferred over desktop to ensure persistence)
+    const savedScheme = localStorage.getItem('colorScheme') || 'Default'
+    mobileColorSchemeSelector.value = savedScheme
 
     // Add event listener to mobile color scheme selector
     mobileColorSchemeSelector.addEventListener('change', (e) => {
+      const newScheme = e.target.value
+
+      // Save to localStorage directly from mobile
+      localStorage.setItem('colorScheme', newScheme)
+
       // Update desktop selector to maintain sync
-      desktopColorSchemeSelector.value = e.target.value
+      desktopColorSchemeSelector.value = newScheme
 
       // Trigger the color scheme change
       const event = new Event('change', { bubbles: true })
