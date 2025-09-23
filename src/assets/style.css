@@ -655,40 +655,12 @@ body {
 /* Note Attachments Styling */
 .note-attachments {
     margin-top: 1rem;
-    padding: 0.75rem;
-    background-color: var(--pico-card-background-color);
-    border: 1px solid var(--pico-form-element-border-color);
-    border-radius: var(--pico-border-radius);
 }
 
 .note-attachments .attachments-items {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-}
-
-.note-attachments .attachments-items a {
-    display: inline-block;
-    padding: 0.5rem 0.75rem;
-    background-color: var(--pico-form-element-background-color);
-    border: 1px solid var(--pico-form-element-border-color);
-    border-radius: calc(var(--pico-border-radius) * 0.75);
-    text-decoration: none;
-    color: var(--pico-color);
-    transition: all 0.2s ease-in-out;
-    font-size: 0.9rem;
-}
-
-.note-attachments .attachments-items a:hover {
-    background-color: var(--pico-form-element-active-background-color);
-    border-color: var(--pico-form-element-active-border-color);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.note-attachments .attachments-items a:focus {
-    outline: 2px solid var(--pico-primary);
-    outline-offset: 2px;
 }
 
 /* Container for tags, now inside the note header */

@@ -148,15 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListener('edit-note-close-btn', 'click', closeEditModal)
   setupEventListener('permalink-close-btn', 'click', closeModal('modal-permalink'))
   setupEventListener('attach-file-close-btn', 'click', closeModal('modal-attach-file'))
-  // Wire up attachment deletion
-  const attachmentsList = document.getElementById('attachments-list')
-  if (attachmentsList) {
-    attachmentsList.addEventListener('click', (event) => {
-      if (event.target.classList.contains('delete-attachment-btn')) {
-        handleAttachmentDelete(event)
-      }
-    })
-  }
+  // Wire up attachment deletion (works for both modal and expanded notes)
+  document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete-attachment-btn')) {
+      handleAttachmentDelete(event)
+    }
+  })
 
   // --- Click-to-show for color scheme selector ---
   const themeSwitcherContainer = document.querySelector(
