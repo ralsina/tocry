@@ -243,7 +243,7 @@ async function handleDeleteBoardButtonClick (boardSelector) {
 }
 
 // Function to select a board, update UI, and change URL
-async function selectBoard (boardName) {
+async function selectBoard (boardName, skipHistoryPush = false) {
   const boardSelector = document.getElementById('board-selector')
   state.setPreviousBoardSelection(boardName) // Update previous selection
   state.setBoardName(boardName) // Update currentBoardName
@@ -268,7 +268,9 @@ async function selectBoard (boardName) {
   }
 
   initializeLanes(boardName) // Load lanes for the selected board
-  history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
+  if (!skipHistoryPush) {
+    history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
+  }
 }
 export { selectBoard }
 
