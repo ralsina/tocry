@@ -29,6 +29,26 @@ export function handleEditNoteRequest (note) {
   document.getElementById('edit-note-end-date').value = note.end_date || ''
   document.getElementById('edit-note-priority').value = note.priority || ''
 
+  // Add event listeners to date inputs to ensure picker works in modal context
+  const startDateInput = document.getElementById('edit-note-start-date')
+  const endDateInput = document.getElementById('edit-note-end-date')
+
+  startDateInput.addEventListener('click', (e) => {
+    try {
+      startDateInput.showPicker()
+    } catch (err) {
+      // Fallback for browsers that don't support showPicker
+    }
+  })
+
+  endDateInput.addEventListener('click', (e) => {
+    try {
+      endDateInput.showPicker()
+    } catch (err) {
+      // Fallback for browsers that don't support showPicker
+    }
+  })
+
   const contentTextarea = document.getElementById('edit-note-content')
   toastuiEditor = new toastui.Editor({
     el: contentTextarea,
