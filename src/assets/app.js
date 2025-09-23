@@ -4,7 +4,7 @@
 import { initializeAuthStatus } from './ui/auth.js'
 import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
-import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener } from './features/board.js'
+import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener, selectBoard } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
 import { handleSearchInput } from './features/search.js' // This line was already correct
 import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
@@ -79,8 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     await initializeBoardSelector()
 
     // 3. Now that the selector is set and `currentBoardName` is finalized,
-    //    load the lanes for that board.
-    await initializeLanes(state.currentBoardName)
+    //    load the lanes for that board and apply its color scheme.
+    if (state.currentBoardName) {
+      await selectBoard(state.currentBoardName, true) // Skip history push to avoid duplicating current URL
+    } else {
+      await initializeLanes(null)
+    }
   })()
 
   // Wire up keyboard shortcuts for scrolling
