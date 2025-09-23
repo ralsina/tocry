@@ -206,6 +206,7 @@
         cursor: pointer;
         user-select: all;
         transition: background-color 0.2s ease;
+        padding-right: 2rem;
       }
 
       .copyable:hover {
@@ -214,6 +215,30 @@
 
       .copyable.copied {
         background-color: var(--card-background-color);
+        color: var(--ins-color);
+      }
+
+      .copy-button {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--muted-color);
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: color 0.2s ease, background-color 0.2s ease;
+        font-size: 1rem;
+      }
+
+      .copy-button:hover {
+        color: var(--color);
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .copy-button.copied {
         color: var(--ins-color);
       }
 
@@ -381,7 +406,7 @@
           <header>
             <h3>System-wide Install</h3>
           </header>
-          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code></pre>
+          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
           <p>
             <small>Installs to <code>/usr/local/bin</code> with systemd service. Requires sudo privileges.</small>
           </p>
@@ -391,7 +416,7 @@
           <header>
             <h3>User Install</h3>
           </header>
-          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | bash</code></pre>
+          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
           <p>
             <small>Installs to <code>~/.local/bin</code> for current user only. No sudo required.</small>
           </p>
@@ -554,14 +579,20 @@
         // Copy functionality for installation commands
         const copyableCodes = document.querySelectorAll('code.copyable');
         copyableCodes.forEach(code => {
-          code.addEventListener('click', async () => {
+          const copyButton = code.nextElementSibling;
+
+          const copyToClipboard = async () => {
             try {
               await navigator.clipboard.writeText(code.textContent);
               code.classList.add('copied');
+              copyButton.classList.add('copied');
+              copyButton.textContent = '✅';
 
               // Remove the copied class after 2 seconds
               setTimeout(() => {
                 code.classList.remove('copied');
+                copyButton.classList.remove('copied');
+                copyButton.textContent = '📋';
               }, 2000);
             } catch (err) {
               // Fallback for older browsers
@@ -573,10 +604,24 @@
               document.body.removeChild(textArea);
 
               code.classList.add('copied');
+              copyButton.classList.add('copied');
+              copyButton.textContent = '✅';
+
               setTimeout(() => {
                 code.classList.remove('copied');
+                copyButton.classList.remove('copied');
+                copyButton.textContent = '📋';
               }, 2000);
             }
+          };
+
+          // Copy on code click
+          code.addEventListener('click', copyToClipboard);
+
+          // Copy on button click
+          copyButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent double-triggering
+            copyToClipboard();
           });
         });
       });
