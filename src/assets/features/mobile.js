@@ -95,21 +95,23 @@ export function syncMobileControls () {
     // Copy options from desktop to mobile
     mobileColorSchemeSelector.innerHTML = desktopColorSchemeSelector.innerHTML
 
-    // Sync selection changes
-    const syncColorScheme = (source, target) => {
-      target.value = source.value
-    }
+    // Set initial value from desktop
+    mobileColorSchemeSelector.value = desktopColorSchemeSelector.value
 
-    desktopColorSchemeSelector.addEventListener('change', () => {
-      syncColorScheme(desktopColorSchemeSelector, mobileColorSchemeSelector)
+    // Add event listener to mobile color scheme selector
+    mobileColorSchemeSelector.addEventListener('change', (e) => {
+      // Update desktop selector to maintain sync
+      desktopColorSchemeSelector.value = e.target.value
+
+      // Trigger the color scheme change
+      const event = new Event('change', { bubbles: true })
+      desktopColorSchemeSelector.dispatchEvent(event)
     })
 
-    mobileColorSchemeSelector.addEventListener('change', () => {
-      syncColorScheme(mobileColorSchemeSelector, desktopColorSchemeSelector)
+    // Listen to desktop changes and update mobile
+    desktopColorSchemeSelector.addEventListener('change', (e) => {
+      mobileColorSchemeSelector.value = e.target.value
     })
-
-    // Initial sync
-    syncColorScheme(desktopColorSchemeSelector, mobileColorSchemeSelector)
   }
 
   // Sync search
