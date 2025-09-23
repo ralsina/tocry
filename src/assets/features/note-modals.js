@@ -27,7 +27,7 @@ export function handleEditNoteRequest (note) {
   document.getElementById('edit-note-public').checked = note.public
   document.getElementById('edit-note-start-date').value = note.start_date || ''
   document.getElementById('edit-note-end-date').value = note.end_date || ''
-  document.getElementById('edit-note-priority').value = note.priority || 'medium'
+  document.getElementById('edit-note-priority').value = note.priority || ''
 
   const contentTextarea = document.getElementById('edit-note-content')
   toastuiEditor = new toastui.Editor({
