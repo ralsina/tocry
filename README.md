@@ -12,6 +12,9 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Kanban Board:** Organize notes into customizable lanes.
 * **Drag & Drop:** Easily move notes between lanes and reorder lanes themselves
 * **Rich Text Notes:** Write notes in Markdown, with a comfortable WYSIWYG editor
+* **Priority Labels:** Set High, Medium, or Low priority on tasks with visual indicators
+* **Date Support:** Add start and end dates to tasks, only shown when expanded
+* **File Attachments:** Upload and attach files to notes with drag & drop support
 * **Inline Editing:** Quickly rename lanes by clicking on their titles
 * **Live Search:** Instantly filter all notes by title, content, or tags
 * **Collapsible Notes:** Collapse notes with content to keep your board tidy
@@ -19,6 +22,7 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 * **Responsive UI:** A clean interface that works on different screen sizes
 * **Image Uploading:** Just paste an image and it's uploaded and linked
 * **Color Schemes:** Choose between 20 color schemes
+* **Easy Installation:** One-line install script with system-wide and user options
 
 ## Quick Install (Recommended)
 

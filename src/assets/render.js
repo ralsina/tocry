@@ -1,4 +1,5 @@
 import { getOriginalFileName } from './utils/constants.js'
+import { createAttachmentElement } from './features/note-attachments.js'
 
 // Helper function to create buttons with consistent setup
 function createButton (className, innerHTML, ariaLabel, clickHandler) {
@@ -267,13 +268,8 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
       const attachmentsList = createElement('div', 'attachments-items')
 
       note.attachments.forEach(attachment => {
-        const originalFileName = getOriginalFileName(attachment)
-        const attachmentLink = createDownloadLink(
-          `/attachments/${note.id}/${attachment}`,
-          originalFileName,
-          originalFileName
-        )
-        attachmentsList.appendChild(attachmentLink)
+        const attachmentElement = createAttachmentElement(note.id, attachment)
+        attachmentsList.appendChild(attachmentElement)
       })
 
       attachmentsContainer.appendChild(attachmentsList)
