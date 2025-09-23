@@ -66,24 +66,19 @@
         overflow-x: auto;
         white-space: pre-wrap;
       }
-      /* Grid for features */
+      /* Simple features grid */
       .features-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: var(--spacing);
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin: 2rem 0;
       }
 
-      /* Wrapper for the features section */
-      .features-wrapper {
-        /* No longer needs horizontal scroll */
-        padding: 1em 0;
-      }
-
-      /* Center the lanes on the website page and allow wrapping */
-      #lanes-container {
-        justify-content: center;
-        flex-wrap: wrap; /* Allow lanes to wrap on smaller screens */
-        min-width: 100%; /* Override style.css to allow centering */
+      @media (max-width: 768px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
       }
 
       /* Style for the merged theme and color scheme switcher */
@@ -186,146 +181,87 @@
         </hgroup>
       </section>
 
-      <div class="features-wrapper">
-        <section id="features">
-          <div id="lanes-container">
-            <div class="lane" draggable="true">
-              <div class="lane-header">
-                <h2 class="lane-title">Core Functionality</h2>
-                <span class="lane-note-count">6</span>
-                <div class="lane-actions">
-                  <button class="add-note-btn" aria-label="Add new note"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                  <button class="delete-lane-btn" aria-label="Delete lane"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                </div>
-              </div>
-              <div class="notes-list">
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Kanban Board</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Organize notes into customizable, re-orderable lanes.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Multiple Boards</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Create and switch between multiple boards to organize different projects or contexts.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Authentication Support</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Secure your board with Google OAuth for individual user accounts or use simple Basic Authentication for private, single-password access.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Rich Text Notes</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Write notes in Markdown, with a comfortable WYSIWYG editor.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Image Uploads</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Drag and drop images directly into the editor to upload and embed them in your notes.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Free and Open Source</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>The full source code is <a href="https://github.com/ralsina/tocry" target="_blank" rel="noopener noreferrer">available on GitHub</a>. Feel free to fork, modify, and contribute to the project!</p></div>
-                  </div>
-                </article>
-              </div>
-            </div>
-            <div class="lane" draggable="true">
-              <div class="lane-header">
-                <h2 class="lane-title">Modern UI</h2>
-                <span class="lane-note-count">5</span>
-                <div class="lane-actions">
-                  <button class="add-note-btn" aria-label="Add new note"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                  <button class="delete-lane-btn" aria-label="Delete lane"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                </div>
-              </div>
-              <div class="notes-list">
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Inline Editing</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Quickly rename lanes by clicking on their titles.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Live Search</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Instantly filter all notes by title, content, or tags.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Light & Dark Modes</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Switch between themes for your viewing comfort.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Syntax Highlighting</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Code blocks are automatically highlighted based on the language, making them easy to read.</p></div>
-                  </div>
-                </article>
-                <article class="note-card" draggable="true">
-                  <div class="note-collapsible is-open">
-                    <div class="note-summary">
-                      <button class="note-toggle-btn" aria-label="Toggle note content"><svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                      <h4>Drag & Drop</h4>
-                      <button class="delete-note-btn" aria-label="Delete note"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                    </div>
-                    <div class="note-content"><p>Easily move notes between lanes and reorder lanes themselves.</p></div>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+      <section id="features" class="container">
+        <div class="grid features-grid">
+          <article class="feature-card">
+            <header>
+              <h3>🚀 Effortless Deployment</h3>
+            </header>
+            <p>Self-hosted Kanban board that's incredibly simple to set up and maintain.</p>
+            <ul>
+              <li>Single binary with zero external dependencies</li>
+              <li>File-based storage (no database required)</li>
+              <li>Lightweight & fast (~50MB RAM usage)</li>
+              <li>Multi-architecture Docker support</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>🎯 Powerful Task Management</h3>
+            </header>
+            <p>Organize your work with a full-featured Kanban system designed for productivity.</p>
+            <ul>
+              <li>Drag & drop interface for natural workflow</li>
+              <li>Multi-board support for different projects</li>
+              <li>Priority labels (High/Medium/Low)</li>
+              <li>Live search across all boards</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>📝 Rich Content Support</h3>
+            </header>
+            <p>Create detailed task descriptions with full formatting capabilities.</p>
+            <ul>
+              <li>WYSIWYG Markdown editor with live preview</li>
+              <li>Syntax highlighting for code blocks</li>
+              <li>Drag & drop image uploads</li>
+              <li>File attachments and embedding</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>🔐 Flexible Authentication</h3>
+            </header>
+            <p>Choose the security level that fits your needs, from open access to secure multi-user.</p>
+            <ul>
+              <li>Google OAuth for individual user accounts</li>
+              <li>Basic Auth for simple password protection</li>
+              <li>No authentication for open access</li>
+              <li>User isolation and data separation</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>🎨 Beautiful & Customizable</h3>
+            </header>
+            <p>Modern interface that adapts to your preferences and workflow.</p>
+            <ul>
+              <li>Light & dark mode support</li>
+              <li>20+ color schemes to choose from</li>
+              <li>Responsive design for all devices</li>
+              <li>Clean, intuitive user interface</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>🛡️ Reliable & Open Source</h3>
+            </header>
+            <p>Built with modern technologies and maintained by the community.</p>
+            <ul>
+              <li>Built with Crystal for safety and performance</li>
+              <li>Free and open source (MIT license)</li>
+              <li>Active development and community support</li>
+              <li>Easy data backup and migration</li>
+            </ul>
+          </article>
+        </div>
+      </section>
 
       <section id="screenshot-section" class="container">
         <figure>
@@ -568,137 +504,6 @@
             });
         }
 
-        // --- Fun Draggable Elements ---
-        function makeDraggable() {
-          const draggableLanes = document.querySelectorAll(".lane");
-          const draggableNotes = document.querySelectorAll(".note-card");
-          const laneContainer = document.querySelector("#lanes-container");
-
-          function onDragStart(e) {
-            e.target.classList.add("dragging"); // Common class for logic
-            // App-specific classes for styling from style.css
-            if (e.target.matches('.lane')) {
-              e.target.classList.add('lane--dragging');
-            } else if (e.target.matches('.note-card')) {
-              e.target.classList.add('note-card--dragging');
-            }
-          }
-
-          function onDragEnd(e) {
-            e.target.classList.remove("dragging", "lane--dragging", "note-card--dragging");
-            // Clean up any lingering drag-over styles
-            document.querySelectorAll('.notes-list--drag-over').forEach(el => el.classList.remove('notes-list--drag-over'));
-            document.querySelectorAll('.lane--drag-over').forEach(el => el.classList.remove('lane--drag-over'));
-          }
-
-          function getDragAfterElement(container, xOrY, selector) {
-            // The '.dragging' class is used to identify the element being dragged
-            // so it can be excluded from the list of potential drop targets.
-            const draggableElements = [
-              ...container.querySelectorAll(`${selector}:not(.dragging)`),
-            ];
-            const isHorizontal = container === laneContainer;
-
-            return draggableElements.reduce(
-              (closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = isHorizontal
-                  ? xOrY - box.left - box.width / 2
-                  : xOrY - box.top - box.height / 2;
-
-                if (offset < 0 && offset > closest.offset) {
-                  return { offset: offset, element: child };
-                } else {
-                  return closest;
-                }
-              },
-              { offset: Number.NEGATIVE_INFINITY }
-            ).element;
-          }
-
-          // --- Lane Dragging ---
-          draggableLanes.forEach((lane) => {
-            lane.addEventListener("dragstart", onDragStart);
-            lane.addEventListener("dragend", onDragEnd);
-          });
-
-          laneContainer.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            const dragging = document.querySelector(".dragging");
-            laneContainer.querySelectorAll('.lane').forEach(l => l.classList.remove('lane--drag-over'));
-            // Only reorder if we are dragging a lane
-            if (dragging && dragging.classList.contains("lane")) {
-              const afterElement = getDragAfterElement(
-                laneContainer,
-                e.clientX,
-                ".lane"
-              );
-              afterElement
-                ? laneContainer.insertBefore(dragging, afterElement)
-                : laneContainer.appendChild(dragging);
-            }
-          });
-
-          // --- Note Dragging ---
-          draggableNotes.forEach((note) => {
-            note.addEventListener("dragstart", (e) => {
-              e.stopPropagation(); // Prevent lane from being dragged
-              onDragStart(e);
-            });
-            note.addEventListener("dragend", onDragEnd);
-          });
-
-          // Note: The dragover for notes is now on the notes list, not the whole lane
-          document.querySelectorAll(".notes-list")
-            .forEach((notesList) => {
-              notesList.addEventListener("dragover", (e) => {
-                e.preventDefault(); // Allow dropping
-                const dragging = document.querySelector(".dragging");
-                notesList.classList.add('notes-list--drag-over');
-
-                // Only handle note dragging here
-                if (dragging && dragging.classList.contains("note-card")) {
-                  e.stopPropagation(); // Stop lane container from handling this
-                  const afterElement = getDragAfterElement(
-                    notesList,
-                    e.clientY,
-                    ".note-card"
-                  );
-
-                  afterElement
-                    ? notesList.insertBefore(dragging, afterElement)
-                    : notesList.appendChild(dragging);
-                }
-              });
-            });
-        }
-        makeDraggable();
-
-        // --- Fun Editable Lane Headings ---
-        function makeHeadingsEditable() {
-          const editableHeadings = document.querySelectorAll(".lane-header .lane-title");
-          editableHeadings.forEach((heading) => {
-            heading.contentEditable = true;
-            heading.dataset.originalName = heading.textContent;
-
-            heading.addEventListener("keydown", (e) => {
-              if (e.key === "Enter") {
-                e.preventDefault(); // Prevent creating a new line
-                e.target.blur(); // Trigger blur to "save"
-              } else if (e.key === "Escape") {
-                e.target.textContent = e.target.dataset.originalName; // Revert
-                e.target.blur();
-              }
-            });
-
-            heading.addEventListener("blur", (e) => {
-              if (e.target.textContent.trim() === "") {
-                e.target.textContent = e.target.dataset.originalName;
-              }
-            });
-          });
-        }
-        makeHeadingsEditable();
       });
     </script>
   </body>
