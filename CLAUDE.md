@@ -12,6 +12,9 @@ crystal run src/main.cr
 # Production build (static binary)
 shards build --release --progress
 
+# Multi-architecture static builds (AMD64 + ARM64)
+./build_static.sh
+
 # Docker build (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 -t tocry .
 ```
@@ -24,7 +27,9 @@ crystal spec
 ./run_unit.sh
 
 # Run integration tests (requires Playwright)
-cd integration-test && npm test
+./run_integration.sh
+
+# Both tests run automatically on commit (via pre-commit hooks)
 ```
 
 ### Linting and Code Quality
@@ -35,6 +40,41 @@ ameba
 # Auto-fix linting issues
 ameba --fix
 ```
+
+### Release Management
+```bash
+# Full release process (version bump, changelog, Docker upload)
+./do_release.sh
+
+# Upload Docker images only
+./upload_docker.sh
+```
+
+### Installation Script
+```bash
+# Install ToCry automatically (one-liner, system-wide)
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
+
+# Install for current user only
+curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Install with custom options
+INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry ./install.sh
+
+# Uninstall ToCry
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --uninstall
+
+# Show help
+./install.sh --help
+```
+
+The install script provides:
+- Automatic architecture detection (AMD64/ARM64)
+- System-wide or user installation
+- Systemd service creation (for root installations)
+- Data directory setup
+- Clean uninstallation
+- Comprehensive error handling
 
 ## Architecture Overview
 
@@ -51,26 +91,37 @@ ToCry is a Kanban-style TODO application built in Crystal using the Kemal web fr
 
 - **src/tocry.cr**: Main application module and configuration
 - **src/main.cr**: Application entry point and server setup
-- **src/board_manager.cr**: Handles multi-board management and persistence
+- **src/board_manager.cr**: Handles multi-board management and persistence with UUID-based naming
 - **src/endpoints/**: RESTful API endpoints (boards, lanes, notes, uploads, auth)
 - **src/assets/**: Frontend JavaScript and CSS
 - **templates/**: ECR templates for server-side rendering
+
+### Domain Models
+
+- **Board**: Kanban board containing lanes with sepia_id-based naming
+- **Lane**: Column within a board containing ordered notes
+- **Note**: Individual task items with support for Markdown, priority labels (High/Medium/Low), and file attachments
 
 ### Authentication Modes
 
 The application supports three authentication modes (controlled by environment variables):
 
 1. **Google OAuth** (priority 1): Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-2. **Basic Auth** (priority 2): Requires `AUTH_USER` and `AUTH_PASSWORD`
+2. **Basic Auth** (priority 2): Requires `TOCRY_AUTH_USER` and `TOCRY_AUTH_PASS`
 3. **No Authentication** (default): Open access
 
 ### Data Structure
 
 ```
 data/
-├── {user_id}/          # User-specific directory
-│   ├── boards/         # Individual board JSON files
-│   └── settings.json   # User preferences
+├── users/              # User-specific directories
+│   ├── {user_id}/      # Sanitized email or "root" for basic/no auth
+│   │   ├── boards/     # Symlink to global boards or user-specific boards
+│   │   └── settings.json # User preferences
+│   └── root/           # Default user directory (symlinks to global boards)
+├── boards/             # Global boards directory with UUID naming
+│   ├── {uuid}.{name}/  # Board directory with sepia_id and name
+│   └── uploads/        # User-uploaded files and images
 └── global/             # Shared data (if any)
 ```
 
@@ -110,11 +161,30 @@ data/
 - Static binary compilation
 - Volume mounting for data persistence at `/data`
 - Environment variable configuration for auth and settings
+- Images published to GitHub Container Registry (ghcr.io)
+
+### Release Process
+
+- Version management using git-cliff for changelog generation
+- Conventional commits for automated version bumping
+- Automated multi-architecture Docker builds and uploads
+- Static binary builds for both AMD64 and ARM64 architectures
 
 ### Common Pitfalls
 
-- Always validate file paths to prevent directory traversal
+- Always validate file paths to prevent directory traversal (use `validate_path_within_data_dir`)
 - Use `File.expand_path` for path joining operations
 - Check file existence before operations
 - Handle user authentication in the correct order (Google OAuth → Basic Auth → None)
 - Remember to run migrations after schema changes
+- The `not_nil!` method is allowed only in specific files (see .ameba.yml)
+- Boolean properties should use the `?` suffix (Naming/QueryBoolMethods rule)
+- Use descriptive parameter names in blocks and follow existing patterns
+
+### Development Workflow
+
+- Pre-commit hooks require both unit and integration tests to pass
+- Editor configuration uses 2-space indentation for Crystal files (see .editorconfig)
+- Ameba linting has specific exclusions for certain files and rules (see .ameba.yml)
+- CLI arguments use docopt with options: `--data-path`, `--safe-mode`, `--port`, `--bind`
+- Kemal sessions configured for security with specific timeout and secret settings
