@@ -52,14 +52,17 @@ ameba --fix
 
 ### Installation Script
 ```bash
-# Install ToCry automatically (one-liner)
-curl -sSL https://github.com/ralsina/tocry/raw/main/install.sh | bash
+# Install ToCry automatically (one-liner, system-wide)
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
+
+# Install for current user only
+curl -sSL https://tocry.ralsina.me/install.sh | bash
 
 # Install with custom options
 INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry ./install.sh
 
 # Uninstall ToCry
-curl -sSL https://github.com/ralsina/tocry/raw/main/install.sh | bash -s -- --uninstall
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --uninstall
 
 # Show help
 ./install.sh --help

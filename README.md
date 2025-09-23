@@ -25,7 +25,7 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 The easiest way to install ToCry is using the automated installation script:
 
 ```bash
-curl -sSL https://tocry.ralsina.me/install.sh | bash
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
 ```
 
 This will:
@@ -211,7 +211,10 @@ The installation script provides several options for customizing your installati
 
 ### Basic Usage
 ```bash
-# Install with default settings
+# Install with default settings (system-wide)
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
+
+# Install for current user only (no sudo needed)
 curl -sSL https://tocry.ralsina.me/install.sh | bash
 
 # Show help
