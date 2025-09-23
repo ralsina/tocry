@@ -100,7 +100,7 @@ ToCry is a Kanban-style TODO application built in Crystal using the Kemal web fr
 
 - **Board**: Kanban board containing lanes with sepia_id-based naming
 - **Lane**: Column within a board containing ordered notes
-- **Note**: Individual task items with support for Markdown, priority labels (High/Medium/Low), and file attachments
+- **Note**: Individual task items with support for Markdown, priority labels (High/Medium/Low), file attachments, start/end dates, and collapsible content
 
 ### Authentication Modes
 
@@ -148,6 +148,9 @@ data/
 - Pico.css for styling
 - Drag-and-drop functionality using HTML5 drag API
 - WebSocket support for real-time updates (when available)
+- ToastUI Editor for rich Markdown editing
+- Smart collapsible notes that only show dates when expanded
+- Copy-to-install functionality for easy deployment
 
 ### Migration System
 
