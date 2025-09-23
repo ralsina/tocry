@@ -135,7 +135,7 @@ export function showPrompt (message, title, defaultValue = '') {
 /**
  * Displays a toast notification.
  * @param {string} message The message to display.
- * @param {string} type The type of notification ('info' or 'error'). Defaults to 'error'.
+ * @param {string} type The type of notification ('success', 'error', or 'info'). Defaults to 'error'.
  */
 export function showNotification (message, type = 'error') {
   const editModal = document.getElementById('modal-edit-note')
