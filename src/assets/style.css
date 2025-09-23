@@ -558,6 +558,13 @@ body {
     outline: none;
 }
 
+/* Ensure permalink button is properly aligned in the modal header */
+.edit-note-modal-header .permalink-btn {
+    vertical-align: middle;
+    align-self: center;
+    margin: 0;
+}
+
 .note-card {
     /* Add padding to create vertical space between note cards */
     padding: 10px 0;
@@ -1073,6 +1080,7 @@ body {
     align-items: center;
     gap: 0.5rem;
 }
+
 
 .permalink-url-group {
     display: flex;
