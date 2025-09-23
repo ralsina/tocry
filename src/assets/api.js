@@ -16,11 +16,36 @@ export async function fetchBoards () {
   return data
 }
 
+export async function fetchBoardDetails (boardName) {
+  const encodedBoardName = encodeURIComponent(boardName)
+  const response = await fetch(`${API_BASE_URL}/boards/${encodedBoardName}`)
+  if (!response.ok) {
+    await handleApiError(response, `Failed to fetch details for board "${boardName}".`)
+  }
+  return await response.json()
+}
+
+// Helper function to get a random color scheme
+export function getRandomColorScheme () {
+  const colorSchemes = [
+    'Amber', 'Blue', 'Cyan', 'Fuchsia', 'Grey', 'Green', 'Indigo', 'Jade',
+    'Lime', 'Orange', 'Pink', 'Pumpkin', 'Purple', 'Red', 'Sand', 'Slate',
+    'Violet', 'Yellow', 'Zinc'
+  ]
+  return colorSchemes[Math.floor(Math.random() * colorSchemes.length)]
+}
+
 export async function createBoard (boardName) {
+  // Assign a random color to the new board
+  const colorScheme = getRandomColorScheme()
+
   const response = await fetch(`${API_BASE_URL}/boards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: boardName })
+    body: JSON.stringify({
+      name: boardName,
+      color_scheme: colorScheme
+    })
   })
   return response
 }
