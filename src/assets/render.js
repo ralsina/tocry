@@ -146,27 +146,31 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
   }
 
   const hasContent = note.content && note.content.trim() !== ''
+  const hasAttachments = note.attachments && note.attachments.length > 0
+  const hasDates = datesContainer
 
   const collapsibleContainer = createElement('div', 'note-collapsible')
-  if (note.expanded && hasContent) {
+  const hasExpandableContent = hasContent || hasAttachments || hasDates
+  if (note.expanded && hasExpandableContent) {
     collapsibleContainer.classList.add('is-open')
   }
 
   const summaryDiv = createElement('div', 'note-summary')
 
-  const toggleButton = createButton(
-    'note-toggle-btn',
-    '<svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
-    'Toggle note content',
-    (e) => {
-      e.stopPropagation()
-      if (hasContent) {
+  let toggleButton = null
+  if (hasExpandableContent) {
+    toggleButton = createButton(
+      'note-toggle-btn',
+      '<svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+      'Toggle note content',
+      (e) => {
+        e.stopPropagation()
         collapsibleContainer.classList.toggle('is-open')
         const isExpanded = collapsibleContainer.classList.contains('is-open')
         if (callbacks.onToggleNote) callbacks.onToggleNote(note, isExpanded)
       }
-    }
-  )
+    )
+  }
 
   const permalinkButton = createButton(
     'permalink-btn edit-note-btn',
@@ -198,7 +202,9 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
 
   // Create a row container for the main header elements
   const headerRow = createElement('div', 'note-header-row')
-  headerRow.appendChild(toggleButton)
+  if (toggleButton) {
+    headerRow.appendChild(toggleButton)
+  }
 
   // Create a container for title and metadata
   const titleAndMetaContainer = createElement('div', 'note-title-and-meta')
@@ -231,17 +237,12 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
     noteCard.appendChild(priorityTab)
   }
 
-  // Add dates inside the summary but as a separate element
-  if (datesContainer) {
-    summaryDiv.appendChild(datesContainer)
-  }
+  // Don't add dates to summary - they will only appear in expanded content
 
   collapsibleContainer.appendChild(summaryDiv)
 
-  // Create noteContent container - always create it if there's content OR attachments
-  const hasAttachments = note.attachments && note.attachments.length > 0
-
-  if (hasContent || hasAttachments) {
+  // Create noteContent container - create it if there's content, attachments, OR dates
+  if (hasContent || hasAttachments || hasDates) {
     const noteContent = createElement('div', 'note-content')
 
     // Add parsed content if it exists
@@ -253,6 +254,11 @@ export function createNoteCardElement (note, laneName, callbacks, dragAndDropCal
           window.hljs.highlightElement(block)
         })
       }
+    }
+
+    // Add dates section if they exist
+    if (datesContainer) {
+      noteContent.appendChild(datesContainer)
     }
 
     // Add attachments section if they exist
