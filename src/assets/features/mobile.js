@@ -103,13 +103,10 @@ export function syncMobileControls () {
     mobileColorSchemeSelector.addEventListener('change', (e) => {
       const newScheme = e.target.value
 
-      // Save to localStorage directly from mobile
-      localStorage.setItem('colorScheme', newScheme)
-
       // Update desktop selector to maintain sync
       desktopColorSchemeSelector.value = newScheme
 
-      // Trigger the color scheme change
+      // Trigger the color scheme change (this will save to board)
       const event = new Event('change', { bubbles: true })
       desktopColorSchemeSelector.dispatchEvent(event)
     })
