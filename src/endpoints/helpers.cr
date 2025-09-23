@@ -108,6 +108,7 @@ module ToCry::Endpoints::Helpers
   struct NewBoardPayload
     include JSON::Serializable
     property name : String
+    property color_scheme : String?
   end
 
   struct UpdateNotePayload
