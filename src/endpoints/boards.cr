@@ -34,9 +34,41 @@ module ToCry::Endpoints::Boards
     ToCry::Endpoints::Helpers.success_response(env, board_names)
   end
 
+  # API Endpoint to get board details including color scheme
+  get "/boards/:board_name" do |env|
+    user = ToCry.get_current_user_id(env)
+    board_name = env.params.url["board_name"].as(String)
+    board = ToCry.board_manager.get(board_name, user)
+
+    unless board
+      env.response.status_code = 404
+      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+    end
+
+    # Check if board has a color scheme
+    color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
+    color_scheme = nil
+
+    if File.exists?(color_scheme_file)
+      begin
+        color_data = JSON.parse(File.read(color_scheme_file))
+        color_scheme = color_data["color_scheme"].as_s
+      rescue
+        # If file is corrupted or invalid, ignore it
+      end
+    end
+
+    board_details = {
+      name: board.name,
+      color_scheme: color_scheme
+    }
+
+    ToCry::Endpoints::Helpers.success_response(env, board_details)
+  end
+
   # API Endpoint to create a new board
-  # Expects a JSON body with a board name, e.g.:
-  # { "name": "My New Board" }
+  # Expects a JSON body with a board name and optional color scheme, e.g.:
+  # { "name": "My New Board", "color_scheme": "Blue" }
   post "/boards" do |env|
     json_body = ToCry::Endpoints::Helpers.get_json_body(env)
     payload = ToCry::Endpoints::Helpers::NewBoardPayload.from_json(json_body)
@@ -46,7 +78,13 @@ module ToCry::Endpoints::Boards
 
     # Get the current user from the request context and pass it to create.
     user = ToCry.get_current_user_id(env)
-    ToCry.board_manager.create(new_board_name, user)
+    board = ToCry.board_manager.create(new_board_name, user)
+
+    # Save color scheme if provided
+    if payload.color_scheme
+      color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
+      File.write(color_scheme_file, {color_scheme: payload.color_scheme}.to_json)
+    end
 
     ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
   end
