@@ -31,6 +31,10 @@ export class MobileDragDrop {
   handleTouchStart(event) {
     const touch = event.touches[0]
     const element = document.elementFromPoint(touch.clientX, touch.clientY)
+
+    // Don't start drag if clicking on buttons, links, or form elements
+    if (element?.closest('button, a, input, select, textarea, .editor-container')) return
+
     const noteCard = element?.closest('.note-card')
 
     if (!noteCard) return
