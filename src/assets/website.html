@@ -82,6 +82,112 @@
         }
       }
 
+      /* Hero section 2-column layout */
+      .hero-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+        margin: 3rem 0;
+      }
+
+      .hero-text p {
+        text-align: left;
+        margin-bottom: 0;
+      }
+
+      .hero-text hgroup {
+        text-align: left;
+        margin-bottom: 1.5rem;
+      }
+
+      .hero-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .screenshot-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-box-shadow);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .screenshot-img:hover {
+        transform: scale(1.02);
+      }
+
+      /* Lightbox styles */
+      .lightbox {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        animation: fadeIn 0.3s ease;
+      }
+
+      .lightbox-content {
+        position: relative;
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding: 20px;
+      }
+
+      .lightbox-img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: var(--border-radius);
+      }
+
+      .close-lightbox {
+        position: absolute;
+        top: 40px;
+        right: 40px;
+        color: white;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        transition: color 0.2s ease;
+      }
+
+      .close-lightbox:hover {
+        color: #ccc;
+      }
+
+      /* Responsive hero section */
+      @media (max-width: 968px) {
+        .hero-content {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+          text-align: center;
+        }
+
+        .hero-text p {
+          text-align: center;
+        }
+
+        .hero-text hgroup {
+          text-align: center;
+        }
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
           </style>
     <style>
       /* Style for the screenshot image */
@@ -119,12 +225,30 @@
     </header>
 
     <main class="container">
-      <section id="hero">
-        <hgroup>
-          <h2>A simple, self-hosted Kanban board.</h2>
-          <h3>Are you going ToDo or ToCry?</h3>
-        </hgroup>
+      <section id="hero" class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <hgroup>
+              <h2>A simple, self-hosted Kanban board.</h2>
+              <h3>Are you going ToDo or ToCry?</h3>
+            </hgroup>
+            <p>ToCry is a lightweight, self-hosted task management application that helps you organize your work with an intuitive Kanban interface. Built with Crystal for performance and reliability, it runs as a single binary with zero external dependencies - perfect for personal productivity or team collaboration.</p>
+          </div>
+          <div class="hero-image">
+            <figure>
+              <img src="screenshot.png" alt="Screenshot of the ToCry Kanban board application" class="screenshot-img" />
+            </figure>
+          </div>
+        </div>
       </section>
+
+      <!-- Lightbox for screenshot -->
+      <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+          <span class="close-lightbox">&times;</span>
+          <img src="screenshot.png" alt="Screenshot of the ToCry Kanban board application" class="lightbox-img" />
+        </div>
+      </div>
 
       <section id="features" class="container">
         <div class="grid features-grid">
@@ -208,12 +332,6 @@
         </div>
       </section>
 
-      <section id="screenshot-section" class="container">
-        <figure>
-          <img src="screenshot.png" alt="Screenshot of the ToCry Kanban board application" />
-        </figure>
-      </section>
-
       <section id="installation">
         <h2>Run with Docker</h2>
         <p>
@@ -284,32 +402,6 @@
           </ol>
         </article>
       </section>
-
-      <section id="usage">
-        <h2>Usage</h2>
-        <ul>
-          <li>
-            <strong>Add a Lane:</strong> Click the `+` button in the header to
-            create a new column.
-          </li>
-          <li>
-            <strong>Rename a Lane:</strong> Click directly on a lane's title,
-            type the new name, and press `Enter` or click away to save.
-          </li>
-          <li>
-            <strong>Add a Note:</strong> Click the `+` button in a lane's
-            header.
-          </li>
-          <li>
-            <strong>Edit a Note:</strong> Double-click on a note card to open
-            the full editor.
-          </li>
-          <li>
-            <strong>Move Items:</strong> Click and drag lanes or notes to
-            reorder them.
-          </li>
-        </ul>
-      </section>
     </main>
 
     <footer class="page-footer">
@@ -351,9 +443,24 @@
         applyTheme(next);
       }
 
+      // Lightbox functionality
+      function openLightbox() {
+        document.getElementById('lightbox').style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+      }
+
+      function closeLightbox() {
+        document.getElementById('lightbox').style.display = 'none';
+        document.body.style.overflow = 'auto'; // Re-enable scrolling
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         const themeSwitcher = document.getElementById('theme-switcher');
+        const screenshotImg = document.querySelector('.screenshot-img');
+        const closeLightboxBtn = document.querySelector('.close-lightbox');
+        const lightbox = document.getElementById('lightbox');
 
+        // Theme switcher
         const savedTheme =
           localStorage.getItem("theme") ||
           (window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -361,6 +468,24 @@
             : "light");
         applyTheme(savedTheme);
         themeSwitcher?.addEventListener("click", handleThemeSwitch);
+
+        // Lightbox functionality
+        screenshotImg?.addEventListener('click', openLightbox);
+        closeLightboxBtn?.addEventListener('click', closeLightbox);
+
+        // Close lightbox when clicking outside the image
+        lightbox?.addEventListener('click', (e) => {
+          if (e.target === lightbox) {
+            closeLightbox();
+          }
+        });
+
+        // Close lightbox with Escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && lightbox.style.display === 'block') {
+            closeLightbox();
+          }
+        });
       });
     </script>
   </body>
