@@ -209,6 +209,11 @@
         padding-right: 2rem;
       }
 
+      /* Add position relative to pre containing copy button */
+      pre.copy-container {
+        position: relative;
+      }
+
       .copyable:hover {
         background-color: var(--code-background-color);
       }
@@ -406,7 +411,7 @@
           <header>
             <h3>System-wide Install</h3>
           </header>
-          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
+          <pre class="copy-container"><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | sudo bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
           <p>
             <small>Installs to <code>/usr/local/bin</code> with systemd service. Requires sudo privileges.</small>
           </p>
@@ -416,7 +421,7 @@
           <header>
             <h3>User Install</h3>
           </header>
-          <pre><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
+          <pre class="copy-container"><code class="copyable">curl -sSL https://tocry.ralsina.me/install.sh | bash</code><button class="copy-button" aria-label="Copy command">📋</button></pre>
           <p>
             <small>Installs to <code>~/.local/bin</code> for current user only. No sudo required.</small>
           </p>
