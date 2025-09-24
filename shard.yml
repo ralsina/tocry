@@ -28,6 +28,8 @@ authors:
 targets:
   tocry:
     main: src/main.cr
+  tocry-demo:
+    main: src/main.cr
 
 crystal: '>= 1.16.0'
 

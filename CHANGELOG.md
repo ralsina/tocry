@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2025-09-23
+
+### 🚀 Features
+
+- **Mobile-First Design:** Complete mobile interface with touch-optimized interactions
+- **Touch Drag & Drop:** Mobile-specific drag-and-drop system for moving notes between lanes
+- **Mobile Menu Overlay:** Dedicated mobile menu with all controls easily accessible
+- **Auto-Scroll on Mobile:** Automatically scroll when dragging notes to screen edges
+- **Per-Board Color Schemes:** Color schemes are now saved per-board instead of globally
+- **Improved Mobile Styling:** Better mobile editor modal layout and controls
+
+### 🐛 Bug Fixes
+
+- Fixed mobile button click interference from drag handling
+- Fixed mobile color scheme selector alignment and functionality
+- Improved mobile touch target sizes and interactions
+
+### 💼 Other
+
+- Enhanced mobile responsiveness across all screen sizes
+- Better visual feedback for mobile drag operations
+
 ## [0.13.0] - 2025-09-20
 
 ### 🚀 Features

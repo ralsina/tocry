@@ -2,14 +2,26 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector, applyColorScheme } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
-import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener } from './features/board.js'
+import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener, selectBoard } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
 import { handleSearchInput } from './features/search.js' // This line was already correct
 import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
 import { handleAttachmentDelete } from './features/note-attachments.js'
+import { initializeMobile } from './features/mobile.js'
+import { initializeMobileDragDrop, handleMobileDragDropResize } from './features/mobile-dnd.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
+
+// Conditionally import demo functionality
+let initializeDemo = null
+if (typeof DEMO_MODE !== 'undefined' && DEMO_MODE) {
+  import('./demo.js').then(module => {
+    initializeDemo = module.initializeDemo
+  }).catch(err => {
+    console.error('Failed to load demo module:', err)
+  })
+}
 
 // Utility function to simplify event listener setup
 function setupEventListener (selector, event, handler) {
@@ -46,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize auth status display
   initializeAuthStatus()
 
-  // Populate the color scheme selector and set up its listener
+  // Populate the color scheme selector and set up its listener (this will apply saved color scheme)
   initializeColorSchemeSelector()
 
   // Set initial theme from localStorage (this will also trigger the initial color scheme application via applyTheme)
@@ -56,6 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
       ? 'dark'
       : 'light')
   applyTheme(savedTheme)
+
+  // Initialize mobile functionality
+  initializeMobile()
+
+  // Initialize mobile drag and drop
+  initializeMobileDragDrop()
+
+  // Handle window resize for drag and drop
+  window.addEventListener('resize', handleMobileDragDropResize)
 
   // Add event listeners using utility function
   setupEventListener('theme-switcher', 'click', handleThemeSwitch)
@@ -79,8 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
     await initializeBoardSelector()
 
     // 3. Now that the selector is set and `currentBoardName` is finalized,
-    //    load the lanes for that board.
-    await initializeLanes(state.currentBoardName)
+    //    load the lanes for that board and apply its color scheme.
+    if (state.currentBoardName) {
+      await selectBoard(state.currentBoardName, true) // Skip history push to avoid duplicating current URL
+    } else {
+      await initializeLanes(null)
+    }
   })()
 
   // Wire up keyboard shortcuts for scrolling
@@ -148,15 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListener('edit-note-close-btn', 'click', closeEditModal)
   setupEventListener('permalink-close-btn', 'click', closeModal('modal-permalink'))
   setupEventListener('attach-file-close-btn', 'click', closeModal('modal-attach-file'))
-  // Wire up attachment deletion
-  const attachmentsList = document.getElementById('attachments-list')
-  if (attachmentsList) {
-    attachmentsList.addEventListener('click', (event) => {
-      if (event.target.classList.contains('delete-attachment-btn')) {
-        handleAttachmentDelete(event)
-      }
-    })
-  }
+  // Wire up attachment deletion (works for both modal and expanded notes)
+  document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete-attachment-btn')) {
+      handleAttachmentDelete(event)
+    }
+  })
 
   // --- Click-to-show for color scheme selector ---
   const themeSwitcherContainer = document.querySelector(
@@ -315,5 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', createParticleAnimation)
   } else {
     createParticleAnimation()
+  }
+
+  // Initialize demo functionality if available
+  if (initializeDemo) {
+    initializeDemo()
   }
 })

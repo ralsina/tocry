@@ -108,6 +108,7 @@ module ToCry::Endpoints::Helpers
   struct NewBoardPayload
     include JSON::Serializable
     property name : String
+    property color_scheme : String?
   end
 
   struct UpdateNotePayload
@@ -141,6 +142,11 @@ module ToCry::Endpoints::Helpers
   struct ShareBoardPayload
     include JSON::Serializable
     property to_user_email : String
+  end
+
+  struct ColorSchemePayload
+    include JSON::Serializable
+    property color_scheme : String
   end
 
   # Helper function to find a note across all user-accessible boards

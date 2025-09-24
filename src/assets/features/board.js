@@ -1,10 +1,11 @@
 /* global history */
-import { fetchBoards, createBoard, renameBoard, deleteBoard, shareBoard, fetchAuthMode } from '../api.js' // Keep createBoard for the new addBoard function
+import { fetchBoards, createBoard, renameBoard, deleteBoard, shareBoard, fetchAuthMode, fetchBoardDetails } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
 import { state } from './state.js'
 import { initializeLanes } from './lane.js'
+import { applyColorScheme } from '../ui/theme.js'
 
 // Helper function to create option elements
 function createOption (value, textContent, disabled = false) {
@@ -242,15 +243,34 @@ async function handleDeleteBoardButtonClick (boardSelector) {
 }
 
 // Function to select a board, update UI, and change URL
-async function selectBoard (boardName) {
+async function selectBoard (boardName, skipHistoryPush = false) {
   const boardSelector = document.getElementById('board-selector')
   state.setPreviousBoardSelection(boardName) // Update previous selection
   state.setBoardName(boardName) // Update currentBoardName
   if (boardSelector) {
     boardSelector.value = boardName // Ensure the dropdown visually reflects the selected board
   }
+
+  // Apply the board's color scheme
+  try {
+    const boardDetails = await fetchBoardDetails(boardName)
+    if (boardDetails.color_scheme) {
+      applyColorScheme(boardDetails.color_scheme)
+      // Update the color scheme selector to match
+      const colorSchemeSwitcher = document.getElementById('color-scheme-switcher')
+      if (colorSchemeSwitcher) {
+        colorSchemeSwitcher.value = boardDetails.color_scheme
+      }
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch board details for "${boardName}":`, error)
+    // Continue with board selection even if color scheme fails
+  }
+
   initializeLanes(boardName) // Load lanes for the selected board
-  history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
+  if (!skipHistoryPush) {
+    history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
+  }
 }
 export { selectBoard }
 

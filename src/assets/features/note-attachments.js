@@ -2,13 +2,14 @@ import { showNotification, showConfirmation } from '../ui/dialogs.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { getOriginalFileName } from '../utils/constants.js'
 import { initializeLanes } from './lane.js'
+import { state } from './state.js'
 
 const API_BASE_URL = ''
 
 let currentNoteForAttachments = null
 
 // Helper function to create attachment DOM elements
-function createAttachmentElement (noteId, attachment) {
+export function createAttachmentElement (noteId, attachment) {
   const originalFileName = getOriginalFileName(attachment)
   const attachmentElement = document.createElement('div')
   attachmentElement.className = 'attachment-item'
@@ -167,27 +168,53 @@ async function handleFileSelection (file) {
 
 export async function handleAttachmentDelete (event) {
   const attachmentId = event.target.dataset.attachmentId
-  if (!attachmentId || !currentNoteForAttachments) {
+  const noteId = event.target.closest('.note-card')?.dataset.noteId
+
+  if (!attachmentId || !noteId) {
     showNotification('Attachment or note not found.', 'error')
     return
   }
 
-  if (!(await showConfirmation(`Are you sure you want to delete attachment '${attachmentId}'?`))) {
+  // Find the note in the current state
+  let targetNote = null
+  let foundInLane = null
+
+  for (const lane of state.currentLanes || []) {
+    const note = lane.notes.find(n => n.id === noteId)
+    if (note) {
+      targetNote = note
+      foundInLane = lane
+      break
+    }
+  }
+
+  if (!targetNote) {
+    showNotification('Note not found.', 'error')
+    return
+  }
+
+  // Get the user-friendly filename for the confirmation message
+  const userFriendlyName = getOriginalFileName(attachmentId)
+
+  if (!(await showConfirmation(`Are you sure you want to delete attachment '${userFriendlyName}'?`))) {
     return
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/n/${currentNoteForAttachments.id}/${attachmentId}`, {
+    const response = await fetch(`${API_BASE_URL}/n/${noteId}/${attachmentId}`, {
       method: 'DELETE'
     })
 
     if (response.ok) {
       showNotification(`Attachment '${attachmentId}' deleted successfully!`, 'success')
-      // Update the note in state and re-render lanes
-      currentNoteForAttachments.attachments = currentNoteForAttachments.attachments.filter(att => att !== attachmentId)
+      // Update the note in state
+      targetNote.attachments = targetNote.attachments.filter(att => att !== attachmentId)
       await initializeLanes() // Re-render to show updated attachments
-      // Re-open modal to show updated list
-      handleAttachFileRequest(currentNoteForAttachments)
+
+      // If we're in the modal context, refresh it
+      if (currentNoteForAttachments && currentNoteForAttachments.id === noteId) {
+        handleAttachFileRequest(currentNoteForAttachments)
+      }
     } else {
       await handleApiError(response, 'Failed to delete attachment.')
     }

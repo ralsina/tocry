@@ -29,8 +29,18 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Custom styles, loaded last to allow overrides of all libraries -->
     <link rel="stylesheet" href="/style.css" />
+
+    <!-- Demo-specific styles (only included in demo builds) -->
+    <link rel="stylesheet" href="/demo.css" />
   </head>
   <body>
+    <!-- Demo banner (only shown in demo builds) -->
+    <div class="demo-banner" style="display: none;">
+      🎉 This is a demo instance of ToCry!
+      <a href="https://github.com/ralsina/tocry" target="_blank" rel="noopener noreferrer">Get your own copy</a> |
+      <a href="https://tocry.ralsina.me" target="_blank" rel="noopener noreferrer">Learn more</a>
+    </div>
+
     <header class="page-header">
       <div class="container">
         <nav>
@@ -50,6 +60,9 @@
                 name="search"
                 placeholder="Search..."
               />
+            </li>
+            <li>
+              <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Mobile menu">☰</button>
             </li>
             <li>
               <div class="theme-and-color-switcher">
@@ -75,6 +88,39 @@
         </nav>
       </div>
     </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+      <div class="mobile-menu-panel">
+        <div class="mobile-menu-header">
+          <h3>Menu</h3>
+          <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close mobile menu">✕</button>
+        </div>
+        <div class="mobile-menu-content">
+          <div class="mobile-menu-section">
+            <h3>Board</h3>
+            <select id="mobile-board-selector" class="board-selector" aria-label="Select board"></select>
+          </div>
+          <div class="mobile-menu-section">
+            <h3>Appearance</h3>
+            <div class="theme-and-color-switcher">
+              <button id="mobile-theme-switcher" aria-label="Switch theme">🌙</button>
+              <select id="mobile-color-scheme-switcher" aria-label="Color scheme"></select>
+              <div id="mobile-current-color-swatch" class="color-swatch"></div>
+            </div>
+          </div>
+          <div class="mobile-menu-section">
+            <h3>Search</h3>
+            <input type="search" id="mobile-search" name="search" placeholder="Search notes..." />
+          </div>
+          <div class="mobile-menu-section" id="mobile-user-section" style="display: none;">
+            <h3>User</h3>
+            <div id="mobile-user-info">Logged in as <strong id="mobile-user-name"></strong></div>
+            <a href="/logout" id="mobile-logout-btn" role="button" class="secondary outline">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <main class="main-content container">
       <div id="lanes-container" class="grid">
@@ -170,6 +216,11 @@
     <!-- Container for toast notifications -->
     <div id="notification-container"></div>
 
+    <!-- Demo-specific elements (only shown in demo builds) -->
+    <button class="demo-reset-button" id="demo-reset-btn" title="Reset demo data" style="display: none;">
+      🔄 Reset Demo
+    </button>
+
     <!-- Modal for Permalink -->
     <dialog id="modal-permalink">
       <article>
@@ -216,5 +267,12 @@
     </dialog>
 
     <script type="module" src="/app.js" defer></script>
+
+    <!-- Demo mode detection for JavaScript -->
+    {% if flag?(:demo) %}
+    <script>
+      window.DEMO_MODE = true;
+    </script>
+    {% end %}
   </body>
 </html>

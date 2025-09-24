@@ -11,14 +11,36 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 
 * **Kanban Board:** Organize notes into customizable lanes.
 * **Drag & Drop:** Easily move notes between lanes and reorder lanes themselves
+* **Mobile-Optimized:** Full touch support with mobile-specific drag-and-drop
 * **Rich Text Notes:** Write notes in Markdown, with a comfortable WYSIWYG editor
+* **Priority Labels:** Set High, Medium, or Low priority on tasks with visual indicators
+* **Date Support:** Add start and end dates to tasks, only shown when expanded
+* **File Attachments:** Upload and attach files to notes with drag & drop support
 * **Inline Editing:** Quickly rename lanes by clicking on their titles
 * **Live Search:** Instantly filter all notes by title, content, or tags
 * **Collapsible Notes:** Collapse notes with content to keep your board tidy
 * **Light & Dark Modes:** Switch between themes for your viewing comfort
-* **Responsive UI:** A clean interface that works on different screen sizes
+* **Mobile-First Design:** Responsive interface with dedicated mobile menu and controls
+* **Per-Board Color Schemes:** Choose between 20 color schemes, saved per board
+* **Auto-Scroll on Mobile:** Automatically scroll when dragging notes to screen edges
 * **Image Uploading:** Just paste an image and it's uploaded and linked
-* **Color Schemes:** Choose between 20 color schemes
+* **Easy Installation:** One-line install script with system-wide and user options
+
+## Quick Install (Recommended)
+
+The easiest way to install ToCry is using the automated installation script:
+
+```bash
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
+```
+
+This will:
+- Automatically detect your system architecture (AMD64/ARM64)
+- Download the latest binary
+- Install system-wide or in your user directory
+- Set up data directories and systemd service (if run as root)
+
+For more options, see the [Installation Script Documentation](#installation-script-options).
 
 ## Installation From Source
 
@@ -159,6 +181,7 @@ For an even simpler setup, you can use Docker Compose. Remember to set environme
 
 Once the application is running, you can manage your tasks through the web interface:
 
+### Desktop Interface
 * **Add a Lane:** Click the `+` button in the header to create a new column
 * **Rename a Lane:** Click directly on a lane's title, type the new name,
   and press `Enter` or click away to save
@@ -167,6 +190,14 @@ Once the application is running, you can manage your tasks through the web inter
 * **Move Items:** Click and drag lanes or notes to reorder them
 * **Search:** Use the search bar in the header to filter all visible notes
 * **Switch Theme:** Use the 🌙/☀️ button to toggle between light and dark modes
+* **Change Color Scheme:** Use the color scheme selector to customize the board's appearance
+
+### Mobile Interface
+* **Mobile Menu:** Tap the menu button to access all controls in a mobile-optimized overlay
+* **Touch Drag & Drop:** Long-press and drag notes between lanes with touch gestures
+* **Auto-Scroll:** When dragging notes to screen edges, the board automatically scrolls to reveal adjacent lanes
+* **Color Schemes:** Choose per-board color schemes that persist across sessions
+* **Responsive Controls:** All desktop features are available in a touch-friendly interface
 
 ## Development
 
@@ -188,6 +219,45 @@ The server will start on `http://localhost:3000`.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request
+
+## Installation Script Options
+
+The installation script provides several options for customizing your installation:
+
+### Basic Usage
+```bash
+# Install with default settings (system-wide)
+curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
+
+# Install for current user only (no sudo needed)
+curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Show help
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --help
+```
+
+### Custom Installation Directories
+```bash
+# Install to custom location
+INSTALL_DIR=$HOME/.local/bin curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Use custom data directory
+DATA_DIR=$HOME/.local/share/tocry curl -sSL https://tocry.ralsina.me/install.sh | bash
+
+# Combine both
+INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry curl -sSL https://tocry.ralsina.me/install.sh | bash
+```
+
+### Uninstall
+```bash
+# Uninstall ToCry
+curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --uninstall
+```
+
+### Environment Variables
+- `INSTALL_DIR`: Installation directory (default: `/usr/local/bin`)
+- `DATA_DIR`: Data directory (default: `/opt/tocry`)
+- `SERVICE_USER`: System service user (default: `tocry`)
 
 ## Contributors
 
