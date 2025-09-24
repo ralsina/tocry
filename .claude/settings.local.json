@@ -14,7 +14,8 @@
       "Bash(crystal build:*)",
       "Bash(sudo:*)",
       "Bash(./install.sh:*)",
-      "Bash(./run_integration.sh:*)"
+      "Bash(./run_integration.sh:*)",
+      "Bash(crystal eval:*)"
     ],
     "deny": [],
     "ask": []

@@ -27,7 +27,7 @@ Options:
   -b ADDRESS, --bind=ADDRESS    Address to bind to [default: 127.0.0.1].
   -h --help                     Show this screen.
   --version                     Show version.
-  --data-path=PATH              Path to the data directory [default: data].
+  --data-path=PATH              Path to the data directory.
   --safe-mode                   Enable safe mode (checks data integrity).
 DOCOPT
 
@@ -44,7 +44,21 @@ def main
 
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
   ARGV.clear                                            # Clear ARGV to prevent further processing by Crystal
-  data_path = args["--data-path"]?.as(String) || "data" # Default to "data"
+
+  # Determine data path
+  data_path = args["--data-path"]?.as?(String)
+  if data_path.nil?
+    # If no explicit data path provided, use user directory for non-root users
+    # Check if we're root by checking if USER environment variable is "root"
+    current_user = ENV["USER"]?
+    if current_user == "root"
+      data_path = "data"
+    else
+      # Use ~/.local/share/tocry for non-root users
+      home_dir = ENV["HOME"]? || Dir.current
+      data_path = File.join(home_dir, ".local", "share", "tocry")
+    end
+  end
   safe_mode = args["--safe-mode"] == true               # Safely parse --safe-mode argument as boolean
 
   # Initialize data environment using the helper

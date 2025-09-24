@@ -199,7 +199,8 @@ show_instructions() {
     echo -e "  This will start the server on http://localhost:3000"
 
     echo -e "\n${BLUE}Data Directory:${NC}"
-    echo -e "  ${DATA_DIR}"
+    echo -e "  For non-root users: ~/.local/share/tocry"
+    echo -e "  For root users: data (or use --data-path)"
 
     echo -e "\n${BLUE}Configuration:${NC}"
     echo -e "  You can set environment variables for authentication:"
@@ -297,7 +298,6 @@ main() {
     fi
 
     # Setup
-    create_data_dir
     create_systemd_service
 
     # Clean up
