@@ -148,9 +148,9 @@ test.describe('Note Attachments', () => {
     ).toBeVisible()
 
     // 3. Click the delete button for the attachment
-    const deleteButton = attachModal.locator(
-      `.attachment-item button[data-attachment-id*="${fileName}"]`
-    )
+    // Find the delete button that's in the same attachment-item as the filename link
+    const attachmentItem = attachModal.locator(`.attachment-item:has(a:has-text("${fileName}"))`)
+    const deleteButton = attachmentItem.locator('.delete-attachment-btn')
     await deleteButton.click()
 
     // 4. Confirm deletion in the dialog

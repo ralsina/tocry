@@ -105,7 +105,8 @@ test.describe('Board Management', () => {
 
 test.describe('Theme and Color Scheme', () => {
   test('should allow changing the color scheme and persist the choice', async ({ page }) => {
-    const themeContainer = page.locator('.theme-and-color-switcher')
+    // Use the main navigation theme switcher, not the mobile one
+    const themeContainer = page.locator('nav .theme-and-color-switcher')
     const colorSwatch = page.locator('#current-color-swatch')
     const colorSelector = page.locator('#color-scheme-switcher')
 
@@ -118,6 +119,9 @@ test.describe('Theme and Color Scheme', () => {
 
     // 3. Change the color scheme to 'Green'
     await colorSelector.selectOption('Green')
+
+    // Wait for the change event to be processed and localStorage to be updated
+    await page.waitForTimeout(100)
 
     // 4. Assert that the color swatch and localStorage have updated
     // The color value is derived from `theme.js` for the 'Green' scheme's light theme
