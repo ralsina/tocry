@@ -3,14 +3,13 @@
 set -euo pipefail
 
 # Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+BLUE=$'\033[0;34m'
+NC=$'\033[0m' # No Color
 
 # Script information
-SCRIPT_NAME="tocry-install"
 REPO="ralsina/tocry"
 BINARY_NAME="tocry"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
@@ -25,9 +24,10 @@ if [[ -z "$LATEST_VERSION" ]]; then
     exit 1
 fi
 
-# Architecture detection
+# Detect architecture
 detect_arch() {
-    local arch=$(uname -m)
+    local arch
+    arch=$(uname -m)
     case $arch in
         x86_64|amd64)
             echo "amd64"
@@ -42,9 +42,10 @@ detect_arch() {
     esac
 }
 
-# OS detection
+# Detect OS
 detect_os() {
-    local os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local os
+    os=$(uname -s | tr '[:upper:]' '[:lower:]')
     if [[ "$os" != "linux" ]]; then
         echo -e "${RED}Error: This installer only supports Linux${NC}" >&2
         exit 1
@@ -56,10 +57,8 @@ detect_os() {
 check_root() {
     if [[ $EUID -eq 0 ]]; then
         echo -e "${YELLOW}Warning: Running as root. Installation will be system-wide.${NC}"
-        return 0
     else
         echo -e "${BLUE}Running as non-root user. Will install to user directory if system-wide installation fails.${NC}"
-        return 1
     fi
 }
 
@@ -67,7 +66,8 @@ check_root() {
 check_dependencies() {
     local missing=()
 
-    for cmd in curl tar sudo; do
+    # Always need curl and tar
+    for cmd in curl tar; do
         if ! command -v "$cmd" &> /dev/null; then
             missing+=("$cmd")
         fi
@@ -88,7 +88,7 @@ download_binary() {
     local url="https://github.com/${REPO}/releases/download/v${version}/${BINARY_NAME}-static-linux-${arch}"
     local temp_file="/tmp/${BINARY_NAME}-${version}-${arch}"
 
-    echo -e "${BLUE}Downloading ${BINARY_NAME} v${version} for ${arch}...${NC}"
+    echo -e "${BLUE}Downloading ${BINARY_NAME} v${version} for ${arch}...${NC}" >&2
 
     if ! curl -sSL -f "$url" -o "$temp_file"; then
         echo -e "${RED}Error: Failed to download binary${NC}" >&2
@@ -111,21 +111,13 @@ install_system_wide() {
     local install_path="${INSTALL_DIR}/${BINARY_NAME}"
 
     if [[ ! -w "$INSTALL_DIR" ]]; then
-        if ! sudo mkdir -p "$INSTALL_DIR" 2>/dev/null; then
-            echo -e "${YELLOW}Cannot write to $INSTALL_DIR, trying user installation${NC}"
-            return 1
-        fi
-        if ! sudo mv "$binary_path" "$install_path"; then
-            echo -e "${RED}Error: Failed to install binary to $install_path${NC}" >&2
-            return 1
-        fi
-        sudo chown root:root "$install_path"
-    else
-        mkdir -p "$INSTALL_DIR"
-        mv "$binary_path" "$install_path"
+        echo -e "${YELLOW}Cannot write to $INSTALL_DIR, trying user installation${NC}" >&2
+        return 1
     fi
 
-    echo -e "${GREEN}✓ Installed to $install_path${NC}"
+    mkdir -p "$INSTALL_DIR"
+    mv "$binary_path" "$install_path"
+    echo -e "${GREEN}✓ Installed to $install_path${NC}" >&2
     return 0
 }
 
@@ -140,12 +132,12 @@ install_user() {
 
     # Add to PATH if not already there
     if [[ ":$PATH:" != *":$user_bin:"* ]]; then
-        echo -e "${YELLOW}Adding $user_bin to PATH${NC}"
+        echo -e "${YELLOW}Adding $user_bin to PATH${NC}" >&2
         echo "export PATH=\"$user_bin:\$PATH\"" >> "$HOME/.bashrc"
-        echo -e "${YELLOW}Run 'source ~/.bashrc' or restart your shell to use the new PATH${NC}"
+        echo -e "${YELLOW}Run 'source ~/.bashrc' or restart your shell to use the new PATH${NC}" >&2
     fi
 
-    echo -e "${GREEN}✓ Installed to $install_path${NC}"
+    echo -e "${GREEN}✓ Installed to $install_path${NC}" >&2
     return 0
 }
 
@@ -154,7 +146,7 @@ create_data_dir() {
     if [[ $EUID -eq 0 ]]; then
         mkdir -p "$DATA_DIR"
         chown -R "${SERVICE_USER}:${SERVICE_USER}" "$DATA_DIR" 2>/dev/null || true
-        echo -e "${GREEN}✓ Data directory created at $DATA_DIR${NC}"
+        echo -e "${GREEN}✓ Data directory created at $DATA_DIR${NC}" >&2
     else
         local user_data="${HOME}/.local/share/tocry"
         mkdir -p "$user_data"
@@ -194,8 +186,8 @@ EOF
     if sudo mv "/tmp/${SERVICE_NAME}.service" "$service_file"; then
         sudo systemctl daemon-reload
         sudo systemctl enable "${SERVICE_NAME}" 2>/dev/null || true
-        echo -e "${GREEN}✓ Systemd service created${NC}"
-        echo -e "${BLUE}You can start the service with: sudo systemctl start ${SERVICE_NAME}${NC}"
+        echo -e "${GREEN}✓ Systemd service created${NC}" >&2
+        echo -e "${BLUE}You can start the service with: sudo systemctl start ${SERVICE_NAME}${NC}" >&2
     fi
 }
 
@@ -290,11 +282,14 @@ main() {
     # System checks
     check_dependencies
     check_root
-    local arch=$(detect_arch)
-    local os=$(detect_os)
+    local arch
+    arch=$(detect_arch)
+    local os
+    os=$(detect_os)
 
     # Download
-    local temp_binary=$(download_binary "$LATEST_VERSION" "$arch" "$os")
+    local temp_binary
+    temp_binary=$(download_binary "$LATEST_VERSION" "$arch" "$os")
 
     # Installation
     if ! install_system_wide "$temp_binary"; then

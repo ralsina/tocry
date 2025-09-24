@@ -2,38 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.14.0] - 2025-09-23
-
-### 🚀 Features
-
-- **Mobile-First Design:** Complete mobile interface with touch-optimized interactions
-- **Touch Drag & Drop:** Mobile-specific drag-and-drop system for moving notes between lanes
-- **Mobile Menu Overlay:** Dedicated mobile menu with all controls easily accessible
-- **Auto-Scroll on Mobile:** Automatically scroll when dragging notes to screen edges
-- **Per-Board Color Schemes:** Color schemes are now saved per-board instead of globally
-- **Improved Mobile Styling:** Better mobile editor modal layout and controls
-
-### 🐛 Bug Fixes
-
-- Fixed mobile button click interference from drag handling
-- Fixed mobile color scheme selector alignment and functionality
-- Improved mobile touch target sizes and interactions
-
-### 💼 Other
-
-- Enhanced mobile responsiveness across all screen sizes
-- Better visual feedback for mobile drag operations
-
-## [0.13.0] - 2025-09-20
+## [0.13.0] - 2025-09-24
 
 ### 🚀 Features
 
 - Add start and end dates to notes
 - Implement priority labels with enum and side tab styling
+- Only show note dates when notes are expanded
+- Add attachment deletion for expanded notes and improve UI
+- Add immediate public toggle functionality in note editor
+- Implement random color assignment for new boards
+- Add styled toast notifications with animations
+- Implement comprehensive mobile support improvements
+
+### 🐛 Bug Fixes
+
+- Correct note priority default in editor
+- Ensure date picker works in note editor modal
+- Ensure board color persistence on page reload
+- Make color selection for boards persistent
 
 ### 💼 Other
 
 - Create /tmp in docker image for uploads (Fix #5)
+- Release v0.13.0
+
+### 📚 Documentation
+
+- Updated screenshot
+- General improvements and fixes
+- Update documentation with mobile support features
 
 ## [0.12.0] - 2025-07-02
 

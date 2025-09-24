@@ -229,6 +229,9 @@ export function initializeColorSchemeSelector () {
   colorSchemeSwitcher.addEventListener('change', async (e) => {
     const newScheme = e.target.value
 
+    // Save to localStorage for persistence
+    localStorage.setItem('colorScheme', newScheme)
+
     // Save to board if we have a current board
     if (state.currentBoardName) {
       try {

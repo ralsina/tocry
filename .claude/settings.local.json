@@ -11,7 +11,10 @@
       "Bash(ameba:*)",
       "Bash(git add:*)",
       "Bash(git reset:*)",
-      "Bash(crystal build:*)"
+      "Bash(crystal build:*)",
+      "Bash(sudo:*)",
+      "Bash(./install.sh:*)",
+      "Bash(./run_integration.sh:*)"
     ],
     "deny": [],
     "ask": []

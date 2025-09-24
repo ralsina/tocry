@@ -59,8 +59,8 @@ module ToCry::Endpoints::Boards
     end
 
     board_details = {
-      name: board.name,
-      color_scheme: color_scheme
+      name:         board.name,
+      color_scheme: color_scheme,
     }
 
     ToCry::Endpoints::Helpers.success_response(env, board_details)

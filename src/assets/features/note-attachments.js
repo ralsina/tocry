@@ -168,7 +168,13 @@ async function handleFileSelection (file) {
 
 export async function handleAttachmentDelete (event) {
   const attachmentId = event.target.dataset.attachmentId
-  const noteId = event.target.closest('.note-card')?.dataset.noteId
+  // First try to get noteId from the closest note-card (for inline attachments)
+  let noteId = event.target.closest('.note-card')?.dataset.noteId
+
+  // If not found in a note-card, use the current note for attachments (for modal)
+  if (!noteId && currentNoteForAttachments) {
+    noteId = currentNoteForAttachments.id
+  }
 
   if (!attachmentId || !noteId) {
     showNotification('Attachment or note not found.', 'error')
@@ -177,13 +183,11 @@ export async function handleAttachmentDelete (event) {
 
   // Find the note in the current state
   let targetNote = null
-  let foundInLane = null
 
   for (const lane of state.currentLanes || []) {
     const note = lane.notes.find(n => n.id === noteId)
     if (note) {
       targetNote = note
-      foundInLane = lane
       break
     }
   }
