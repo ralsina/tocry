@@ -29,8 +29,18 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Custom styles, loaded last to allow overrides of all libraries -->
     <link rel="stylesheet" href="/style.css" />
+
+    <!-- Demo-specific styles (only included in demo builds) -->
+    <link rel="stylesheet" href="/demo.css" />
   </head>
   <body>
+    <!-- Demo banner (only shown in demo builds) -->
+    <div class="demo-banner" style="display: none;">
+      🎉 This is a demo instance of ToCry!
+      <a href="https://github.com/ralsina/tocry" target="_blank" rel="noopener noreferrer">Get your own copy</a> |
+      <a href="https://tocry.ralsina.me" target="_blank" rel="noopener noreferrer">Learn more</a>
+    </div>
+
     <header class="page-header">
       <div class="container">
         <nav>
@@ -206,6 +216,11 @@
     <!-- Container for toast notifications -->
     <div id="notification-container"></div>
 
+    <!-- Demo-specific elements (only shown in demo builds) -->
+    <button class="demo-reset-button" id="demo-reset-btn" title="Reset demo data" style="display: none;">
+      🔄 Reset Demo
+    </button>
+
     <!-- Modal for Permalink -->
     <dialog id="modal-permalink">
       <article>
@@ -252,5 +267,12 @@
     </dialog>
 
     <script type="module" src="/app.js" defer></script>
+
+    <!-- Demo mode detection for JavaScript -->
+    {% if flag?(:demo) %}
+    <script>
+      window.DEMO_MODE = true;
+    </script>
+    {% end %}
   </body>
 </html>

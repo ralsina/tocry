@@ -13,6 +13,16 @@ import { initializeMobile } from './features/mobile.js'
 import { initializeMobileDragDrop, handleMobileDragDropResize } from './features/mobile-dnd.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
 
+// Conditionally import demo functionality
+let initializeDemo = null
+if (typeof DEMO_MODE !== 'undefined' && DEMO_MODE) {
+  import('./demo.js').then(module => {
+    initializeDemo = module.initializeDemo
+  }).catch(err => {
+    console.error('Failed to load demo module:', err)
+  })
+}
+
 // Utility function to simplify event listener setup
 function setupEventListener (selector, event, handler) {
   const element = document.getElementById(selector) || document.querySelector(selector)
@@ -327,5 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', createParticleAnimation)
   } else {
     createParticleAnimation()
+  }
+
+  // Initialize demo functionality if available
+  if (initializeDemo) {
+    initializeDemo()
   }
 })

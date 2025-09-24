@@ -6,10 +6,22 @@ require "./lane"  # Include the Lane class from its new file
 require "./board" # Include the Board class from its new file
 require "./board_manager"
 
+# Compile-time demo mode detection
+{% if flag?(:demo) %}
+  puts "Building ToCry in DEMO mode"
+{% end %}
+
 module ToCry
   VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
 
   Log = ::Log.for(self)
+
+  # Compile-time demo mode flag
+  {% if flag?(:demo) %}
+    DEMO_MODE = true
+  {% else %}
+    DEMO_MODE = false
+  {% end %}
 
   # A class variable to store the configured data directory.
   # It's initialized with a default, but will be set by `main.cr` at startup.

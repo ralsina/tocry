@@ -1,0 +1,210 @@
+/* Demo-specific styles - only included in demo builds */
+
+/* Demo banner */
+.demo-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.demo-banner a {
+  color: white;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.demo-banner a:hover {
+  text-decoration: none;
+}
+
+/* Add space for demo banner */
+body.has-demo-banner {
+  padding-top: 60px;
+}
+
+/* Demo feature callout */
+.demo-feature-callout {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.demo-feature-callout h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.demo-feature-callout .cta-button {
+  display: inline-block;
+  background: white;
+  color: #f5576c;
+  padding: 0.75rem 2rem;
+  border-radius: 2rem;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.demo-feature-callout .cta-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Demo notification styles */
+.demo-notification {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--card-background-color);
+  border: 2px solid var(--primary-color);
+  border-radius: var(--border-radius);
+  padding: 1rem 1.5rem;
+  max-width: 400px;
+  box-shadow: var(--card-box-shadow);
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+}
+
+.demo-notification h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.demo-notification p {
+  margin: 0;
+  color: var(--color);
+}
+
+.demo-notification .close-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--muted-color);
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.demo-notification .close-button:hover {
+  background-color: var(--muted-background-color);
+}
+
+/* Demo tour highlight */
+.demo-tour-highlight {
+  position: relative;
+  z-index: 999;
+}
+
+.demo-tour-highlight::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border: 3px solid var(--primary-color);
+  border-radius: var(--border-radius);
+  animation: pulse 2s infinite;
+  z-index: -1;
+}
+
+/* Mobile demo optimizations */
+@media (max-width: 768px) {
+  .demo-banner {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  body.has-demo-banner {
+    padding-top: 50px;
+  }
+
+  .demo-notification {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+  }
+
+  .demo-feature-callout {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+/* Demo reset button */
+.demo-reset-button {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--card-box-shadow);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.demo-reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Mobile demo button position */
+@media (max-width: 768px) {
+  .demo-reset-button {
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}

@@ -6,12 +6,24 @@ require "ecr" # Required for render
 require "baked_file_system"
 require "docopt"         # Keep docopt
 require "./auth"         # Add auth (defines Google OAuth routes and current_user helper)
-require "./endpoints"    # Add this line to include your new endpoints file
 require "./auth_helpers" # New: Contains authentication mode setup functions
+
+# Conditionally require endpoints - use demo endpoints in demo mode, regular endpoints otherwise
+{% if flag?(:demo) %}
+  require "./demo_endpoints"
+{% else %}
+  require "./endpoints"    # Add this line to include your new endpoints file
+{% end %}
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
 require "sepia"
+
+# Conditionally require demo modules
+{% if flag?(:demo) %}
+  require "./demo_data"
+  require "./demo_board_manager"
+{% end %}
 
 DOC = <<-DOCOPT
 ToCry, a list of things To Do. Or Cry.
@@ -48,7 +60,12 @@ def main
   safe_mode = args["--safe-mode"] == true               # Safely parse --safe-mode argument as boolean
 
   # Initialize data environment using the helper
-  ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true)
+  {% if flag?(:demo) %}
+    puts "Starting in DEMO mode with sample data"
+    ToCry.board_manager = ToCry::DemoBoardManager.new(safe_mode)
+  {% else %}
+    ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true)
+  {% end %}
 
   ToCry::Log.info { "Using data path: #{data_path}" }
   ToCry::Log.info { "Safe mode enabled: #{safe_mode}" }
@@ -123,6 +140,7 @@ def main
     end
   end
 
+  # Add baked asset handler after routes are defined
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
   add_handler baked_asset_handler
 
