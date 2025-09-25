@@ -2,6 +2,7 @@ require "./migrations/v0_1_0"
 require "./migrations/v0_6_1"
 require "./migrations/v0_8_0"
 require "./migrations/v0_10_0"
+require "./migrations/v0_15_0"
 
 module ToCry
   # The Migration module handles evolving the data directory from one version
@@ -82,6 +83,12 @@ module ToCry
       # This runs for any version before 0.10.0.
       if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.10.0"))
         migrate_to_centralized_notes
+      end
+
+      # Migration 5: migrate color schemes from separate JSON files to Board objects.
+      # This runs for any version before 0.15.0.
+      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.15.0"))
+        migrate_color_schemes_to_sepia
       end
     end
   end

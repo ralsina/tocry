@@ -45,22 +45,9 @@ module ToCry::Endpoints::Boards
       next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
     end
 
-    # Check if board has a color scheme
-    color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
-    color_scheme = nil
-
-    if File.exists?(color_scheme_file)
-      begin
-        color_data = JSON.parse(File.read(color_scheme_file))
-        color_scheme = color_data["color_scheme"].as_s
-      rescue
-        # If file is corrupted or invalid, ignore it
-      end
-    end
-
     board_details = {
       name:         board.name,
-      color_scheme: color_scheme,
+      color_scheme: board.color_scheme,
     }
 
     ToCry::Endpoints::Helpers.success_response(env, board_details)
@@ -80,10 +67,10 @@ module ToCry::Endpoints::Boards
     user = ToCry.get_current_user_id(env)
     board = ToCry.board_manager.create(new_board_name, user)
 
-    # Save color scheme if provided
+    # Set color scheme if provided
     if payload.color_scheme
-      color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
-      File.write(color_scheme_file, {color_scheme: payload.color_scheme}.to_json)
+      board.color_scheme = payload.color_scheme
+      board.save
     end
 
     ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
@@ -142,9 +129,9 @@ module ToCry::Endpoints::Boards
       next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
     end
 
-    # Save color scheme
-    color_scheme_file = File.join(board.canonical_path, "color_scheme.json")
-    File.write(color_scheme_file, {color_scheme: payload.color_scheme}.to_json)
+    # Save color scheme to board object
+    board.color_scheme = payload.color_scheme
+    board.save
 
     ToCry::Endpoints::Helpers.success_response(env, {success: "Color scheme updated for board '#{board_name}'."})
   end
