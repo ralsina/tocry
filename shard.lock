@@ -26,7 +26,7 @@ shards:
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.7.1
+    version: 1.7.2
 
   kemal-basic-auth:
     git: https://github.com/kemalcr/kemal-basic-auth.git
@@ -34,7 +34,7 @@ shards:
 
   kemal-session:
     git: https://github.com/kemalcr/kemal-session.git
-    version: 1.2.0
+    version: 1.3.0
 
   multi_auth:
     git: https://github.com/msa7/multi_auth.git
@@ -46,4 +46,4 @@ shards:
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.1.0+git.commit.c7d608986ea2a356a872b3608b8b0d512765749a
+    version: 0.1.0+git.commit.838013f4a52bfa94458db7def10f2735e2638c2b
