@@ -4,7 +4,7 @@ require "json"       # For JSON serialization
 require "sepia"      # For Sepia::Container
 
 module ToCry
-  class Lane
+  class Lane < Sepia::Object
     include JSON::Serializable
     include Sepia::Container
 

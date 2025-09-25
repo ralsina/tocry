@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   timeout: 30 * 1000, // Increased to 30 seconds for better stability
+  workers: 1, // Set to 1 to avoid race conditions in board creation
   expect: {
     timeout: 5000
   },
@@ -14,7 +15,7 @@ export default defineConfig({
   },
   webServer: {
     // Command to start the backend server in test mode.
-    command: '../bin/tocry --data-path=testdata --safe-mode',
+    command: '../bin/tocry --data-path=testdata',
     url: 'http://localhost:3000',
     timeout: 30 * 1000, // Increased timeout to give the server more time to start
     reuseExistingServer: !process.env.CI
@@ -32,7 +33,7 @@ export default defineConfig({
         trace: 'on-first-retry'
       },
       webServer: {
-        command: '../bin/tocry --data-path=testdata --safe-mode',
+        command: '../bin/tocry --data-path=testdata-no-auth',
         url: 'http://localhost:3000',
         timeout: 10 * 1000,
         reuseExistingServer: !process.env.CI
@@ -48,7 +49,7 @@ export default defineConfig({
         trace: 'on-first-retry'
       },
       webServer: {
-        command: 'TOCRY_AUTH_USER=testuser TOCRY_AUTH_PASS=testpass ../bin/tocry --data-path=testdata --safe-mode',
+        command: 'TOCRY_AUTH_USER=testuser TOCRY_AUTH_PASS=testpass ../bin/tocry --data-path=testdata-simple-auth',
         url: 'http://localhost:3000',
         timeout: 10 * 1000,
         reuseExistingServer: !process.env.CI
@@ -63,7 +64,7 @@ export default defineConfig({
         }
       },
       webServer: {
-        command: 'TOCRY_FAKE_AUTH_USER=test@example.com GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata --safe-mode',
+        command: 'TOCRY_FAKE_AUTH_USER=test@example.com GOOGLE_CLIENT_ID=dummy GOOGLE_CLIENT_SECRET=dummy ../bin/tocry --data-path=testdata-google-auth',
         url: 'http://localhost:3000',
         timeout: 10 * 1000,
         reuseExistingServer: !process.env.CI

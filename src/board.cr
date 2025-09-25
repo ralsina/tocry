@@ -6,7 +6,7 @@ require "./lane" # For ToCry::Lane
 require "./note" # For ToCry::Note
 
 module ToCry
-  class Board
+  class Board < Sepia::Object
     include JSON::Serializable
     include Sepia::Container
 

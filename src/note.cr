@@ -53,7 +53,7 @@ module ToCry
     end
   end
 
-  class Note
+  class Note < Sepia::Object
     include JSON::Serializable
     include Sepia::Serializable
 
