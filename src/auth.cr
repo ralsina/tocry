@@ -13,7 +13,7 @@ MultiAuth.config("google", ENV.fetch("GOOGLE_CLIENT_ID", "YOUR_ID"), ENV.fetch("
 # Gets the currently logged-in user from the session, if any.
 def current_user(env)
   if user_id = env.session.string?("user_id")
-    User.find_by_id(user_id)
+    ToCry::User.find_by_id(user_id)
   else
     nil
   end
@@ -67,14 +67,14 @@ get "/auth/:provider/callback" do |env| # Corrected: Top-level route definition
   name = auth_user.name || "Unknown User"
 
   # Find an existing user or create a new one.
-  user = User.find_by_email(email) ||
-         User.new(
+  user = ToCry::User.find_by_email(email) ||
+         ToCry::User.new(
            email: email,
            name: name,
            provider: provider
          ).save
 
-  env.session.string("user_id", user.id)
+  env.session.string("user_id", user.sepia_id)
   env.redirect "/"
 end
 

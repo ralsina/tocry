@@ -1,7 +1,7 @@
 require "./spec_helper"
 require "file_utils"
 require "../src/tocry"   # For ToCry.data_directory and ToCry.board_manager
-require "../src/user.cr" # For User class and USERS constant
+require "../src/user.cr" # For ToCry::User class
 
 describe ToCry::BoardManager do
   data_dir = "test_board_manager_data"
@@ -40,7 +40,7 @@ describe ToCry::BoardManager do
     user_email = "test_user@example.com"
     board_name = "My New Board"
 
-    User.new(user_email, "Test User", "test").save
+    ToCry::User.new(user_email, "Test User", "test").save
 
     created_board = board_manager.create(board_name, user_email)
 
@@ -69,8 +69,8 @@ describe ToCry::BoardManager do
     user2_email = "user2@example.com"
     board_name = "Shared Board"
 
-    User.new(user1_email, "User One", "test").save
-    User.new(user2_email, "User Two", "test").save
+    ToCry::User.new(user1_email, "User One", "test").save
+    ToCry::User.new(user2_email, "User Two", "test").save
 
     # User 1 creates a board
     board = board_manager.create(board_name, user1_email)
@@ -104,9 +104,9 @@ describe ToCry::BoardManager do
     user3_email = "user3@example.com"
     board_name = "Private Board"
 
-    User.new(user1_email, "User One", "test").save
-    User.new(user2_email, "User Two", "test").save
-    User.new(user3_email, "User Three", "test").save
+    ToCry::User.new(user1_email, "User One", "test").save
+    ToCry::User.new(user2_email, "User Two", "test").save
+    ToCry::User.new(user3_email, "User Three", "test").save
 
     # User 1 creates a board
     board = board_manager.create(board_name, user1_email)
@@ -126,8 +126,8 @@ describe ToCry::BoardManager do
     user2_email = "user2@example.com"
     board_name = "Already Shared Board"
 
-    User.new(user1_email, "User One", "test").save
-    User.new(user2_email, "User Two", "test").save
+    ToCry::User.new(user1_email, "User One", "test").save
+    ToCry::User.new(user2_email, "User Two", "test").save
 
     # User 1 creates a board
     board = board_manager.create(board_name, user1_email)
@@ -147,8 +147,8 @@ describe ToCry::BoardManager do
     user2_email = "user2@example.com"
     board_name = "Board to Delete"
 
-    User.new(user1_email, "User One", "test").save
-    User.new(user2_email, "User Two", "test").save
+    ToCry::User.new(user1_email, "User One", "test").save
+    ToCry::User.new(user2_email, "User Two", "test").save
 
     # User 1 creates a board
     board = board_manager.create(board_name, user1_email)
@@ -207,8 +207,8 @@ describe ToCry::BoardManager do
     old_board_name = "Old Board Name"
     new_board_name = "New Board Name"
 
-    User.new(user1_email, "User One", "test").save
-    User.new(user2_email, "User Two", "test").save
+    ToCry::User.new(user1_email, "User One", "test").save
+    ToCry::User.new(user2_email, "User Two", "test").save
 
     # User 1 creates a board
     board = board_manager.create(old_board_name, user1_email)
@@ -284,7 +284,7 @@ describe ToCry::BoardManager do
     board_name1 = "Board One"
     board_name2 = "Board Two"
 
-    User.new(user_email, "Test User", "test").save
+    ToCry::User.new(user_email, "Test User", "test").save
 
     board_manager.create(board_name1, user_email)
     board_manager.create(board_name2, user_email)

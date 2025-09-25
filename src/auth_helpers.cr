@@ -34,13 +34,13 @@ def setup_google_auth_mode
 
       # Only create a new session if the user is not logged in or is changing.
       # Simplified for testing: always ensure the fake user is logged in for the request.
-      user = User.find_by_email(fake_user_email) ||
-             User.new(
+      user = ToCry::User.find_by_email(fake_user_email) ||
+             ToCry::User.new(
                email: fake_user_email,
                name: fake_user_email, # Use email as name for uniqueness
                provider: "fake_google"
              ).save
-      env.session.string("user_id", user.id)
+      env.session.string("user_id", user.sepia_id)
       ToCry::Log.info { "Impersonating user via fake session: #{fake_user_email}" }
     end
     return
