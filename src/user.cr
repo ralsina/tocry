@@ -13,13 +13,14 @@ module ToCry
 
     property email : String
     property name : String
-    property provider : String # e.g., "root", "basic", "google"
+    property provider : String # e.g., "noauth", "basic", "google", "fake_google"
     property is_root : Bool = false # Special flag for root user access
 
     # Constructor that uses email as sepia_id (similar to Board using name)
     def initialize(@email : String, @name : String, @provider : String)
       super(@email) # Pass email as sepia_id to Sepia::Object
-      @is_root = (@email == "root" && (@provider == "noauth" || @provider == "basic"))
+      # Root user identification should be explicit via is_root flag, not inferred
+      @is_root = (@email == "root")
     end
 
     # Default constructor for deserialization (Sepia needs this)
@@ -70,17 +71,22 @@ module ToCry
       end
 
       # Create root user if it doesn't exist
+      # Provider reflects the actual auth mode being used
+      provider = if ENV["TOCRY_AUTH_USER"]? && ENV["TOCRY_AUTH_PASS"]?
+                   "basic"
+                 else
+                   "noauth"
+                 end
+
       root_user = User.new(
         email: "root",
         name: "Root User",
-        provider: "system"
+        provider: provider
       )
       root_user.is_root = true
       root_user.save
       root_user
-    end
-
-    # Helper method to check if user has access to all boards (root privileges)
+    end    # Helper method to check if user has access to all boards (root privileges)
     def has_global_board_access? : Bool
       @is_root
     end
