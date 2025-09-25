@@ -1,32 +1,88 @@
 require "uuid"
+require "sepia"
 
-# A simple in-memory store for users for this example.
-# In a real application, you would use a proper database.
-USERS = {} of String => User
+module ToCry
+  # User class with Sepia persistence for multi-auth mode support.
+  # Handles three authentication modes:
+  # 1. No Auth: Uses a single "root" user with access to all boards
+  # 2. Basic Auth: Uses a single "root" user with access to all boards
+  # 3. Google Auth: Creates persistent user records with email-based IDs
+  class User < Sepia::Object
+    include JSON::Serializable
+    include Sepia::Container
 
-class User
-  property id : String
-  property email : String
-  property name : String
-  property provider : String # e.g., "local", "github", "google"
+    property email : String
+    property name : String
+    property provider : String # e.g., "root", "basic", "google"
+    property is_root : Bool = false # Special flag for root user access
 
-  def initialize(@email, @name, @provider)
-    @id = UUID.random.to_s
-  end
+    # Constructor that uses email as sepia_id (similar to Board using name)
+    def initialize(@email : String, @name : String, @provider : String)
+      super(@email) # Pass email as sepia_id to Sepia::Object
+      @is_root = (@email == "root" && (@provider == "noauth" || @provider == "basic"))
+    end
 
-  # "Saves" the user to our in-memory store
-  def save
-    USERS[self.email] = self
-    self
-  end
+    # Default constructor for deserialization (Sepia needs this)
+    def initialize(@email : String = "", @name : String = "", @provider : String = "", @is_root : Bool = false)
+    end
 
-  # Finds a user by their email
-  def self.find_by_email(email)
-    USERS[email]?
-  end
+    # Saves the user using Sepia persistence (inherited from Sepia::Object)
+    def save
+      super
+      self
+    end
 
-  # Finds a user by their ID
-  def self.find_by_id(id)
-    USERS.values.find { |user| user.id == id }
+    # Finds a user by their email using Sepia
+    def self.find_by_email(email : String) : User?
+      # For root user in no-auth/basic-auth mode, ensure it exists
+      if email == "root"
+        return ensure_root_user
+      end
+
+      # For other users, search in Sepia storage
+      # Use the sepia_id which would be the email for users
+      begin
+        ToCry::User.load(email)
+      rescue
+        nil
+      end
+    end
+
+    # Finds a user by their ID (sepia_id) using Sepia
+    # In our case, sepia_id is the email for regular users or "root" for root user
+    def self.find_by_id(id : String) : User?
+      begin
+        ToCry::User.load(id)
+      rescue
+        nil
+      end
+    end
+
+    # Ensures the root user exists for no-auth/basic-auth modes
+    # This user has special privileges to access all boards
+    private def self.ensure_root_user : User
+      # Try to load existing root user
+      begin
+        existing_root = ToCry::User.load("root")
+        return existing_root if existing_root.is_root
+      rescue
+        # Root user doesn't exist yet, will create below
+      end
+
+      # Create root user if it doesn't exist
+      root_user = User.new(
+        email: "root",
+        name: "Root User",
+        provider: "system"
+      )
+      root_user.is_root = true
+      root_user.save
+      root_user
+    end
+
+    # Helper method to check if user has access to all boards (root privileges)
+    def has_global_board_access? : Bool
+      @is_root
+    end
   end
 end

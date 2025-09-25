@@ -3,6 +3,7 @@ require "./migrations/v0_6_1"
 require "./migrations/v0_8_0"
 require "./migrations/v0_10_0"
 require "./migrations/v0_15_0"
+require "./migrations/v0_16_0"
 
 module ToCry
   # The Migration module handles evolving the data directory from one version
@@ -89,6 +90,12 @@ module ToCry
       # This runs for any version before 0.15.0.
       if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.15.0"))
         migrate_color_schemes_to_sepia
+      end
+
+      # Migration 6: migrate User class from in-memory storage to Sepia persistence.
+      # This runs for any version before 0.16.0.
+      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.16.0"))
+        migrate_users_to_sepia
       end
     end
   end
