@@ -13,6 +13,8 @@ module ToCry::Migration
   # - User sessions persist across restarts
   # - Improved user lookup using sepia_id (email) instead of searching all users
   # - Root user gets special is_root flag for global board access privileges
+  # - Provider field now accurately reflects authentication method (noauth/basic/google)
+  # - Fixed provider consistency: root users get provider based on actual auth mode
   # - Migration handles both new installations and updates to existing root users
   private def self.migrate_users_to_sepia
     # Ensure the root user exists for no-auth/basic-auth modes
