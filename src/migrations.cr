@@ -2,10 +2,7 @@ require "./migrations/v0_1_0"
 require "./migrations/v0_6_1"
 require "./migrations/v0_8_0"
 require "./migrations/v0_10_0"
-require "./migrations/v0_15_0"
-require "./migrations/v0_16_0"
-require "./migrations/v0_17_0"
-require "./migrations/v0_18_0"
+require "./migrations/v0_15_0_consolidated"
 
 module ToCry
   # The Migration module handles evolving the data directory from one version
@@ -88,28 +85,11 @@ module ToCry
         migrate_to_centralized_notes
       end
 
-      # Migration 5: migrate color schemes from separate JSON files to Board objects.
+      # Migration 5: Complete Sepia integration (consolidated migration).
       # This runs for any version before 0.15.0.
+      # Combines: color schemes, user persistence, upload management, and BoardManager Sepia migration.
       if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.15.0"))
-        migrate_color_schemes_to_sepia
-      end
-
-      # Migration 6: migrate User class from in-memory storage to Sepia persistence.
-      # This runs for any version before 0.16.0.
-      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.16.0"))
-        migrate_users_to_sepia
-      end
-
-      # Migration 7: migrate upload management to use Sepia for metadata tracking.
-      # This runs for any version before 0.17.0.
-      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.17.0"))
-        migrate_uploads_to_sepia
-      end
-
-      # Migration 8: migrate BoardManager to use Sepia for board indexing and user access.
-      # This runs for any version before 0.18.0.
-      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.18.0"))
-        migrate_board_manager_to_sepia
+        migrate_complete_sepia_integration
       end
     end
   end
