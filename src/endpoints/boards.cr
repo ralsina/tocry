@@ -27,9 +27,8 @@ module ToCry::Endpoints::Boards
   # API Endpoint to get all boards
   get "/boards" do |env|
     user = ToCry.get_current_user_id(env)
-    board_names = ToCry.board_manager.list(user).map { |uuid|
-      ToCry.board_manager.@boards[uuid].name
-    }
+    # Get board names using the new BoardReference system
+    board_names = ToCry::BoardReference.accessible_to_user(user).map(&.board_name)
 
     ToCry::Endpoints::Helpers.success_response(env, board_names)
   end
