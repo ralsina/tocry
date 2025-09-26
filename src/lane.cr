@@ -1,4 +1,4 @@
-require "file_utils" # For File.join, mkdir_p, symlink, Dir.glob, File.delete
+require "file_utils" # For File.join and mkdir_p
 require "./note"     # Lane contains Notes
 require "json"       # For JSON serialization
 require "sepia"      # For Sepia::Container

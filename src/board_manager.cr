@@ -15,7 +15,7 @@ module ToCry
   end
 
   # The BoardManager is responsible for discovering, loading, and managing
-  # multiple Board instances. It uses Sepia-based BoardIndex and UserBoardAccess
+  # multiple Board instances. It uses Sepia-based BoardIndex and BoardReference
   # classes for efficient board discovery and user access management, replacing
   # the previous filesystem scanning and symlink-based approach.
   #

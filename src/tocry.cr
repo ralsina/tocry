@@ -99,28 +99,4 @@ module ToCry
     Log.error(exception: ex) { "Failed to create user directory for '#{user_id}'" }
     # We don't re-raise, as this is a non-critical background task for now.
   end
-
-  # Traverses the data directory and identifies broken symlinks.
-  # Returns an array of absolute paths to broken symlinks.
-  def self.find_broken_symlinks : Array(String)
-    broken_symlinks = [] of String
-    Log.info { "--- Starting find_broken_symlinks scan in: #{data_directory} ---" }
-    Dir.glob([File.join(data_directory, "**/*")]).each do |path|
-      Log.info { "  Scanning path: #{path}" }
-      if File.symlink?(path)
-        Log.info { "    Found symlink: #{path}" }
-        begin
-          resolved_path = File.realpath(path)
-          Log.info { "    Symlink target resolved to: #{resolved_path}" }
-        rescue ex
-          Log.error { "    ERROR: Symlink #{path} is broken or unresolvable. Exception: #{ex.message}" }
-          broken_symlinks << path
-        end
-      else
-        Log.info { "    Not a symlink: #{path}" }
-      end
-    end
-    Log.info { "--- Finished find_broken_symlinks scan. Broken links found: #{broken_symlinks.size} ---" }
-    broken_symlinks
-  end
 end
