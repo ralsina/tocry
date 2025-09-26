@@ -4,6 +4,7 @@ require "json"    # For JSON serialization
 require "ecr"     # For ECR templating
 require "./lane"  # Include the Lane class from its new file
 require "./board" # Include the Board class from its new file
+require "./upload" # Include the Upload class for file management
 require "./board_manager"
 
 module ToCry

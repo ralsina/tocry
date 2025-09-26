@@ -4,6 +4,7 @@ require "./migrations/v0_8_0"
 require "./migrations/v0_10_0"
 require "./migrations/v0_15_0"
 require "./migrations/v0_16_0"
+require "./migrations/v0_17_0"
 
 module ToCry
   # The Migration module handles evolving the data directory from one version
@@ -96,6 +97,12 @@ module ToCry
       # This runs for any version before 0.16.0.
       if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.16.0"))
         migrate_users_to_sepia
+      end
+
+      # Migration 7: migrate upload management to use Sepia for metadata tracking.
+      # This runs for any version before 0.17.0.
+      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.17.0"))
+        migrate_uploads_to_sepia
       end
     end
   end

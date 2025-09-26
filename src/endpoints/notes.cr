@@ -1,6 +1,7 @@
 # /home/ralsina/code/tocry/src/endpoints/notes.cr
 require "kemal"
 require "../tocry"
+require "../upload" # Include the new Upload class
 require "./helpers"
 require "uuid"
 require "file_utils"
@@ -240,34 +241,57 @@ module ToCry::Endpoints::Notes
     # No further access check is needed here as it was done by BoardManager.list(user)
     _ = containing_board # Mark as used to avoid linter warning
 
+    user_id = ToCry.get_current_user_id(env)
     uploaded_file = env.params.files.values.first?
 
     if uploaded_file.nil?
       next ToCry::Endpoints::Helpers.error_response(env, "No file uploaded.")
     end
 
+    # Extract file information
+    original_filename = uploaded_file.filename.as(String)
+    base_filename = File.basename(original_filename, File.extname(original_filename))
+    extension = File.extname(original_filename)
+    content_type = uploaded_file.headers["Content-Type"]?
+
     # Create a directory for attachments specific to this note
     attachments_dir = File.join(ToCry.data_directory, "uploads", "attachments", note_id)
     FileUtils.mkdir_p(attachments_dir)
 
     # Generate a unique filename for the uploaded file
-    original_filename = uploaded_file.filename.as(String)
-    base_filename = File.basename(original_filename, File.extname(original_filename))
-    extension = File.extname(original_filename)
     sanitized_base_filename = ToCry::Endpoints::Helpers.sanitize_filename(base_filename)
     unique_filename = "#{UUID.random}_#{sanitized_base_filename}#{extension}"
     save_path = File.join(attachments_dir, unique_filename)
+    relative_path = File.join("uploads", "attachments", note_id, unique_filename)
 
     # Save the file
     File.open(save_path, "w") do |outf|
       IO.copy(uploaded_file.tempfile, outf)
     end
 
-    # Update the note's attachments field
+    # Create Upload record with Sepia persistence
+    upload = ToCry::Upload.new(
+      original_filename: original_filename,
+      file_extension: extension,
+      file_size: uploaded_file.tempfile.size.to_i64,
+      upload_type: "attachment",
+      uploaded_by: user_id,
+      relative_path: relative_path,
+      content_type: content_type,
+      note_id: note_id
+    )
+    upload.save
+
+    # Update the note's attachments field with the upload ID (not just filename)
     existing_note.add_attachment(unique_filename)
     existing_note.save
 
-    ToCry::Endpoints::Helpers.success_response(env, {success: "File '#{original_filename}' attached to note '#{note_id}'.", filename: unique_filename})
+    ToCry::Endpoints::Helpers.success_response(env, {
+      success: "File '#{original_filename}' attached to note '#{note_id}'.",
+      filename: unique_filename,
+      upload_id: upload.upload_id,
+      file_size: upload.file_size
+    })
   end
 
   delete "/n/:note_uuid/:attachment_uuid" do |env|
@@ -290,13 +314,32 @@ module ToCry::Endpoints::Notes
     # Remove the attachment from the note's attachments list
     existing_note.remove_attachment(attachment_uuid)
 
-    # Delete the actual attachment file from the filesystem
-    attachment_file_path = File.join(ToCry.data_directory, "uploads", "attachments", note_uuid, attachment_uuid)
-    if File.exists?(attachment_file_path)
-      FileUtils.rm(attachment_file_path)
-      ToCry::Log.info { "Deleted attachment file: '#{attachment_file_path}'" }
+    # Find and delete the Upload record and associated file
+    note_uploads = ToCry::Upload.find_by_note(note_uuid)
+    upload_to_delete = note_uploads.find { |upload|
+      File.basename(upload.relative_path) == attachment_uuid
+    }
+
+    if upload_to_delete
+      # Delete the physical file
+      if upload_to_delete.delete_file
+        ToCry::Log.info { "Deleted attachment file: '#{upload_to_delete.full_path}'" }
+      else
+        ToCry::Log.warn { "Failed to delete attachment file: '#{upload_to_delete.full_path}'" }
+      end
+
+      # Delete the Upload record
+      upload_to_delete.delete # Remove from Sepia storage
+      ToCry::Log.info { "Deleted upload record for attachment '#{attachment_uuid}'" }
     else
-      ToCry::Log.warn { "Attachment file not found on disk: '#{attachment_file_path}'. Removing from note's attachments list anyway." }
+      # Fallback to old method if Upload record not found (for backward compatibility)
+      attachment_file_path = File.join(ToCry.data_directory, "uploads", "attachments", note_uuid, attachment_uuid)
+      if File.exists?(attachment_file_path)
+        FileUtils.rm(attachment_file_path)
+        ToCry::Log.info { "Deleted attachment file (legacy): '#{attachment_file_path}'" }
+      else
+        ToCry::Log.warn { "Attachment file not found on disk: '#{attachment_file_path}'. Removing from note's attachments list anyway." }
+      end
     end
 
     # Save the updated note
