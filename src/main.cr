@@ -19,7 +19,6 @@ ToCry, a list of things To Do. Or Cry.
 Usage:
   tocry [options]
   tocry (-h | --help)
-  tocry [--data-path=PATH] [--safe-mode]
   tocry --version
 
 Options:
