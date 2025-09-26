@@ -15,303 +15,178 @@ module ToCry
   end
 
   # The BoardManager is responsible for discovering, loading, and managing
-  # multiple Board instances. It interacts with the filesystem to handle
-  # the multi-board data structure, using the globally configured data directory.
+  # multiple Board instances. It uses Sepia-based BoardIndex and UserBoardAccess
+  # classes for efficient board discovery and user access management, replacing
+  # the previous filesystem scanning and symlink-based approach.
   #
-  # This class is NOT implemented using Sepia, because it manages the users
-  # and boards at a higher level and persists in a complicated way with
-  # an in-memory cache.
+  # This class now uses Sepia for board indexing and user-board relationships,
+  # providing better performance, reliability, and extensibility.
   #
   class BoardManager
     Log = ::Log.for(self)
-    # Maps board uuid (the sepia_id) to its Board instance
-    # { board_name => { uuid: "...", board: Board_instance } }
+    # In-memory cache for loaded boards (board_uuid => Board instance)
     @boards = {} of String => Board
-    property board_base_dir : String = File.join(ToCry.data_directory, "boards")
     property safe_mode_enabled : Bool
 
     def initialize(@safe_mode_enabled : Bool)
-      # Ensure the base data directory for boards exists
-      FileUtils.mkdir_p(board_base_dir)
-
-      # Populate the board cache by scanning the new structure
-      scan_boards_directory
+      # No need for filesystem scanning - Sepia handles persistence
+      # Cache will be populated on-demand when boards are accessed
     end
 
-    # Scans the boards directory and populates the in-memory cache.
-    private def scan_boards_directory
-      @boards.clear
+    # Get a cached board or load it from Sepia storage
+    private def get_board(board_uuid : String) : Board?
+      # Check cache first
+      if cached_board = @boards[board_uuid]?
+        return cached_board
+      end
 
-      Dir.children(board_base_dir).each do |entry|
-        # Expected format: {UUID}.{name}
-        if match = entry.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(.+)$/)
-          uuid = match[1]
-          name = match[2]
-          board_dir = File.join(board_base_dir, entry)
-
-          if File.symlink?(board_dir)
-            @boards[uuid] = Board.load(uuid, board_dir)
-            @boards[uuid].name = name
-          end
-        else
-          Log.warn { "Found invalid board directory name format: #{entry}" }
-        end
+      # Load from Sepia storage
+      begin
+        board = ToCry::Board.load(board_uuid)
+        @boards[board_uuid] = board # Cache it
+        return board
+      rescue
+        return nil
       end
     end
 
     # Lists all available boards for a given user.
-    # This filters the globally known boards by what's present in the user's specific board directory.
+    # Returns the board UUIDs that the user has references to.
     def list(user : String) : Array(String)
-      user_boards_path = File.join(ToCry.users_base_directory, user, "boards")
-
-      unless File.exists?(user_boards_path)
-        Log.info { "User board directory '#{user_boards_path}' does not exist for user '#{user}'. Returning empty list." }
-        return [] of String
-      end
-
-      user_accessible_board_uuids = [] of String
-      Dir.glob(File.join(user_boards_path, "*"), follow_symlinks: true).each do |entry|
-        entry = File.basename(entry) # Get just the entry name, not the full path
-        # Symlinks are in the format {UUID}.{name}
-        if match = entry.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(.+)$/)
-          user_accessible_board_uuids << match[1] if @boards.has_key?(match[1])
-        else
-          Log.warn { "Found invalid entry format in user board directory '#{user_boards_path}': #{entry}" }
-        end
-      end
-      user_accessible_board_uuids
+      ToCry::BoardReference.accessible_to_user(user).map(&.board_uuid)
     end
 
     # Get a board by name and user combination.
-    # names are unique per user, so this will return the first match.
+    # Names are user-specific, so this searches the user's personal board names.
     def get(name : String, user : String) : Board?
-      # get the board by the combination of name and user
-      list(user).each do |board_uuid|
-        board = @boards[board_uuid]
-        return board if board.name == name
-      end
-      nil
+      # Get all board references for this user
+      user_references = ToCry::BoardReference.accessible_to_user(user)
+
+      # Find the reference with matching name
+      reference = user_references.find { |ref| ref.board_name == name }
+      return nil unless reference
+
+      # Load and return the actual board
+      get_board(reference.board_uuid)
     end
 
     # Creates a new board with the given name.
-    # Also creates a symlink for the user.
+    # Uses Sepia-based BoardIndex and BoardReference for user-specific names.
     def create(name : String, user : String) : Board
+      # Create the board using Sepia
       board = Board.new(name: name)
-      uuid = board.sepia_id
       board.save
+      uuid = board.sepia_id
 
-      # New board directory will be {UUID}.{name}
-      board_full_name = "#{uuid}.#{name}"
-      board_path = File.join(board_base_dir, board_full_name)
+      # Add to board index with the canonical name
+      board_index = ToCry::BoardIndex.new(uuid, name, user)
+      board_index.save
 
-      ToCry.validate_path_within_data_dir(board_path)
-      source_path = Path[board.canonical_path].relative_to(Path[board_path].parent)
+      # Create owner reference for the user (user's personal name for this board)
+      ToCry::BoardReference.create_reference(user, uuid, name, "owner", user)
 
-      FileUtils.ln_s(
-        source_path,
-        board_path,
-      )
+      # Cache the board
       @boards[uuid] = board
 
-      if @safe_mode_enabled
-        broken_links = ToCry.find_broken_symlinks
-        unless broken_links.empty?
-          raise "Operation blocked: Broken symlinks detected after creating canonical board. Please fix: #{broken_links.join(", ")}"
-        end
-      end
-
-      Log.info { "Board '#{name}' created at '#{board_path}'." }
-
-      return board if user == "root"
-
-      # For non-root users, create a symlink in their user directory.
-      # Construct the full path for the symlink: /data/users/{user}/boards/{UUID}.{name}
-      user_board_symlink_path = File.join(
-        ToCry.data_directory,
-        "users",
-        user,
-        "boards",
-        board_full_name
-      )
-
-      # Validate the user-specific path to prevent traversal attacks
-      ToCry.validate_path_within_data_dir(user_board_symlink_path)
-      FileUtils.mkdir_p(File.dirname(user_board_symlink_path)) # Ensure user's boards directory exists
-      # Create a secondary symlink in the user's boards directory
-      source_path = Path[board.canonical_path].relative_to(Path[user_board_symlink_path].parent)
-      FileUtils.ln_s(source_path, user_board_symlink_path) # Create the symlink
-
-      if @safe_mode_enabled
-        broken_links = ToCry.find_broken_symlinks
-        unless broken_links.empty?
-          raise "Operation blocked: Broken symlinks detected after creating user symlink. Please fix: #{broken_links.join(", ")}"
-        end
-      end
-      Log.info { "Symlink created for user '#{user}' from '#{board_path}' to '#{user_board_symlink_path}'." }
-
+      Log.info { "Board '#{name}' (#{uuid}) created and assigned to user '#{user}'" }
       board
     end
 
     # Deletes a board by its name for a given user.
-    # If the user is 'root', the canonical board directory is deleted.
-    # Otherwise, only the user's symlink to the board is removed.
+    # Uses BoardReference-based access control instead of symlink management.
     def delete(name : String, user : String)
-      # Find the board for this user
-      board = nil
-      list(user).each do |user_board|
-        # Check if the board is the one we want to delete
-        if @boards[user_board].name == name
-          # Found the board for this user
-          board = @boards[user_board]
-          break
-        end
-      end
+      # Find the board reference for this user
+      user_references = ToCry::BoardReference.accessible_to_user(user)
+      reference = user_references.find { |ref| ref.board_name == name }
+      return unless reference
 
-      # If the board doesn't exist, do nothing
+      board = get_board(reference.board_uuid)
       return unless board
 
       uuid = board.sepia_id
 
-      if user == "root"
-        @boards.delete(uuid)                                       # remove from the cache
-        FileUtils.rm(File.join(board_base_dir, "#{uuid}.#{name}")) # Remove from boards/uuid.name
-        board.delete                                               # remove from disk totally
+      if reference.owner?
+        # Owner deletes the entire board and all references
+        @boards.delete(uuid)                              # Remove from cache
+        ToCry::BoardIndex.remove(uuid)                    # Remove from board index
 
-        if @safe_mode_enabled
-          broken_links = ToCry.find_broken_symlinks
-          unless broken_links.empty?
-            raise "Operation blocked: Broken symlinks detected after deleting canonical board. Please fix: #{broken_links.join(", ")}"
-          end
-        end
-        Log.info { "Board '#{name}' and its canonical directory '#{board.canonical_path}' deleted by root." }
+        # Remove all board references for this board
+        ToCry::BoardReference.find_by_board(uuid).each(&.delete)
+
+        board.delete                                      # Delete the actual board data
+
+        Log.info { "Board '#{name}' (#{uuid}) and all associated data deleted by owner '#{user}'" }
       else
-        # Non-root user deletes only their symlink because other
-        # users might still have access to the board.
-        user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{name}")
-        ToCry.validate_path_within_data_dir(user_board_symlink_path)
-        if File.symlink?(user_board_symlink_path)
-          FileUtils.rm(user_board_symlink_path)
-
-          if @safe_mode_enabled
-            broken_links = ToCry.find_broken_symlinks
-            unless broken_links.empty?
-              raise "Operation blocked: Broken symlinks detected after deleting user symlink. Please fix: #{broken_links.join(", ")}"
-            end
-          end
-          Log.info { "Symlink for board '#{name}' at '#{user_board_symlink_path}' deleted by user '#{user}'." }
-        else
-          Log.warn { "User '#{user}' attempted to delete symlink for board '#{name}' at '#{user_board_symlink_path}', but it was not found or not a symlink." }
-        end
+        # Non-owner just removes their reference
+        ToCry::BoardReference.remove_reference(user, uuid)
+        Log.info { "Reference to board '#{name}' (#{uuid}) removed for user '#{user}'" }
       end
     end
 
     # Renames an existing board for a given user.
-    # If the user is 'root', the canonical board directory is renamed.
-    # Otherwise, only the user's symlink to the board is renamed.
+    # For regular users: Updates the user's personal name for the board.
+    # For root user: Updates both the canonical board name and their reference.
     def rename(old_name : String, new_name : String, user : String) : Board
+      # Check if new name already exists for this user
       if get(new_name, user)
         raise "Board with name '#{new_name}' already exists."
       end
 
-      board = get(old_name, user)
+      # Find the board reference to rename
+      user_references = ToCry::BoardReference.accessible_to_user(user)
+      reference = user_references.find { |ref| ref.board_name == old_name }
+      raise "Board '#{old_name}' not found for renaming." unless reference
+
+      # Load the board
+      board = get_board(reference.board_uuid)
       raise "Board '#{old_name}' not found for renaming." unless board
 
-      # Verify user access to the board before proceeding
-      unless get(old_name, user) # Use the user-aware get to check accessibility
-        raise "Board '#{old_name}' not found or not accessible to user '#{user}' for renaming."
-      end
+      # Update the user's personal name for this board
+      reference.update_name(new_name)
 
-      if user == "root"
-        rename_canonical_board_directory(board, old_name, new_name)
+      # Special case: if the user is root and is the owner, also update the canonical board name
+      if user == "root" && reference.owner?
+        board.name = new_name
+        board.save
+
+        # Update the board index
+        board_index = ToCry::BoardIndex.find_by_uuid(reference.board_uuid)
+        if board_index
+          board_index.update_name(new_name)
+        end
+
+        # Update cache
+        @boards[reference.board_uuid] = board
+
+        Log.info { "Root user renamed board canonically from '#{old_name}' to '#{new_name}' (#{reference.board_uuid})" }
       else
-        rename_user_board_symlink(board, old_name, new_name, user)
+        Log.info { "User '#{user}' renamed their reference to board (#{reference.board_uuid}) from '#{old_name}' to '#{new_name}'" }
       end
+
       board
     end
 
-    private def rename_canonical_board_directory(board : Board, old_name : String, new_name : String)
-      uuid = board.sepia_id
-      old_board_dir_name = "#{uuid}.#{old_name}"
-      new_board_dir_name = "#{uuid}.#{new_name}"
-
-      old_board_dir_path = File.join(board_base_dir, old_board_dir_name)
-      new_board_dir_path = File.join(board_base_dir, new_board_dir_name)
-
-      ToCry.validate_path_within_data_dir(old_board_dir_path)
-      ToCry.validate_path_within_data_dir(new_board_dir_path)
-
-      FileUtils.mv(old_board_dir_path, new_board_dir_path)
-
-      if @safe_mode_enabled
-        broken_links = ToCry.find_broken_symlinks
-        unless broken_links.empty?
-          raise "Operation blocked: Broken symlinks detected after renaming canonical board directory. Please fix: #{broken_links.join(", ")}"
-        end
-      end
-
-      board.name = new_name # Update the board object's name
-      @boards[uuid] = board # Update the cache with the modified board object
-
-      Log.info { "Board renamed from '#{old_name}' to '#{new_name}' (canonical directory: '#{old_board_dir_path}' to '#{new_board_dir_path}') by root." }
-    end
-
-    private def rename_user_board_symlink(board : Board, old_name : String, new_name : String, user : String)
-      uuid = board.sepia_id
-      old_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{old_name}")
-      new_user_board_symlink_path = File.join(ToCry.users_base_directory, user, "boards", "#{uuid}.#{new_name}")
-
-      ToCry.validate_path_within_data_dir(old_user_board_symlink_path)
-      ToCry.validate_path_within_data_dir(new_user_board_symlink_path)
-
-      FileUtils.mv(old_user_board_symlink_path, new_user_board_symlink_path)
-
-      if @safe_mode_enabled
-        broken_links = ToCry.find_broken_symlinks
-        unless broken_links.empty?
-          raise "Operation blocked: Broken symlinks detected after renaming user symlink. Please fix: #{broken_links.join(", ")}"
-        end
-      end
-      Log.info { "Symlink for board '#{old_name}' renamed to '#{new_name}' at '#{old_user_board_symlink_path}' to '#{new_user_board_symlink_path}' by user '#{user}'." }
-      board
-    end
-
-    # Shares a board from one user to another by creating a symlink.
+    # Shares a board from one user to another.
+    # Creates a new BoardReference with the target user's preferred name.
     def share_board(board_name : String, from_user : String, to_user : String)
-      # 1. Find the board for the `from_user`.
-      board = get(board_name, from_user)
-      raise "Board '#{board_name}' not found for user '#{from_user}'." unless board
+      # Find the board reference for the `from_user`.
+      from_user_references = ToCry::BoardReference.accessible_to_user(from_user)
+      reference = from_user_references.find { |ref| ref.board_name == board_name }
+      raise "Board '#{board_name}' not found for user '#{from_user}'." unless reference
 
-      # 2. Check if the `to_user` already has access.
-      if get(board_name, to_user)
-        Log.info { "Board '#{board_name}' is already shared with user '#{to_user}'." }
+      uuid = reference.board_uuid
+
+      # Check if the `to_user` already has a reference to this board.
+      if ToCry::BoardReference.has_reference?(to_user, uuid)
+        Log.info { "Board (#{uuid}) is already accessible to user '#{to_user}'." }
         return
       end
 
-      # 3. Create the symlink for the `to_user`.
-      uuid = board.sepia_id
-      board_full_name = "#{uuid}.#{board.name}"
+      # Create shared reference for the target user (they can choose their own name)
+      # For now, use the same name as the sharing user, but they can rename it later
+      ToCry::BoardReference.create_reference(to_user, uuid, board_name, "shared", from_user)
 
-      user_board_symlink_path = File.join(
-        ToCry.users_base_directory,
-        to_user,
-        "boards",
-        board_full_name
-      )
-      board_path = Path[board.canonical_path].relative_to(Path[user_board_symlink_path].parent)
-
-      ToCry.validate_path_within_data_dir(user_board_symlink_path)
-      FileUtils.mkdir_p(File.dirname(user_board_symlink_path))
-
-      # The symlink in the user's dir should point to the canonical board symlink in `data/boards/`
-      FileUtils.ln_s(board_path, user_board_symlink_path)
-
-      if @safe_mode_enabled
-        broken_links = ToCry.find_broken_symlinks
-        unless broken_links.empty?
-          raise "Operation blocked: Broken symlinks detected after sharing board. Please fix: #{broken_links.join(", ")}"
-        end
-      end
-      Log.info { "Shared board '#{board_name}' from user '#{from_user}' to user '#{to_user}'." }
+      Log.info { "Shared board '#{board_name}' (#{uuid}) from user '#{from_user}' to user '#{to_user}'" }
     end
   end
 end

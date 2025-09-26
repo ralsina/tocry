@@ -25,9 +25,7 @@ describe ToCry::BoardManager do
     ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_dir, true, false)
     board_manager = ToCry.board_manager
     Log.info { "Test data_dir: #{data_dir}" }
-    Log.info { "Board base directory: #{board_manager.board_base_dir}" }
-    File.exists?(board_manager.board_base_dir).should be_true
-    File.directory?(board_manager.board_base_dir).should be_true
+    Log.info { "BoardManager initialized with Sepia-based storage" }
   end
 
   it "creates a board and it is accessible by the creating user" do
@@ -86,15 +84,14 @@ describe ToCry::BoardManager do
     # User 2 should now see the board
     board_manager.list(user2_email).includes?(board.sepia_id).should be_true
 
-    # Verify the symlink was created correctly for user2
+    # Verify user2 has shared reference to the board
     uuid = board.sepia_id
-    board_full_name = "#{uuid}.#{board_name}"
-    user2_board_symlink_path = File.join(ToCry.users_base_directory, user2_email, "boards", board_full_name)
-    File.symlink?(user2_board_symlink_path).should be_true
-    File.exists?(
-      File.join(
-        Path[user2_board_symlink_path].parent,
-        File.readlink(user2_board_symlink_path))).should be_true
+    ToCry::BoardReference.has_reference?(user2_email, uuid).should be_true
+
+    # Verify the access type is "shared"
+    reference = ToCry::BoardReference.find_by_user(user2_email).find { |ref| ref.board_uuid == uuid }
+    reference.should_not be_nil
+    reference.not_nil!.shared?.should be_true
   end
 
   it "does not share if the board is not accessible to the from_user" do
@@ -166,13 +163,11 @@ describe ToCry::BoardManager do
 
     # User 2 should no longer see the board
     board_manager.list(user2_email).includes?(board_uuid).should be_false
-    # User 1 should still see the board (canonical board not deleted)
+    # User 1 should still see the board (owner access not removed)
     board_manager.list(user1_email).includes?(board_uuid).should be_true
 
-    # Verify canonical board directory still exists
-    board_full_name = "#{board_uuid}.#{board_name}"
-    canonical_board_path = File.join(board_manager.board_base_dir, board_full_name)
-    File.exists?(canonical_board_path).should be_true
+    # Verify board still exists in the system (since user1 is still the owner)
+    ToCry::BoardIndex.exists?(board_uuid).should be_true
   end
 
   it "allows deleting a board for the root user (removes canonical board)" do
@@ -194,13 +189,12 @@ describe ToCry::BoardManager do
     # Root should no longer see the board
     board_manager.list(root_user).includes?(board_uuid).should be_false
 
-    # Verify canonical board directory no longer exists
-    board_full_name = "#{board_uuid}.#{board_name}"
-    canonical_board_path = File.join(board_manager.board_base_dir, board_full_name)
-    File.exists?(canonical_board_path).should be_false
+    # Verify board no longer exists in the system (removed from BoardIndex)
+    ToCry::BoardIndex.exists?(board_uuid).should be_false
+    ToCry::BoardReference.has_reference?(root_user, board_uuid).should be_false
   end
 
-  it "allows renaming a board for a non-root user (renames symlink only)" do
+  it "allows renaming a board for a non-root user (renames user's personal reference)" do
     board_manager = ToCry::Initialization.setup_data_environment(data_dir, true, false)
     user1_email = "user1@example.com"
     user2_email = "user2@example.com"
@@ -223,26 +217,26 @@ describe ToCry::BoardManager do
     board_manager.list(user2_email).includes?(board_uuid).should be_true
     board_manager.get(old_board_name, user2_email).as(ToCry::Board).name.should eq(old_board_name)
 
-    # User 2 renames the board (should only rename symlink)
+    # User 2 renames their personal reference to the board
     board_manager.rename(old_board_name, new_board_name, user2_email)
 
-    # User 2 should now see the board with the new name
+    # User 2 should see the new name (their personal reference was updated)
     board_manager.list(user2_email).includes?(board_uuid).should be_true
+    board_manager.get(new_board_name, user2_email).should_not be_nil # Can find by new name
+    board_manager.get(old_board_name, user2_email).should be_nil     # Cannot find by old name
 
-    # FIXME: currently a board can't have two names for two users
-    # BUT MAYBE IT SHOULD? OR MAYBE RENAMING SHOULD RENAME FOR ALL USERS?
-    # board_manager.get(new_board_name, user2_email).as(ToCry::Board).name.should eq(new_board_name)
-    # board_manager.get(old_board_name, user2_email).should be_nil # Old name should not be accessible for user2
-
-    # User 1 should still see the board with the old name (canonical board not renamed)
+    # User 1 should still see the board with the old name (their reference unchanged)
     board_manager.list(user1_email).includes?(board_uuid).should be_true
-    board_manager.get(old_board_name, user1_email).as(ToCry::Board).name.should eq(old_board_name)
-    board_manager.get(new_board_name, user1_email).should be_nil # New name should not be accessible for user1
+    board_manager.get(old_board_name, user1_email).should_not be_nil # Can find by old name
+    board_manager.get(new_board_name, user1_email).should be_nil     # Cannot find by new name
 
-    # Verify canonical board directory still has the old name
-    old_board_full_name = "#{board_uuid}.#{old_board_name}"
-    canonical_board_path = File.join(board_manager.board_base_dir, old_board_full_name)
-    File.exists?(canonical_board_path).should be_true
+    # Verify board references are independent - each user has their own name
+    user1_ref = ToCry::BoardReference.find_by_user(user1_email).find { |ref| ref.board_uuid == board_uuid }
+    user2_ref = ToCry::BoardReference.find_by_user(user2_email).find { |ref| ref.board_uuid == board_uuid }
+    user1_ref.should_not be_nil
+    user2_ref.should_not be_nil
+    user1_ref.not_nil!.board_name.should eq(old_board_name)  # Still has original name
+    user2_ref.not_nil!.board_name.should eq(new_board_name)  # Has renamed name
   end
 
   it "allows renaming a board for the root user (renames canonical board)" do
@@ -265,17 +259,13 @@ describe ToCry::BoardManager do
 
     # Root should now see the board with the new name
     board_manager.list(root_user).includes?(board_uuid).should be_true
-    board_manager.get(new_board_name, root_user).as(ToCry::Board).name.should eq(new_board_name)
-    board_manager.get(old_board_name, root_user).should be_nil # Old name should not be accessible
+    board_manager.get(new_board_name, root_user).should_not be_nil # Can find by new name
+    board_manager.get(old_board_name, root_user).should be_nil     # Cannot find by old name
 
-    # Verify canonical board directory has the new name
-    new_board_full_name = "#{board_uuid}.#{new_board_name}"
-    canonical_board_path = File.join(board_manager.board_base_dir, new_board_full_name)
-    File.exists?(canonical_board_path).should be_true
-
-    old_board_full_name = "#{board_uuid}.#{old_board_name}"
-    old_canonical_board_path = File.join(board_manager.board_base_dir, old_board_full_name)
-    File.exists?(old_canonical_board_path).should be_false
+    # Verify board has the new name in the BoardIndex
+    board_index = ToCry::BoardIndex.find_by_uuid(board_uuid)
+    board_index.should_not be_nil
+    board_index.not_nil!.board_name.should eq(new_board_name)
   end
 
   it "raises an error if renaming to an existing board name for the same user" do

@@ -5,6 +5,8 @@ require "ecr"     # For ECR templating
 require "./lane"  # Include the Lane class from its new file
 require "./board" # Include the Board class from its new file
 require "./upload" # Include the Upload class for file management
+require "./board_index" # Include the BoardIndex class for board indexing
+require "./board_reference" # Include the BoardReference class for user-specific board references
 require "./board_manager"
 
 module ToCry
@@ -73,26 +75,11 @@ module ToCry
   end
 
   # Create the root user directory if it doesn't exist.
+  # With Sepia-based board management, we no longer need symlinks.
   def self.create_root_user_directory(user_dir)
-    root_boards_symlink_path = File.join(user_dir, "boards") # Expected path for the symlink
-    target_boards_path = Path[board_manager.board_base_dir].relative_to(
-      Path[root_boards_symlink_path].dirname
-    ) # The target path for the symlink
-
-    # Ensure the parent directory for the symlink exists
+    # Simply ensure the user directory exists
     FileUtils.mkdir_p(user_dir)
-
-    if File.symlink?(root_boards_symlink_path)
-      Log.debug { "Root user boards symlink already exists at '#{root_boards_symlink_path}'." }
-    elsif File.exists?(root_boards_symlink_path)
-      Log.warn { "Root user boards directory exists but is not a symlink. Removing '#{root_boards_symlink_path}' to create symlink." }
-      FileUtils.rm_rf(root_boards_symlink_path)                    # Remove existing directory if it's not a symlink
-      FileUtils.ln_s(target_boards_path, root_boards_symlink_path) # Create the symlink
-      Log.info { "Created symlink for root user boards from '#{root_boards_symlink_path}' to '#{target_boards_path}'." }
-    else
-      FileUtils.ln_s(target_boards_path, root_boards_symlink_path) # Create the symlink
-      Log.info { "Created symlink for root user boards from '#{root_boards_symlink_path}' to '#{target_boards_path}'." }
-    end
+    Log.debug { "Root user directory ensured at '#{user_dir}'" }
   end
 
   # Ensures that the data directory for the current user exists.
