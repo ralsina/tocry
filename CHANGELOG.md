@@ -2,7 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.13.0] - 2025-09-24
+## [0.15.0] - 2025-09-26
+
+### 🚀 Features
+
+- Auto-detect user data directory for non-root users
+- *(sepia)* Migrate board color schemes to Sepia persistence
+- *(sepia)* Migrate User class to Sepia persistence
+- *(sepia)* Migrate upload management to Sepia persistence
+- *(sepia)* Migrate BoardManager to Sepia with BoardReference system
+- Consolidate Sepia migrations into v0.15.0 and revert version
+
+### 🐛 Bug Fixes
+
+- Make install script work for non-root users
+- *(test)* Disable safe mode to resolve integration test failures
+- *(user)* Resolve provider field inconsistencies
+- BoardManager API endpoint after Sepia migration
+
+### 🚜 Refactor
+
+- Remove legacy symlink-related dead code
+
+### 📚 Documentation
+
+- *(migration)* Update v0_16_0 comments to reflect provider consistency fix
+
+## [0.14.0] - 2025-09-24
 
 ### 🚀 Features
 
