@@ -204,25 +204,43 @@ async function handleNoteDrop (event) {
     return
   }
 
+  // Optimistic UI update - move the card immediately
+  if (draggedElement) {
+    // Remove the dragging class
+    draggedElement.classList.remove('note-card--dragging')
+
+    // Insert the element at the new position
+    if (afterElement == null) {
+      notesListContainer.appendChild(draggedElement)
+    } else {
+      notesListContainer.insertBefore(draggedElement, afterElement)
+    }
+
+    // Update the visual state immediately
+    draggedElement.style.opacity = '1'
+    draggedElement.style.transform = 'none'
+  }
+
   try {
     const response = await updateNote(state.currentBoardName, noteId, {
       note: originalNoteObject,
       lane_name: targetLaneName,
       position: newPosition
     })
-    if (response.ok) {
-      await initializeLanes()
-    } else {
-      // API call failed
+
+    if (!response.ok) {
+      // If the API call failed, revert to the server state
       await handleApiError(response, 'Failed to move note.')
       await initializeLanes()
     }
+    // If successful, the UI is already updated, no need to re-render
   } catch (error) {
     handleUIError(
       error,
       'An unexpected error occurred while trying to move the note.'
     )
     showNotification('An error occurred while trying to move the note.')
+    // Revert to server state on error
     await initializeLanes()
   }
 }
