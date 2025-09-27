@@ -57,61 +57,55 @@ module ToCry
       save
     end
 
-    # Find all board references for a specific user
-    def self.find_by_user(user_id : String) : Array(BoardReference)
-      results = [] of BoardReference
+  # Find all board references for a specific user
+  def self.find_by_user(user_id : String) : Array(BoardReference)
+    results = [] of BoardReference
 
-      begin
-        Dir.glob(File.join(Sepia::Storage::INSTANCE.path, "ToCry::BoardReference", "*")).each do |entry_path|
-          next unless File.directory?(entry_path)
-
+    begin
+      # Use Sepia's storage API instead of filesystem operations
+      ids = Sepia::Storage.list_all(BoardReference)
+      ids.each do |entry_id|
+        # Check if this entry belongs to the user (format: user_id:board_uuid)
+        if entry_id.starts_with?("#{user_id}:")
           begin
-            entry_id = File.basename(entry_path)
-            # Check if this entry belongs to the user (format: user_id:board_uuid)
-            if entry_id.starts_with?("#{user_id}:")
-              reference = BoardReference.load(entry_id)
-              results << reference
-            end
+            reference = BoardReference.load(entry_id)
+            results << reference
           rescue
             # Skip entries that can't be loaded
             next
           end
         end
-      rescue
-        # If directory doesn't exist or other error, return empty array
       end
-
-      results
+    rescue
+      # If there's any error with storage operations, return empty array
     end
 
-    # Find all references to a specific board
-    def self.find_by_board(board_uuid : String) : Array(BoardReference)
-      results = [] of BoardReference
+    results
+  end  # Find all references to a specific board
+  def self.find_by_board(board_uuid : String) : Array(BoardReference)
+    results = [] of BoardReference
 
-      begin
-        Dir.glob(File.join(Sepia::Storage::INSTANCE.path, "ToCry::BoardReference", "*")).each do |entry_path|
-          next unless File.directory?(entry_path)
-
+    begin
+      # Use Sepia's storage API instead of filesystem operations
+      ids = Sepia::Storage.list_all(BoardReference)
+      ids.each do |entry_id|
+        # Check if this entry is for the board (format: user_id:board_uuid)
+        if entry_id.ends_with?(":#{board_uuid}")
           begin
-            entry_id = File.basename(entry_path)
-            # Check if this entry is for the board (format: user_id:board_uuid)
-            if entry_id.ends_with?(":#{board_uuid}")
-              reference = BoardReference.load(entry_id)
-              results << reference
-            end
+            reference = BoardReference.load(entry_id)
+            results << reference
           rescue
             # Skip entries that can't be loaded
             next
           end
         end
-      rescue
-        # If directory doesn't exist or other error, return empty array
       end
-
-      results
+    rescue
+      # If there's any error with storage operations, return empty array
     end
 
-    # Check if a user has a reference to a board
+    results
+  end    # Check if a user has a reference to a board
     def self.has_reference?(user_id : String, board_uuid : String) : Bool
       begin
         BoardReference.load("#{user_id}:#{board_uuid}")
