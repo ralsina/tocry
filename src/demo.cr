@@ -17,9 +17,6 @@ module ToCry::Demo
     # Configure Sepia to use in-memory backend
     Sepia::Storage.configure(:memory)
 
-    # Seed demo data
-    seed_data
-
     Log.info { "Demo mode storage configured successfully" }
   end
 
@@ -68,7 +65,9 @@ module ToCry::Demo
   end
 
   private def self.create_feature_demo_board
-    board = ToCry::Board.new("🚀 ToCry Features Demo", color_scheme: "Blue")
+    # Use BoardManager to properly create and register the board
+    board = ToCry.board_manager.create("🚀 ToCry Features Demo", "root")
+    board.color_scheme = "Blue"
 
     # "Getting Started" lane
     getting_started = board.lane_add("📚 Getting Started")
@@ -175,13 +174,12 @@ module ToCry::Demo
     done_note.save
 
     board.save
-
-    # Register board with BoardManager
-    register_demo_board(board, "root")
   end
 
   private def self.create_project_board
-    board = ToCry::Board.new("📋 Project Alpha", color_scheme: "Green")
+    # Use BoardManager to properly create and register the board
+    board = ToCry.board_manager.create("📋 Project Alpha", "root")
+    board.color_scheme = "Green"
 
     # Project lanes
     backlog = board.lane_add("📝 Backlog")
@@ -208,11 +206,12 @@ module ToCry::Demo
     done.note_add("Development environment", ["devops"], "Docker development environment setup")
 
     board.save
-    register_demo_board(board, "root")
   end
 
   private def self.create_personal_board
-    board = ToCry::Board.new("🏠 Personal Tasks", color_scheme: "Purple")
+    # Use BoardManager to properly create and register the board
+    board = ToCry.board_manager.create("🏠 Personal Tasks", "root")
+    board.color_scheme = "Purple"
 
     # Personal lanes
     today = board.lane_add("📅 Today")
@@ -243,27 +242,6 @@ module ToCry::Demo
     done.note_add("Pay bills", ["finance"], "Monthly utility and credit card payments")
 
     board.save
-    register_demo_board(board, "root")
-  end
-
-  private def self.register_demo_board(board : ToCry::Board, user_id : String)
-    # Create BoardIndex entry
-    board_index = ToCry::BoardIndex.new(
-      board_uuid: board.sepia_id,
-      board_name: board.name,
-      owner: user_id
-    )
-    board_index.save
-
-    # Create BoardReference for the user
-    board_ref = ToCry::BoardReference.new(
-      user_id: user_id,
-      board_name: board.name,
-      board_uuid: board.sepia_id
-    )
-    board_ref.save
-
-    Log.info { "Registered demo board: #{board.name}" }
   end
 
   # Handle demo file uploads by creating dummy files

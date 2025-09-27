@@ -1,6 +1,7 @@
 # /home/ralsina/code/tocry/src/endpoints/boards.cr
 require "kemal"
 require "../tocry"
+require "../demo"
 require "./helpers"
 
 module ToCry::Endpoints::Boards
@@ -21,6 +22,7 @@ module ToCry::Endpoints::Boards
   get "/b/:board_name" do |_|
     # board_name = env.params.url["board_name"].as(String)
     # user = ToCry.get_current_user_id(env)
+    demo_mode = ToCry::Demo.demo_mode?
     render "templates/app.ecr"
   end
 

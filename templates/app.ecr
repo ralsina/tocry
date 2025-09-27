@@ -31,6 +31,23 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
+    <% if demo_mode %>
+    <div class="demo-banner" style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      position: relative;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    ">
+      🚀 <strong>ToCry Demo Mode</strong> - Your data won't persist when you refresh!
+      <a href="https://github.com/ralsina/tocry" target="_blank" style="color: #fff; text-decoration: underline;">
+        Install locally for full features
+      </a>
+    </div>
+    <% end %>
     <header class="page-header">
       <div class="container">
         <nav>

@@ -8,6 +8,7 @@ require "docopt"         # Keep docopt
 require "./auth"         # Add auth (defines Google OAuth routes and current_user helper)
 require "./endpoints"    # Add this line to include your new endpoints file
 require "./auth_helpers" # New: Contains authentication mode setup functions
+require "./demo"         # Demo mode functionality
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
@@ -28,6 +29,7 @@ Options:
   --version                     Show version.
   --data-path=PATH              Path to the data directory.
   --safe-mode                   Enable safe mode (checks data integrity).
+  --demo                        Enable demo mode (in-memory storage with sample data).
 DOCOPT
 
 class Assets
@@ -59,11 +61,16 @@ def main
     end
   end
   safe_mode = args["--safe-mode"] == true               # Safely parse --safe-mode argument as boolean
+  demo_mode = args["--demo"] == true                     # Parse --demo argument as boolean
 
   # Initialize data environment using the helper
-  ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true)
+  ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
 
-  ToCry::Log.info { "Using data path: #{data_path}" }
+  if demo_mode
+    ToCry::Log.info { "Demo mode enabled: using in-memory storage with sample data" }
+  else
+    ToCry::Log.info { "Using data path: #{data_path}" }
+  end
   ToCry::Log.info { "Safe mode enabled: #{safe_mode}" }
 
   # Port and binding address are important
@@ -72,12 +79,15 @@ def main
 
   # Add a handler to serve user-uploaded images from the configured data path.
   # This replaces the `public_folder` macro.
-  uploads_path = File.join(data_path, "uploads")
-  add_handler Kemal::StaticFileHandler.new(uploads_path)
-  # Ensure the uploads directory exists to prevent issues.
-  unless Dir.exists?(uploads_path)
-    ToCry::Log.warn { "Uploads directory not found at '#{uploads_path}'. Creating it now." }
-    FileUtils.mkdir_p(uploads_path)
+  # Skip this in demo mode since we don't store actual files
+  unless ToCry::Demo.demo_mode?
+    uploads_path = File.join(data_path, "uploads")
+    add_handler Kemal::StaticFileHandler.new(uploads_path)
+    # Ensure the uploads directory exists to prevent issues.
+    unless Dir.exists?(uploads_path)
+      ToCry::Log.warn { "Uploads directory not found at '#{uploads_path}'. Creating it now." }
+      FileUtils.mkdir_p(uploads_path)
+    end
   end
 
   # Log at debug level. Probably worth making it configurable.
@@ -121,19 +131,42 @@ def main
     user = ToCry.get_current_user_id(env)
 
     # List boards for the current user
-    boards = ToCry.board_manager.list(user).map do |uuid|
-      ToCry.board_manager.@boards[uuid].name
-    end
+    board_references = ToCry::BoardReference.accessible_to_user(user)
+    boards = board_references.map(&.board_name)
 
     # If there's exactly one board, redirect to it
+    demo_mode = ToCry::Demo.demo_mode?
     case boards.size
     when 0
       render "templates/app.ecr"
     when 1
-      env.redirect "/b/#{boards.first}"
+      env.redirect "/b/#{board_references.first.board_uuid}"
     else
       render "templates/board_selection.ecr"
     end
+  end
+
+  # Demo mode: serve placeholder images for demo uploads
+  get "/demo/image/:upload_id" do |env|
+    upload_id = env.params.url["upload_id"]
+
+    # Only serve demo images if we're actually in demo mode
+    unless ToCry::Demo.demo_mode?
+      next env.response.status = HTTP::Status::NOT_FOUND
+    end
+
+    # Create a simple placeholder image (SVG)
+    placeholder_svg = <<-SVG
+    <svg width="200" height="150" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="150" fill="#e0e0e0" stroke="#ccc" stroke-width="2"/>
+      <text x="100" y="75" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">Demo Image</text>
+      <text x="100" y="95" text-anchor="middle" font-family="Arial" font-size="10" fill="#999">#{upload_id[0..7]}...</text>
+    </svg>
+    SVG
+
+    env.response.content_type = "image/svg+xml"
+    env.response.headers["Cache-Control"] = "public, max-age=3600"
+    placeholder_svg
   end
 
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)
