@@ -23,7 +23,6 @@ describe ToCry::BoardManager do
 
   it "creates the board base directory" do
     ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_dir, true, false)
-    board_manager = ToCry.board_manager
     Log.info { "Test data_dir: #{data_dir}" }
     Log.info { "BoardManager initialized with Sepia-based storage" }
   end
