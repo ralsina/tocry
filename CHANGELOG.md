@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2025-09-27
+
+### 🐛 Bug Fixes
+
+- Add migration to fix single-user mode board visibility
+
+## [0.16.0] - 2025-09-27
+
+### 🚀 Features
+
+- Make BoardReference and BoardIndex compatible with in-memory storage
+- Add comprehensive demo mode with in-memory storage
+
 ## [0.15.0] - 2025-09-26
 
 ### 🚀 Features
@@ -19,6 +32,10 @@ All notable changes to this project will be documented in this file.
 - *(test)* Disable safe mode to resolve integration test failures
 - *(user)* Resolve provider field inconsistencies
 - BoardManager API endpoint after Sepia migration
+
+### 💼 Other
+
+- Release v0.15.0
 
 ### 🚜 Refactor
 
