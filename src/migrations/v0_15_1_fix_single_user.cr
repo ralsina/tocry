@@ -63,7 +63,6 @@ module ToCry::Migration
 
         migrated_count += 1
         Log.info { "Migrated board '#{board_name}' (#{board_uuid}) to new structure" }
-
       rescue ex
         Log.warn { "Failed to migrate board '#{board_uuid}' to new structure: #{ex.message}" }
       end
@@ -106,7 +105,6 @@ module ToCry::Migration
           indexed_count += 1
 
           Log.info { "Created BoardIndex for: #{canonical_name} (#{uuid})" }
-
         rescue ex
           Log.warn { "Failed to create BoardIndex for '#{entry}': #{ex.message}" }
         end
@@ -154,7 +152,6 @@ module ToCry::Migration
         reference_count += 1
 
         Log.info { "Created BoardReference for root user: #{board_index.board_name} (#{board_uuid})" }
-
       rescue ex
         Log.warn { "Failed to create BoardReference for root user, board '#{board_uuid}': #{ex.message}" }
       end
