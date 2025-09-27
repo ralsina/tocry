@@ -43,76 +43,70 @@ module ToCry
       save
     end
 
-  # Find all boards owned by a specific user
-  def self.find_by_owner(owner : String) : Array(BoardIndex)
-    results = [] of BoardIndex
+    # Find all boards owned by a specific user
+    def self.find_by_owner(owner : String) : Array(BoardIndex)
+      results = [] of BoardIndex
 
-    # Use Sepia's storage API instead of filesystem operations
-    begin
-      ids = Sepia::Storage.list_all(BoardIndex)
-      ids.each do |entry_id|
-        begin
-          board_index = BoardIndex.load(entry_id)
-          results << board_index if board_index.owner == owner
-        rescue
-          # Skip entries that can't be loaded
-          next
-        end
-      end
-    rescue
-      # If there's any error with storage operations, return empty array
-    end
-
-    results
-  end  # Find all boards (for administrative purposes)
-  def self.all : Array(BoardIndex)
-    results = [] of BoardIndex
-
-    begin
       # Use Sepia's storage API instead of filesystem operations
-      ids = Sepia::Storage.list_all(BoardIndex)
-      ids.each do |entry_id|
-        begin
-          board_index = BoardIndex.load(entry_id)
-          results << board_index
-        rescue
-          # Skip entries that can't be loaded
-          next
-        end
-      end
-    rescue
-      # If there's any error with storage operations, return empty array
-    end
-
-    results
-  end    # Check if a board exists by UUID
-    def self.exists?(board_uuid : String) : Bool
       begin
-        BoardIndex.load(board_uuid)
-        true
+        ids = Sepia::Storage.list_all(BoardIndex)
+        ids.each do |entry_id|
+          begin
+            board_index = BoardIndex.load(entry_id)
+            results << board_index if board_index.owner == owner
+          rescue
+            # Skip entries that can't be loaded
+            next
+          end
+        end
       rescue
-        false
+        # If there's any error with storage operations, return empty array
       end
+
+      results
+    end # Find all boards (for administrative purposes)
+    def self.all : Array(BoardIndex)
+      results = [] of BoardIndex
+
+      begin
+        # Use Sepia's storage API instead of filesystem operations
+        ids = Sepia::Storage.list_all(BoardIndex)
+        ids.each do |entry_id|
+          begin
+            board_index = BoardIndex.load(entry_id)
+            results << board_index
+          rescue
+            # Skip entries that can't be loaded
+            next
+          end
+        end
+      rescue
+        # If there's any error with storage operations, return empty array
+      end
+
+      results
+    end # Check if a board exists by UUID
+    def self.exists?(board_uuid : String) : Bool
+      BoardIndex.load(board_uuid)
+      true
+    rescue
+      false
     end
 
     # Find a board index by UUID
     def self.find_by_uuid(board_uuid : String) : BoardIndex?
-      begin
-        BoardIndex.load(board_uuid)
-      rescue
-        nil
-      end
+      BoardIndex.load(board_uuid)
+    rescue
+      nil
     end
 
     # Remove a board from the index
     def self.remove(board_uuid : String) : Bool
-      begin
-        board_index = BoardIndex.load(board_uuid)
-        board_index.delete
-        true
-      rescue
-        false
-      end
+      board_index = BoardIndex.load(board_uuid)
+      board_index.delete
+      true
+    rescue
+      false
     end
   end
 end

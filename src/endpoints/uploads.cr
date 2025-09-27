@@ -1,8 +1,8 @@
 # /home/ralsina/code/tocry/src/endpoints/uploads.cr
 require "kemal"
 require "../tocry"
-require "../upload" # Include the new Upload class
-require "../demo"   # Include demo functionality
+require "../upload"  # Include the new Upload class
+require "../demo"    # Include demo functionality
 require "uuid"       # For generating unique filenames
 require "file_utils" # For creating directories
 require "./helpers"
@@ -49,7 +49,6 @@ module ToCry::Endpoints::Uploads
 
       # Create a dummy public URL for demo mode
       public_url = "/demo/image/#{upload.upload_id}#{extension}"
-
     else
       # Normal mode: full functionality
       if file_size > MAX_IMAGE_SIZE
@@ -89,10 +88,10 @@ module ToCry::Endpoints::Uploads
 
     # Respond with the URL and upload metadata so the frontend can use it
     ToCry::Endpoints::Helpers.created_response(env, {
-      url: public_url,
-      upload_id: upload.upload_id,
+      url:               public_url,
+      upload_id:         upload.upload_id,
       original_filename: original_filename,
-      file_size: upload.file_size
+      file_size:         upload.file_size,
     })
   end
 end

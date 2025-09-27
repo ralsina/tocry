@@ -85,7 +85,9 @@ module ToCry::Migration
     Log.info { "Initializing Sepia user storage..." }
 
     # Create root user for no-auth and basic-auth modes if it doesn't exist
-    unless ToCry::User.find_by_email("root")
+    if ToCry::User.find_by_email("root")
+      Log.info { "Root user already exists in Sepia storage" }
+    else
       root_user = ToCry::User.new(
         email: "root",
         name: "Root User",
@@ -94,8 +96,6 @@ module ToCry::Migration
       )
       root_user.save
       Log.info { "Created root user in Sepia storage" }
-    else
-      Log.info { "Root user already exists in Sepia storage" }
     end
 
     Log.info { "User storage initialization completed" }
@@ -148,7 +148,6 @@ module ToCry::Migration
         upload.save
 
         Log.info { "Migrated image upload: #{filename}" }
-
       rescue ex
         Log.warn { "Failed to migrate image upload '#{filename}': #{ex.message}" }
         # Continue with other files
@@ -183,10 +182,10 @@ module ToCry::Migration
 
           # Try to extract original filename from UUID prefix pattern
           original_filename = if filename.includes?("_")
-                               filename.split("_", 2)[1]? || filename
-                             else
-                               filename
-                             end
+                                filename.split("_", 2)[1]? || filename
+                              else
+                                filename
+                              end
 
           # Create Upload record for existing attachment
           upload = ToCry::Upload.new(
@@ -205,7 +204,6 @@ module ToCry::Migration
           upload.save
 
           Log.info { "Migrated attachment: #{filename} for note #{note_id}" }
-
         rescue ex
           Log.warn { "Failed to migrate attachment '#{filename}' for note '#{note_id}': #{ex.message}" }
           # Continue with other files
@@ -246,9 +244,6 @@ module ToCry::Migration
         next unless File.directory?(board_path)
 
         begin
-          # Load the board to get owner information and creation time
-          board = ToCry::Board.load(uuid, board_path)
-
           # Determine owner - for now, default to root since we don't have historical ownership data
           owner = "root"
 
@@ -269,7 +264,6 @@ module ToCry::Migration
           board_count += 1
 
           Log.info { "Indexed board: #{canonical_name} (#{uuid})" }
-
         rescue ex
           Log.warn { "Failed to index board '#{entry}': #{ex.message}" }
           # Continue with other boards
@@ -325,11 +319,9 @@ module ToCry::Migration
             reference_count += 1
 
             Log.info { "Created board reference: #{user_id} -> #{personal_board_name} (#{board_uuid})" }
-
           else
             Log.warn { "Could not extract board UUID from symlink target: #{target_path}" }
           end
-
         rescue ex
           Log.warn { "Failed to migrate board reference '#{board_link}' for user '#{user_id}': #{ex.message}" }
           # Continue with other references
@@ -344,15 +336,15 @@ module ToCry::Migration
   private def self.guess_content_type_from_extension(extension : String) : String
     case extension.downcase
     when ".jpg", ".jpeg" then "image/jpeg"
-    when ".png" then "image/png"
-    when ".gif" then "image/gif"
-    when ".webp" then "image/webp"
-    when ".pdf" then "application/pdf"
-    when ".txt" then "text/plain"
-    when ".md" then "text/markdown"
-    when ".doc" then "application/msword"
-    when ".docx" then "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    else "application/octet-stream"
+    when ".png"          then "image/png"
+    when ".gif"          then "image/gif"
+    when ".webp"         then "image/webp"
+    when ".pdf"          then "application/pdf"
+    when ".txt"          then "text/plain"
+    when ".md"           then "text/markdown"
+    when ".doc"          then "application/msword"
+    when ".docx"         then "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else                      "application/octet-stream"
     end
   end
 end

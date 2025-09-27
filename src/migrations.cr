@@ -3,6 +3,7 @@ require "./migrations/v0_6_1"
 require "./migrations/v0_8_0"
 require "./migrations/v0_10_0"
 require "./migrations/v0_15_0_consolidated"
+require "./migrations/v0_15_1_fix_single_user"
 
 module ToCry
   # The Migration module handles evolving the data directory from one version
@@ -90,6 +91,13 @@ module ToCry
       # Combines: color schemes, user persistence, upload management, and BoardManager Sepia migration.
       if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.15.0"))
         migrate_complete_sepia_integration
+      end
+
+      # Migration 6: Fix single-user mode board visibility.
+      # This runs for any version before 0.15.1.
+      # Ensures all boards are visible to root user in single-user mode.
+      if from_version.nil? || (parsed_from_version && parsed_from_version < SemanticVersion.parse("0.15.1"))
+        migrate_fix_single_user_board_visibility
       end
     end
   end
