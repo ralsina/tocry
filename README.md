@@ -7,6 +7,12 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 
 ![image](https://github.com/user-attachments/assets/abaa6209-b457-4332-b039-c9dd240300f2)
 
+## Demo
+
+Try the live demo at https://tocry-demo.ralsina.me
+**Username:** `demo`
+**Password:** `tocry`
+
 ## Features
 
 * **Kanban Board:** Organize notes into customizable lanes.
