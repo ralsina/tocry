@@ -64,22 +64,28 @@ module ToCry
     begin
       # Use Sepia's storage API instead of filesystem operations
       ids = Sepia::Storage.list_all(BoardReference)
+      Log.debug { "BoardReference.find_by_user(#{user_id}): Found #{ids.size} total references: #{ids}" }
+
       ids.each do |entry_id|
         # Check if this entry belongs to the user (format: user_id:board_uuid)
         if entry_id.starts_with?("#{user_id}:")
           begin
             reference = BoardReference.load(entry_id)
+            Log.debug { "Found reference for user #{user_id}: #{reference.board_name} (#{reference.board_uuid})" }
             results << reference
-          rescue
+          rescue ex
             # Skip entries that can't be loaded
+            Log.warn { "Failed to load BoardReference #{entry_id}: #{ex.message}" }
             next
           end
         end
       end
-    rescue
+    rescue ex
       # If there's any error with storage operations, return empty array
+      Log.warn { "Error in BoardReference.find_by_user(#{user_id}): #{ex.message}" }
     end
 
+    Log.debug { "BoardReference.find_by_user(#{user_id}) returning #{results.size} results" }
     results
   end  # Find all references to a specific board
   def self.find_by_board(board_uuid : String) : Array(BoardReference)
@@ -108,9 +114,11 @@ module ToCry
   end    # Check if a user has a reference to a board
     def self.has_reference?(user_id : String, board_uuid : String) : Bool
       begin
-        BoardReference.load("#{user_id}:#{board_uuid}")
+        ref = BoardReference.load("#{user_id}:#{board_uuid}")
+        Log.debug { "has_reference?(#{user_id}, #{board_uuid}) found existing: '#{ref.board_name}'" }
         true
-      rescue
+      rescue ex
+        Log.debug { "has_reference?(#{user_id}, #{board_uuid}) not found: #{ex.message}" }
         false
       end
     end
@@ -124,6 +132,7 @@ module ToCry
 
       reference = BoardReference.new(user_id, board_uuid, board_name, access_type, granted_by)
       reference.save
+      Log.debug { "Created BoardReference: #{user_id}:#{board_uuid} -> '#{board_name}'" }
       reference
     end
 
