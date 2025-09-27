@@ -11,11 +11,17 @@ module ToCry::Demo
   # Maximum file size for demo uploads (64KB)
   MAX_UPLOAD_SIZE = 64 * 1024
 
+  # Time interval for data reset (30 minutes)
+  RESET_INTERVAL = 30 * 60
+
   def self.setup_demo_storage
     Log.info { "Configuring in-memory storage for demo mode..." }
 
     # Configure Sepia to use in-memory backend
     Sepia::Storage.configure(:memory)
+
+    # Start the periodic reset timer
+    start_reset_timer
 
     Log.info { "Demo mode storage configured successfully" }
   end
@@ -85,7 +91,7 @@ module ToCry::Demo
       - Upload small files (limited to 64KB in demo)
       - Set note priorities and dates
 
-      **Note:** This is a demo - your data won't persist when you refresh the page!
+      **Note:** This is a demo - your data is stored in server memory and will reset every 30 minutes!
       CONTENT
     )
     welcome_note.expanded = true
@@ -146,8 +152,9 @@ module ToCry::Demo
       <<-CONTENT
       In demo mode:
 
-      - All data is stored in memory
-      - Data resets when you refresh the page
+      - All data is stored in server memory
+      - Data automatically resets every 30 minutes
+      - Data persists across page refreshes but not server restarts
       - No actual files are stored on disk
       - Upload functionality is simulated
 
@@ -275,5 +282,92 @@ module ToCry::Demo
   # Check if we're in demo mode
   def self.demo_mode? : Bool
     Sepia::Storage.backend.is_a?(Sepia::InMemoryStorage)
+  end
+
+  # Timer for periodic data reset
+  @@reset_timer : Timer?
+
+  # Start the periodic reset timer
+  private def self.start_reset_timer
+    Log.info { "Starting demo data reset timer (resets every #{RESET_INTERVAL / 60} minutes)" }
+
+    # Cancel any existing timer
+    if current_timer = @@reset_timer
+      current_timer.cancel
+    end
+
+    # Create new timer
+    @@reset_timer = Timer.new(RESET_INTERVAL) do
+      Log.info { "Periodic demo data reset triggered" }
+      reset_demo_data
+    end
+
+    Log.info { "Demo data reset timer started" }
+  end
+
+  # Reset all demo data while keeping the server running
+  def self.reset_demo_data
+    Log.info { "Resetting demo data..." }
+
+    # Clear all Sepia data
+    Sepia::Storage.backend.clear
+
+    # Re-seed the demo data
+    seed_data
+
+    # Update the last reset time
+    @@last_reset_time = Time.utc
+
+    Log.info { "Demo data reset completed" }
+  end
+
+  # Manually trigger a reset (useful for testing)
+  def self.trigger_reset
+    reset_demo_data
+  end
+
+  # Get the time until next reset in seconds
+  def self.time_until_next_reset : Int32
+    @@last_reset_time ||= Time.utc
+    elapsed = (Time.utc - @@last_reset_time).total_seconds.to_i
+    RESET_INTERVAL - elapsed
+  end
+
+  # Stop the reset timer
+  def self.stop_reset_timer
+    if timer = @@reset_timer
+      timer.cancel
+      @@reset_timer = nil
+      Log.info { "Demo data reset timer stopped" }
+    end
+  end
+
+  # Track when data was last reset
+  @@last_reset_time : Time?
+end
+
+# Simple timer implementation for periodic tasks
+class Timer
+  @running = true
+  @channel = Channel(Bool).new
+
+  def initialize(@interval : Int32, &@callback : -> Nil)
+    spawn do
+      while @running
+        select
+        when @channel.receive
+          # Stop signal received
+          break
+        when timeout(@interval.seconds)
+          # Timer elapsed
+          @callback.call
+        end
+      end
+    end
+  end
+
+  def cancel
+    @running = false
+    @channel.send(true)
   end
 end
