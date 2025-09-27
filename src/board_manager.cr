@@ -44,9 +44,9 @@ module ToCry
       begin
         board = ToCry::Board.load(board_uuid)
         @boards[board_uuid] = board # Cache it
-        return board
+        board
       rescue
-        return nil
+        nil
       end
     end
 
@@ -107,13 +107,13 @@ module ToCry
 
       if reference.owner?
         # Owner deletes the entire board and all references
-        @boards.delete(uuid)                              # Remove from cache
-        ToCry::BoardIndex.remove(uuid)                    # Remove from board index
+        @boards.delete(uuid)           # Remove from cache
+        ToCry::BoardIndex.remove(uuid) # Remove from board index
 
         # Remove all board references for this board
         ToCry::BoardReference.find_by_board(uuid).each(&.delete)
 
-        board.delete                                      # Delete the actual board data
+        board.delete # Delete the actual board data
 
         Log.info { "Board '#{name}' (#{uuid}) and all associated data deleted by owner '#{user}'" }
       else

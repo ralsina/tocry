@@ -13,7 +13,7 @@ module ToCry
 
     property email : String
     property name : String
-    property provider : String # e.g., "noauth", "basic", "google", "fake_google"
+    property provider : String      # e.g., "noauth", "basic", "google", "fake_google"
     property is_root : Bool = false # Special flag for root user access
 
     # Constructor that uses email as sepia_id (similar to Board using name)
@@ -52,11 +52,9 @@ module ToCry
     # Finds a user by their ID (sepia_id) using Sepia
     # In our case, sepia_id is the email for regular users or "root" for root user
     def self.find_by_id(id : String) : User?
-      begin
-        ToCry::User.load(id)
-      rescue
-        nil
-      end
+      ToCry::User.load(id)
+    rescue
+      nil
     end
 
     # Ensures the root user exists for no-auth/basic-auth modes
@@ -86,7 +84,7 @@ module ToCry
       root_user.is_root = true
       root_user.save
       root_user
-    end    # Helper method to check if user has access to all boards (root privileges)
+    end # Helper method to check if user has access to all boards (root privileges)
     def has_global_board_access? : Bool
       @is_root
     end

@@ -235,8 +235,8 @@ describe ToCry::BoardManager do
     user2_ref = ToCry::BoardReference.find_by_user(user2_email).find { |ref| ref.board_uuid == board_uuid }
     user1_ref.should_not be_nil
     user2_ref.should_not be_nil
-    user1_ref.not_nil!.board_name.should eq(old_board_name)  # Still has original name
-    user2_ref.not_nil!.board_name.should eq(new_board_name)  # Has renamed name
+    user1_ref.not_nil!.board_name.should eq(old_board_name) # Still has original name
+    user2_ref.not_nil!.board_name.should eq(new_board_name) # Has renamed name
   end
 
   it "allows renaming a board for the root user (renames canonical board)" do

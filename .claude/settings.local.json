@@ -15,7 +15,15 @@
       "Bash(sudo:*)",
       "Bash(./install.sh:*)",
       "Bash(./run_integration.sh:*)",
-      "Bash(crystal eval:*)"
+      "Bash(crystal eval:*)",
+      "Bash(tar:*)",
+      "Bash(grep:*)",
+      "Bash(TOCRY_DATA_PATH=test_data crystal run src/main.cr -- --help)",
+      "Bash(env:*)",
+      "Bash(xargs:*)",
+      "Bash(crystal run:*)",
+      "Bash(crystal format:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

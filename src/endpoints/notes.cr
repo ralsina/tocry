@@ -287,10 +287,10 @@ module ToCry::Endpoints::Notes
     existing_note.save
 
     ToCry::Endpoints::Helpers.success_response(env, {
-      success: "File '#{original_filename}' attached to note '#{note_id}'.",
-      filename: unique_filename,
+      success:   "File '#{original_filename}' attached to note '#{note_id}'.",
+      filename:  unique_filename,
       upload_id: upload.upload_id,
-      file_size: upload.file_size
+      file_size: upload.file_size,
     })
   end
 

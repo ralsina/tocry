@@ -44,7 +44,7 @@ def main
   # We parse the command line (`ARGV`) using the help we described above.
 
   args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
-  ARGV.clear                                            # Clear ARGV to prevent further processing by Crystal
+  ARGV.clear # Clear ARGV to prevent further processing by Crystal
 
   # Determine data path
   data_path = args["--data-path"]?.as?(String)
@@ -60,8 +60,8 @@ def main
       data_path = File.join(home_dir, ".local", "share", "tocry")
     end
   end
-  safe_mode = args["--safe-mode"] == true               # Safely parse --safe-mode argument as boolean
-  demo_mode = args["--demo"] == true                     # Parse --demo argument as boolean
+  safe_mode = args["--safe-mode"] == true # Safely parse --safe-mode argument as boolean
+  demo_mode = args["--demo"] == true      # Parse --demo argument as boolean
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
