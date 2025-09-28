@@ -210,3 +210,73 @@ export async function fetchAuthMode () {
   }
   return await response.json()
 }
+
+// Message API functions
+export async function fetchMessages (filters = {}) {
+  const params = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.append(key, value)
+  })
+
+  const response = await fetch(`${API_BASE_URL}/messages?${params}`)
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to fetch messages.')
+  }
+  return await response.json()
+}
+
+export async function fetchUnreadMessageCount () {
+  const response = await fetch(`${API_BASE_URL}/messages/unread-count`)
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to fetch unread message count.')
+  }
+  return await response.json()
+}
+
+export async function fetchMessage (messageId) {
+  const response = await fetch(`${API_BASE_URL}/messages/${messageId}`)
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to fetch message.')
+  }
+  return await response.json()
+}
+
+export async function sendMessage (toUser, subject, content, messageType = 'direct', metadata = null) {
+  const response = await fetch(`${API_BASE_URL}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      to_user: toUser,
+      subject,
+      content,
+      message_type: messageType,
+      metadata
+    })
+  })
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to send message.')
+  }
+  return await response.json()
+}
+
+export async function markMessageAsRead (messageId) {
+  const response = await fetch(`${API_BASE_URL}/messages/${messageId}/read`, {
+    method: 'PUT'
+  })
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to mark message as read.')
+  }
+  return response
+}
+
+export async function archiveMessage (messageId) {
+  const response = await fetch(`${API_BASE_URL}/messages/${messageId}`, {
+    method: 'DELETE'
+  })
+  if (!response.ok) {
+    await handleApiError(response, 'Failed to archive message.')
+  }
+  return response
+}

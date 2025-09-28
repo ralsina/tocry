@@ -82,6 +82,26 @@
               <select id="board-selector" aria-label="Select board"></select>
             </li>
             <li><button id="add-lane-btn" outline aria-label="Add new lane" title="Add Lane"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></li>
+            <li class="message-center-container">
+              <button id="message-center-btn" aria-label="Message center" title="Message Center">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span id="unread-count" class="unread-count" style="display: none;">0</span>
+              </button>
+              <div id="message-center-dropdown" class="message-center-dropdown" style="display: none;">
+                <div class="message-center-header">
+                  <h3>Messages</h3>
+                  <button id="compose-message-btn" class="secondary outline">New Message</button>
+                </div>
+                <div id="message-list" class="message-list">
+                  <!-- Messages will be loaded here -->
+                </div>
+                <div class="message-center-footer">
+                  <a href="#" id="view-all-messages">View All Messages</a>
+                </div>
+              </div>
+            </li>
             <li id="user-status" class="user-menu-container" style="display: none;">
               <button id="user-menu-btn" aria-label="User menu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -265,6 +285,53 @@
           </div>
         </div>
         <input type="file" id="attach-file-input" name="attachment" style="display: none;">
+      </article>
+    </dialog>
+
+    <!-- Compose Message Dialog -->
+    <dialog id="compose-message-dialog" class="dialog">
+      <article>
+        <header>
+          <button aria-label="Close" rel="prev" onclick="closeComposeMessageDialog()"></button>
+          <h3>New Message</h3>
+        </header>
+        <form id="compose-message-form">
+          <label for="message-to">To</label>
+          <input type="email" id="message-to" name="to" required placeholder="recipient@example.com">
+
+          <label for="message-subject">Subject</label>
+          <input type="text" id="message-subject" name="subject" required placeholder="Message subject">
+
+          <label for="message-content">Message</label>
+          <textarea id="message-content" name="content" required rows="6" placeholder="Type your message here..."></textarea>
+
+          <footer>
+            <button type="button" class="secondary" onclick="closeComposeMessageDialog()">Cancel</button>
+            <button type="submit" class="primary">Send Message</button>
+          </footer>
+        </form>
+      </article>
+    </dialog>
+
+    <!-- Message Detail Dialog -->
+    <dialog id="message-detail-dialog" class="dialog">
+      <article>
+        <header>
+          <button aria-label="Close" rel="prev" onclick="closeMessageDetailDialog()"></button>
+          <h3 id="message-detail-subject"></h3>
+        </header>
+        <div class="message-detail-content">
+          <div class="message-detail-meta">
+            <span id="message-detail-from"></span>
+            <span id="message-detail-date"></span>
+          </div>
+          <div id="message-detail-body" class="message-detail-body"></div>
+        </div>
+        <footer>
+          <button type="button" class="secondary" onclick="closeMessageDetailDialog()">Close</button>
+          <button type="button" id="reply-message-btn" class="secondary">Reply</button>
+          <button type="button" id="archive-message-btn" class="secondary">Archive</button>
+        </footer>
       </article>
     </dialog>
 

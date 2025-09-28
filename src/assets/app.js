@@ -2,7 +2,7 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector, applyColorScheme } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
 import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener, selectBoard } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
@@ -11,6 +11,7 @@ import { handleEditNoteSubmit, closeEditModal } from './features/note.js'
 import { handleAttachmentDelete } from './features/note-attachments.js'
 import { initializeMobile } from './features/mobile.js'
 import { initializeMobileDragDrop, handleMobileDragDropResize } from './features/mobile-dnd.js'
+import { initializeMessageCenter } from './features/messages.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
 
 // Utility function to simplify event listener setup
@@ -67,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle window resize for drag and drop
   window.addEventListener('resize', handleMobileDragDropResize)
+
+  // Initialize message center
+  initializeMessageCenter()
 
   // Add event listeners using utility function
   setupEventListener('theme-switcher', 'click', handleThemeSwitch)

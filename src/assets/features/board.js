@@ -40,6 +40,8 @@ const setupBoardSelectorListener = () => {
       await handleDeleteBoardButtonClick(boardSelector)
     } else if (selectedValue === BOARD_SELECTOR_OPTIONS.SHARE_BOARD) {
       await handleShareBoardButtonClick(boardSelector)
+    } else if (selectedValue === BOARD_SELECTOR_OPTIONS.SEND_MESSAGE) {
+      await handleSendMessageButtonClick(boardSelector)
     } else if (selectedValue) { // A regular board was selected, and it's not the separator
       await selectBoard(selectedValue)
     } else {
@@ -77,6 +79,10 @@ export async function initializeBoardSelector () {
       // Add "Share current board..." option only if in Google Auth mode
       const shareBoardOption = createOption(BOARD_SELECTOR_OPTIONS.SHARE_BOARD, 'Share current board...')
       boardSelector.appendChild(shareBoardOption)
+
+      // Add "Send Message..." option only if in Google Auth mode
+      const sendMessageOption = createOption(BOARD_SELECTOR_OPTIONS.SEND_MESSAGE, 'Send Message...')
+      boardSelector.appendChild(sendMessageOption)
     }
 
     const separatorOption = createOption('', '---', true)
@@ -303,4 +309,22 @@ async function handleShareBoardButtonClick (boardSelector) {
   } else {
     boardSelector.value = state.previousBoardSelection
   }
+}
+
+// Function to handle send message button click
+async function handleSendMessageButtonClick (boardSelector) {
+  // Reset the board selector to the current board
+  boardSelector.value = state.previousBoardSelection
+
+  // Open the compose message dialog
+  // Import dynamically to avoid circular dependency
+  import('../features/messages.js').then(({ openComposeMessageDialog }) => {
+    if (typeof openComposeMessageDialog === 'function') {
+      openComposeMessageDialog()
+    } else {
+      showNotification('Message center not available.', 'error')
+    }
+  }).catch(() => {
+    showNotification('Message center not available.', 'error')
+  })
 }
