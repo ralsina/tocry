@@ -2,11 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.0] - 2025-09-28
+
+### 🚀 Features
+
+- Implement periodic demo data reset and update warnings
+
+### 🐛 Bug Fixes
+
+- Implement optimistic UI updates for drag-and-drop to eliminate visual delay
+
+### 📚 Documentation
+
+- Add demo instance information to README and website
+
+### 🎨 Styling
+
+- Fix linting issues and update ameba configuration
+
 ## [0.16.1] - 2025-09-27
 
 ### 🐛 Bug Fixes
 
 - Add migration to fix single-user mode board visibility
+
+### 💼 Other
+
+- Release v0.16.1
 
 ## [0.16.0] - 2025-09-27
 
