@@ -298,6 +298,41 @@ body {
     cursor: pointer;
 }
 
+/* Import/Export buttons styling */
+.import-export-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.import-export-buttons button {
+    background-color: transparent;
+    border: 1px solid var(--pico-form-element-border-color);
+    color: var(--pico-color);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--pico-border-radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.import-export-buttons button:hover {
+    background-color: var(--pico-form-element-background-color);
+    border-color: var(--pico-primary);
+    color: var(--pico-primary-hover);
+}
+
+.import-export-buttons button:active {
+    transform: translateY(1px);
+}
+
+/* Hide import/export buttons in demo mode */
+.demo-mode .import-export-buttons {
+    display: none;
+}
+
 /* Style for the board selector and add board button */
 #board-selector {
     /* Inherit Pico's select styles */

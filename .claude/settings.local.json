@@ -23,7 +23,11 @@
       "Bash(xargs:*)",
       "Bash(crystal run:*)",
       "Bash(crystal format:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(shards install:*)",
+      "Bash(cat:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [],
     "ask": []
