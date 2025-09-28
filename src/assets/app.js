@@ -2,7 +2,7 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector, applyColorScheme } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
 import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener, selectBoard } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'

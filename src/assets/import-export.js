@@ -99,7 +99,7 @@ export async function handleImportClick () {
       }
 
       // Confirm import
-      if (!confirm('This will import all data from the export file. Are you sure you want to continue?')) {
+      if (!window.confirm('This will import all data from the export file. Are you sure you want to continue?')) {
         return
       }
 
