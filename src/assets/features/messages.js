@@ -21,6 +21,7 @@ const state = {
 // Initialize message center
 export function initializeMessageCenter () {
   const messageCenterBtn = document.getElementById('message-center-btn')
+  const mobileMessageCenterBtn = document.getElementById('mobile-message-center-btn')
   const composeMessageBtn = document.getElementById('compose-message-btn')
   const composeMessageForm = document.getElementById('compose-message-form')
   const replyMessageBtn = document.getElementById('reply-message-btn')
@@ -29,6 +30,19 @@ export function initializeMessageCenter () {
   // Set up event listeners
   if (messageCenterBtn) {
     messageCenterBtn.addEventListener('click', toggleMessageCenter)
+  }
+
+  if (mobileMessageCenterBtn) {
+    mobileMessageCenterBtn.addEventListener('click', () => {
+      // Close mobile menu when opening messages
+      const mobileMenuOverlay = document.getElementById('mobile-menu-overlay')
+      if (mobileMenuOverlay) {
+        mobileMenuOverlay.classList.remove('active')
+        document.body.style.overflow = 'auto'
+      }
+      // Open message center
+      toggleMessageCenter()
+    })
   }
 
   if (composeMessageBtn) {
@@ -118,6 +132,7 @@ async function updateUnreadCount () {
     const response = await fetchUnreadMessageCount()
     state.unreadCount = response.count
 
+    // Update desktop unread count
     const unreadCountEl = document.getElementById('unread-count')
     if (unreadCountEl) {
       if (response.count > 0) {
@@ -125,6 +140,17 @@ async function updateUnreadCount () {
         unreadCountEl.style.display = 'inline-block'
       } else {
         unreadCountEl.style.display = 'none'
+      }
+    }
+
+    // Update mobile unread count
+    const mobileUnreadCountEl = document.getElementById('mobile-unread-count')
+    if (mobileUnreadCountEl) {
+      if (response.count > 0) {
+        mobileUnreadCountEl.textContent = response.count > 99 ? '99+' : response.count
+        mobileUnreadCountEl.style.display = 'inline-block'
+      } else {
+        mobileUnreadCountEl.style.display = 'none'
       }
     }
   } catch (error) {
@@ -317,4 +343,3 @@ window.closeComposeMessageDialog = closeComposeMessageDialog
 window.closeMessageDetailDialog = closeMessageDetailDialog
 
 export { updateUnreadCount, openComposeMessageDialog }
-
