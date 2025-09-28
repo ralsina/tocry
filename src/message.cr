@@ -15,7 +15,7 @@ module ToCry
     property subject : String
     property content : String
     property message_type : String # "direct", "share_request", "system"
-    property status : String # "unread", "read", "archived"
+    property status : String       # "unread", "read", "archived"
     property created_at : Time
     property read_at : Time?
     property metadata : JSON::Any?
@@ -87,7 +87,7 @@ module ToCry
         end
 
         # Sort by created_at (newest first)
-        results.sort_by! { |message| message.created_at }.reverse!
+        results.sort_by!(&.created_at).reverse!
       rescue ex
         Log.warn { "Error in Message.find_for_user(#{user_id}): #{ex.message}" }
       end
@@ -118,7 +118,7 @@ module ToCry
         end
 
         # Sort by created_at (newest first)
-        results.sort_by! { |message| message.created_at }.reverse!
+        results.sort_by!(&.created_at).reverse!
       rescue
         # Return empty array on error
       end
@@ -139,11 +139,9 @@ module ToCry
 
     # Find a specific message by ID
     def self.find_by_id(message_id : String) : Message?
-      begin
-        Message.load(message_id)
-      rescue
-        nil
-      end
+      Message.load(message_id)
+    rescue
+      nil
     end
   end
 end

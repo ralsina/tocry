@@ -25,15 +25,15 @@ module ToCry::Endpoints::Messages
     # Return message data without full content for list view
     message_data = messages.map do |message|
       {
-        id: message.id,
-        from_user: message.from_user,
-        subject: message.subject,
-        preview: message.content[0..100] + (message.content.size > 100 ? "..." : ""),
+        id:           message.id,
+        from_user:    message.from_user,
+        subject:      message.subject,
+        preview:      message.content[0..100] + (message.content.size > 100 ? "..." : ""),
         message_type: message.message_type,
-        status: message.status,
-        created_at: message.created_at.to_rfc3339,
-        read_at: message.read_at.try(&.to_rfc3339),
-        metadata: message.metadata
+        status:       message.status,
+        created_at:   message.created_at.to_rfc3339,
+        read_at:      message.read_at.try(&.to_rfc3339),
+        metadata:     message.metadata,
       }
     end
 
