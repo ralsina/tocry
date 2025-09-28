@@ -21,6 +21,8 @@ dependencies:
     github: kemalcr/kemal-session
   sepia:
     github: ralsina/sepia
+  crystar:
+    github: naqvis/crystar
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>

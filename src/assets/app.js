@@ -12,6 +12,7 @@ import { handleAttachmentDelete } from './features/note-attachments.js'
 import { initializeMobile } from './features/mobile.js'
 import { initializeMobileDragDrop, handleMobileDragDropResize } from './features/mobile-dnd.js'
 import { state } from './features/state.js' // Corrected import: directly import the 'state' object
+import { initializeImportExport } from './import-export.js'
 
 // Utility function to simplify event listener setup
 function setupEventListener (selector, event, handler) {
@@ -67,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle window resize for drag and drop
   window.addEventListener('resize', handleMobileDragDropResize)
+
+  // Initialize import/export functionality
+  initializeImportExport()
 
   // Add event listeners using utility function
   setupEventListener('theme-switcher', 'click', handleThemeSwitch)
