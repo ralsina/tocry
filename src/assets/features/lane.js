@@ -54,6 +54,7 @@ async function handleCreateFirstBoardClick () {
 export async function initializeLanes (boardName = state.currentBoardName) {
   const lanesContainer = document.getElementById('lanes-container')
   const addLaneButton = document.getElementById('add-lane-btn')
+  const isReadOnlyMode = window.tocryConfig && window.tocryConfig.readOnlyMode === true
 
   // If boardName is null (meaning no boards exist at all), display the welcome message directly
   if (!boardName) {
@@ -85,7 +86,25 @@ export async function initializeLanes (boardName = state.currentBoardName) {
 
   state.setBoardName(boardName) // Update the global currentBoardName
   try {
-    const lanes = await fetchLanes(state.currentBoardName)
+    let lanes
+    if (isReadOnlyMode) {
+      // For public boards, get lanes from the public board data
+      const pathParts = window.location.pathname.split('/')
+      if (pathParts[1] === 'public' && pathParts[2] === 'boards' && pathParts[3]) {
+        const uuid = pathParts[3]
+        const response = await fetch(`/public/boards/${uuid}/data`)
+        if (response.ok) {
+          const boardData = await response.json()
+          lanes = boardData.lanes || []
+        } else {
+          lanes = []
+        }
+      } else {
+        lanes = []
+      }
+    } else {
+      lanes = await fetchLanes(state.currentBoardName)
+    }
     state.currentLanes = lanes // Update the cache
 
     // --- Animation Cleanup ---
@@ -118,25 +137,25 @@ export async function initializeLanes (boardName = state.currentBoardName) {
       // If there are lanes, render them
       // Board has at least one lane, so render them all.
       const callbacks = {
-        onDeleteLane: handleDeleteLaneRequest,
-        onAddNote: handleAddNoteRequest,
-        onDeleteNote: handleDeleteNoteRequest,
-        onEditNote: handleEditNoteRequest,
-        onUpdateLaneName: handleUpdateLaneNameRequest,
-        onUpdateNoteTitle: handleUpdateNoteTitleRequest,
-        onPasteAsNote: handlePasteAsNoteRequest,
-        onPasteAsImageNote: handlePasteAsImageNoteRequest,
-        onToggleNote: handleToggleNoteRequest,
+        onDeleteLane: isReadOnlyMode ? null : handleDeleteLaneRequest,
+        onAddNote: isReadOnlyMode ? null : handleAddNoteRequest,
+        onDeleteNote: isReadOnlyMode ? null : handleDeleteNoteRequest,
+        onEditNote: isReadOnlyMode ? null : handleEditNoteRequest,
+        onUpdateLaneName: isReadOnlyMode ? null : handleUpdateLaneNameRequest,
+        onUpdateNoteTitle: isReadOnlyMode ? null : handleUpdateNoteTitleRequest,
+        onPasteAsNote: isReadOnlyMode ? null : handlePasteAsNoteRequest,
+        onPasteAsImageNote: isReadOnlyMode ? null : handlePasteAsImageNoteRequest,
+        onToggleNote: isReadOnlyMode ? null : handleToggleNoteRequest,
         onPermalink: handlePermalinkRequest,
-        onAttachFile: handleAttachFileRequest
+        onAttachFile: isReadOnlyMode ? null : handleAttachFileRequest
       }
       renderLanes(lanes, callbacks, {
-        lane: laneDragAndDropCallbacks,
-        note: noteDragAndDropCallbacks
+        lane: isReadOnlyMode ? null : laneDragAndDropCallbacks,
+        note: isReadOnlyMode ? null : noteDragAndDropCallbacks
       })
 
-      // Onboarding for the first empty lane
-      if (lanes.length === 1 && lanes[0].notes.length === 0) {
+      // Onboarding for the first empty lane (only in edit mode)
+      if (!isReadOnlyMode && lanes.length === 1 && lanes[0].notes.length === 0) {
         const firstLaneElement = lanesContainer.querySelector('.lane')
         if (firstLaneElement) {
           const addNoteButton = firstLaneElement.querySelector('.add-note-btn')

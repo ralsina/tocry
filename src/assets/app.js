@@ -2,7 +2,7 @@
 // app.js - Main application entry point and orchestrator
 
 import { initializeAuthStatus } from './ui/auth.js'
-import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector, applyColorScheme } from './ui/theme.js'
+import { applyTheme, handleThemeSwitch, initializeColorSchemeSelector } from './ui/theme.js'
 import { updateScrollButtonsVisibility, handleScrollButtonClick, handleKeyDown } from './ui/scroll.js'
 import { getBoardNameFromURL, initializeBoardSelector, setupBoardSelectorListener, selectBoard } from './features/board.js'
 import { initializeLanes, handleAddLaneButtonClick } from './features/lane.js'
@@ -45,6 +45,9 @@ function closeModal (modalId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check if we're in read-only mode
+  const isReadOnlyMode = window.tocryConfig && window.tocryConfig.readOnlyMode === true
+
   // Initialize auth status display
   initializeAuthStatus()
 
@@ -67,6 +70,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle window resize for drag and drop
   window.addEventListener('resize', handleMobileDragDropResize)
+
+  // Hide edit controls in read-only mode
+  if (isReadOnlyMode) {
+    // Hide add lane button
+    const addLaneBtn = document.getElementById('add-lane-btn')
+    if (addLaneBtn) addLaneBtn.style.display = 'none'
+
+    // Hide user menu if present
+    const userStatus = document.getElementById('user-status')
+    if (userStatus) userStatus.style.display = 'none'
+
+    // Disable drag and drop
+    document.body.classList.add('read-only-mode')
+
+    // Add read-only banner
+    const header = document.querySelector('.page-header')
+    if (header) {
+      const banner = document.createElement('div')
+      banner.className = 'read-only-banner'
+      banner.style.cssText = `
+        background: #ff6b6b;
+        color: white;
+        text-align: center;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        position: relative;
+        z-index: 1000;
+      `
+      banner.textContent = '🔒 Read-Only Mode - This board is publicly viewable but cannot be edited'
+      header.appendChild(banner)
+    }
+  }
 
   // Add event listeners using utility function
   setupEventListener('theme-switcher', 'click', handleThemeSwitch)

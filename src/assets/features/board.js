@@ -1,5 +1,5 @@
 /* global history */
-import { fetchBoards, createBoard, renameBoard, deleteBoard, shareBoard, fetchAuthMode, fetchBoardDetails } from '../api.js' // Keep createBoard for the new addBoard function
+import { fetchBoards, createBoard, renameBoard, deleteBoard, shareBoard, fetchAuthMode, fetchBoardDetails, updateBoardPublicStatus } from '../api.js' // Keep createBoard for the new addBoard function
 import { showPrompt, showNotification, showConfirmation } from '../ui/dialogs.js'
 import { handleApiError, handleUIError } from '../utils/errorHandler.js'
 import { BOARD_SELECTOR_OPTIONS } from '../utils/constants.js'
@@ -110,6 +110,9 @@ export async function initializeBoardSelector () {
     state.setBoardName(null) // Ensure state is clear on error
     boardSelector.disabled = true
   }
+
+  // Initialize public toggle visibility and state
+  updatePublicToggleVisibility()
 }
 
 // Core function to add a board (backend interaction and notification)
@@ -245,6 +248,8 @@ async function handleDeleteBoardButtonClick (boardSelector) {
 // Function to select a board, update UI, and change URL
 async function selectBoard (boardName, skipHistoryPush = false) {
   const boardSelector = document.getElementById('board-selector')
+  const isReadOnlyMode = window.tocryConfig && window.tocryConfig.readOnlyMode === true
+
   state.setPreviousBoardSelection(boardName) // Update previous selection
   state.setBoardName(boardName) // Update currentBoardName
   if (boardSelector) {
@@ -253,8 +258,22 @@ async function selectBoard (boardName, skipHistoryPush = false) {
 
   // Apply the board's color scheme
   try {
-    const boardDetails = await fetchBoardDetails(boardName)
-    if (boardDetails.color_scheme) {
+    let boardDetails
+    if (isReadOnlyMode) {
+      // For public boards, we need to extract UUID from URL and fetch public data
+      const pathParts = window.location.pathname.split('/')
+      if (pathParts[1] === 'public' && pathParts[2] === 'boards' && pathParts[3]) {
+        const uuid = pathParts[3]
+        const response = await fetch(`/public/boards/${uuid}/data`)
+        if (response.ok) {
+          boardDetails = await response.json()
+        }
+      }
+    } else {
+      boardDetails = await fetchBoardDetails(boardName)
+    }
+
+    if (boardDetails && boardDetails.color_scheme) {
       applyColorScheme(boardDetails.color_scheme)
       // Update the color scheme selector to match
       const colorSchemeSwitcher = document.getElementById('color-scheme-switcher')
@@ -271,6 +290,9 @@ async function selectBoard (boardName, skipHistoryPush = false) {
   if (!skipHistoryPush) {
     history.pushState({ board: boardName }, '', `/b/${boardName}`) // Update the URL
   }
+
+  // Update public toggle visibility when board changes
+  updatePublicToggleVisibility()
 }
 export { selectBoard }
 
@@ -303,4 +325,193 @@ async function handleShareBoardButtonClick (boardSelector) {
   } else {
     boardSelector.value = state.previousBoardSelection
   }
+}
+
+// Function to update public toggle visibility based on current board
+export async function updatePublicToggleVisibility () {
+  const publicToggleContainer = document.getElementById('public-toggle-container')
+  const publicToggleBtn = document.getElementById('public-toggle-btn')
+  const sharePublicContainer = document.getElementById('share-public-container')
+  const sharePublicBtn = document.getElementById('share-public-btn')
+  const isReadOnlyMode = window.tocryConfig && window.tocryConfig.readOnlyMode === true
+
+  // Hide toggle in read-only mode or if no board is selected
+  if (isReadOnlyMode || !state.currentBoardName) {
+    if (publicToggleContainer) {
+      publicToggleContainer.style.display = 'none'
+    }
+    if (sharePublicContainer) {
+      sharePublicContainer.style.display = 'none'
+    }
+    return
+  }
+
+  // Show toggle for board owners
+  if (publicToggleContainer) {
+    publicToggleContainer.style.display = 'flex'
+
+    // Fetch current board details to get public status
+    try {
+      const boardDetails = await fetchBoardDetails(state.currentBoardName)
+      if (boardDetails && typeof boardDetails.public === 'boolean') {
+        updatePublicToggleUI(boardDetails.public)
+        updateShareButtonVisibility(boardDetails.public)
+      } else {
+        // Default to private if public status is not available
+        updatePublicToggleUI(false)
+        updateShareButtonVisibility(false)
+      }
+    } catch (error) {
+      console.warn('Failed to fetch board public status:', error)
+      // Default to private on error
+      updatePublicToggleUI(false)
+      updateShareButtonVisibility(false)
+    }
+  }
+
+  // Add click handler if not already added
+  if (publicToggleBtn && !publicToggleBtn.dataset.hasClickListener) {
+    publicToggleBtn.addEventListener('click', handlePublicToggleClick)
+    publicToggleBtn.dataset.hasClickListener = 'true'
+  }
+
+  // Add share button click handler if not already added
+  if (sharePublicBtn && !sharePublicBtn.dataset.hasClickListener) {
+    sharePublicBtn.addEventListener('click', handleSharePublicClick)
+    sharePublicBtn.dataset.hasClickListener = 'true'
+  }
+}
+
+// Update the public toggle UI to reflect current state
+function updatePublicToggleUI (isPublic) {
+  const publicToggleText = document.getElementById('public-toggle-text')
+  const publicToggleBtn = document.getElementById('public-toggle-btn')
+
+  if (publicToggleText) {
+    publicToggleText.textContent = isPublic ? 'Public' : 'Private'
+  }
+
+  if (publicToggleBtn) {
+    if (isPublic) {
+      publicToggleBtn.classList.remove('secondary')
+      publicToggleBtn.classList.add('primary')
+    } else {
+      publicToggleBtn.classList.remove('primary')
+      publicToggleBtn.classList.add('secondary')
+    }
+  }
+}
+
+// Update share button visibility based on public status
+function updateShareButtonVisibility (isPublic) {
+  const sharePublicContainer = document.getElementById('share-public-container')
+  if (sharePublicContainer) {
+    sharePublicContainer.style.display = isPublic ? 'flex' : 'none'
+  }
+}
+
+// Handle share button click for public boards
+async function handleSharePublicClick () {
+  const currentBoardName = state.currentBoardName
+  if (!currentBoardName) {
+    showNotification('No board selected.', 'error')
+    return
+  }
+
+  const uuid = await getBoardUuid(currentBoardName)
+  if (!uuid) {
+    showNotification('Unable to generate share link.', 'error')
+    return
+  }
+
+  const shareUrl = `${window.location.origin}/public/boards/${uuid}`
+
+  // Copy to clipboard
+  try {
+    await navigator.clipboard.writeText(shareUrl)
+    showNotification('Share link copied to clipboard!', 'success')
+  } catch (error) {
+    // Fallback for browsers that don't support clipboard API
+    const textArea = document.createElement('textarea')
+    textArea.value = shareUrl
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    showNotification('Share link copied to clipboard!', 'success')
+  }
+}
+
+// Handle public toggle button click
+async function handlePublicToggleClick () {
+  const currentBoardName = state.currentBoardName
+  if (!currentBoardName) {
+    showNotification('No board selected.', 'error')
+    return
+  }
+
+  // Get current state from UI
+  const publicToggleText = document.getElementById('public-toggle-text')
+  const isCurrentlyPublic = publicToggleText && publicToggleText.textContent === 'Public'
+
+  // Confirm before making public
+  if (!isCurrentlyPublic) {
+    const confirmed = await showConfirmation(
+      'Are you sure you want to make this board public? ' +
+      'Anyone with the link will be able to view this board in read-only mode.',
+      'Make Board Public'
+    )
+
+    if (!confirmed) {
+      return
+    }
+  }
+
+  try {
+    const response = await updateBoardPublicStatus(currentBoardName, !isCurrentlyPublic)
+    if (response.ok) {
+      const newStatus = !isCurrentlyPublic
+      updatePublicToggleUI(newStatus)
+      showNotification(
+        `Board is now ${newStatus ? 'public' : 'private'}.`,
+        'success'
+      )
+
+      // If board was made public, show the share URL
+      if (newStatus) {
+        const uuid = await getBoardUuid(currentBoardName)
+        if (uuid) {
+          const shareUrl = `${window.location.origin}/public/boards/${uuid}`
+          showNotification(
+            `Board is now public! Share this link: ${shareUrl}`,
+            'info',
+            10000 // Longer display time
+          )
+        } else {
+          showNotification(
+            'Board is now public! Unable to generate share URL.',
+            'warning'
+          )
+        }
+      }
+    } else {
+      await handleApiError(response, 'Failed to update board visibility.')
+    }
+  } catch (error) {
+    console.error('Error updating board public status:', error)
+    handleUIError(error, 'An unexpected error occurred while updating board visibility.')
+  }
+}
+
+// Helper function to get board UUID
+async function getBoardUuid (boardName) {
+  try {
+    const boardDetails = await fetchBoardDetails(boardName)
+    if (boardDetails && boardDetails.uuid) {
+      return boardDetails.uuid
+    }
+  } catch (error) {
+    console.error('Error getting board UUID:', error)
+  }
+  return null
 }

@@ -203,6 +203,18 @@ export async function updateBoardColorScheme (boardName, colorScheme) {
   return response
 }
 
+export async function updateBoardPublicStatus (boardName, isPublic) {
+  const encodedBoardName = encodeURIComponent(boardName)
+  const response = await fetch(`${API_BASE_URL}/boards/${encodedBoardName}/public`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ public: isPublic })
+  })
+  return response
+}
+
 export async function fetchAuthMode () {
   const response = await fetch(`${API_BASE_URL}/auth_mode`)
   if (!response.ok) {

@@ -23,6 +23,7 @@ module ToCry::Endpoints::Boards
     # board_name = env.params.url["board_name"].as(String)
     # user = ToCry.get_current_user_id(env)
     demo_mode = ToCry::Demo.demo_mode?
+    _read_only_mode = false
     render "templates/app.ecr"
   end
 
@@ -49,6 +50,8 @@ module ToCry::Endpoints::Boards
     board_details = {
       name:         board.name,
       color_scheme: board.color_scheme,
+      public:       board.public?,
+      uuid:         board.sepia_id,
     }
 
     ToCry::Endpoints::Helpers.success_response(env, board_details)
@@ -152,5 +155,88 @@ module ToCry::Endpoints::Boards
     ToCry.board_manager.share_board(board_name, from_user, to_user_email)
 
     ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' shared with '#{to_user_email}'."})
+  end
+
+  # API Endpoint to update board public/private status
+  # Expects the board name in the URL path, e.g.:
+  # PUT /boards/My%20Board/public
+  # Expects a JSON body like:
+  # { "public": true }
+  put "/boards/:board_name/public" do |env|
+    board_name = env.params.url["board_name"].as(String)
+    json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+    payload = ToCry::Endpoints::Helpers::PublicStatusPayload.from_json(json_body)
+
+    user = ToCry.get_current_user_id(env)
+    board = ToCry.board_manager.get(board_name, user)
+
+    unless board
+      env.response.status_code = 404
+      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+    end
+
+    # Update public status
+    board.public = payload.public?
+    board.save
+
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' is now #{payload.public? ? "public" : "private"}."})
+  end
+
+  # Public board endpoint - read-only access for anyone
+  # This endpoint serves the main application with read-only mode
+  get "/public/boards/:uuid" do |env|
+    uuid = env.params.url["uuid"].as(String)
+
+    # Find the board by UUID
+    board = ToCry.board_manager.get_by_uuid(uuid)
+
+    unless board
+      env.response.status_code = 404
+      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+    end
+
+    # Check if board is public
+    unless board.public?
+      env.response.status_code = 403
+      next ToCry::Endpoints::Helpers.error_response(env, "Board is not public", 403)
+    end
+
+    # Set read-only mode flag
+    env.set("read_only_mode", true)
+    env.set("board_name", board.name)
+
+    # Render the main application with read-only mode
+    demo_mode = ToCry::Demo.demo_mode?
+    _read_only_mode = true
+    render "templates/app.ecr"
+  end
+
+  # API Endpoint to get public board data
+  get "/public/boards/:uuid/data" do |env|
+    uuid = env.params.url["uuid"].as(String)
+
+    # Find the board by UUID
+    board = ToCry.board_manager.get_by_uuid(uuid)
+
+    unless board
+      env.response.status_code = 404
+      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+    end
+
+    # Check if board is public
+    unless board.public?
+      env.response.status_code = 403
+      next ToCry::Endpoints::Helpers.error_response(env, "Board is not public", 403)
+    end
+
+    # Return board data
+    board_data = {
+      name:         board.name,
+      lanes:        board.lanes,
+      color_scheme: board.color_scheme,
+      public:       board.public?,
+    }
+
+    ToCry::Endpoints::Helpers.success_response(env, board_data)
   end
 end

@@ -136,6 +136,7 @@ def main
 
     # If there's exactly one board, redirect to it
     demo_mode = ToCry::Demo.demo_mode?
+    _read_only_mode = false # Used in template
     case boards.size
     when 0
       render "templates/app.ecr"

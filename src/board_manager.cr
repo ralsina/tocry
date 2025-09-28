@@ -70,6 +70,14 @@ module ToCry
       get_board(reference.board_uuid)
     end
 
+    # Get a board by its UUID (public access)
+    # This bypasses user authentication and is used for public board access
+    def get_by_uuid(uuid : String) : Board?
+      # Direct access by UUID without user validation
+      # Used for public boards that can be accessed by anyone
+      get_board(uuid)
+    end
+
     # Creates a new board with the given name.
     # Uses Sepia-based BoardIndex and BoardReference for user-specific names.
     def create(name : String, user : String) : Board

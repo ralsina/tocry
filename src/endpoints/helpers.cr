@@ -149,6 +149,11 @@ module ToCry::Endpoints::Helpers
     property color_scheme : String
   end
 
+  struct PublicStatusPayload
+    include JSON::Serializable
+    property? public : Bool
+  end
+
   # Helper function to find a note across all user-accessible boards
   # Returns a tuple of (note, lane, board) if found, nil otherwise
   def self.find_note_for_user(note_id : String, user : String)
