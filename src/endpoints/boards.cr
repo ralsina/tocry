@@ -19,9 +19,8 @@ module ToCry::Endpoints::Boards
   end
 
   # Serve the main application HTML for board-specific URLs
-  get "/b/:board_name" do |_|
-    # board_name = env.params.url["board_name"].as(String)
-    # user = ToCry.get_current_user_id(env)
+  get "/b/:board_name" do |env|
+    board_name = env.params.url["board_name"].as(String)
     demo_mode = ToCry::Demo.demo_mode?
     render "templates/app.ecr"
   end
