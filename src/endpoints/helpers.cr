@@ -153,11 +153,13 @@ module ToCry::Endpoints::Helpers
   # Returns a tuple of (note, lane, board) if found, nil otherwise
   def self.find_note_for_user(note_id : String, user : String)
     ToCry.board_manager.list(user).each do |board_uuid|
-      board = ToCry.board_manager.@boards[board_uuid]
-      found_note_and_lane = board.note(note_id)
-      if found_note_and_lane
-        note, lane = found_note_and_lane
-        return {note, lane, board}
+      board = ToCry.board_manager.get_by_uuid(board_uuid)
+      if board
+        found_note_and_lane = board.note(note_id)
+        if found_note_and_lane
+          note, lane = found_note_and_lane
+          return {note, lane, board}
+        end
       end
     end
     nil

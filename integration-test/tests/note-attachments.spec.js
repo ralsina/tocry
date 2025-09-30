@@ -36,8 +36,11 @@ test.beforeEach(async ({ page }) => {
   await page.addStyleTag({ content: '* { animation: none !important; }' })
 
   // Ensure the app is loaded and ready
-  await expect(page.locator('#add-lane-btn')).toBeVisible()
-  await expect(page.locator('#board-selector')).toBeVisible()
+  await expect(page.locator('[x-ref="hamburgerMenuButton"]')).toBeVisible()
+
+  // Wait for board to be loaded (check select element with x-model)
+  const boardSelect = page.locator('select[x-model="currentBoardName"]')
+  await expect(boardSelect).toBeVisible()
 
   // Create a lane via API for note management tests
   const laneResponse = await page.request.post(

@@ -40,7 +40,7 @@ module ToCry
     # Returns a tuple containing the Note and its parent Lane if found, or `nil` otherwise.
     def note(id : String) : Tuple(Note, Lane)?
       @lanes.each do |lane|
-        found_note = lane.notes.find { |note| note.id == id }
+        found_note = lane.notes.find { |note| note.sepia_id == id }
         return {found_note, lane} if found_note
       end
       nil

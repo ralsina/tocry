@@ -32,6 +32,7 @@ Lint/UselessAssign:
   ExcludeTypeDeclarations: false
   Excluded:
   - src/endpoints/boards.cr
+  - src/endpoints/notes.cr
   Enabled: true
   Severity: Warning
 

@@ -14,3 +14,4 @@ integration-test/testdata/
 .last-run.json
 tocry
 *.log
+main
