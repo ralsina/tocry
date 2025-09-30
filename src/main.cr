@@ -126,24 +126,9 @@ def main
   end
 
   # Serve the main application HTML for the root path
-  get "/" do |env|
-    # Get the current user
-    user = ToCry.get_current_user_id(env)
-
-    # List boards for the current user
-    board_references = ToCry::BoardReference.accessible_to_user(user)
-    boards = board_references.map(&.board_name)
-
-    # If there's exactly one board, redirect to it
-    demo_mode = ToCry::Demo.demo_mode?
-    case boards.size
-    when 0
-      render "templates/app.ecr"
-    when 1
-      env.redirect "/b/#{board_references.first.board_uuid}"
-    else
-      render "templates/board_selection.ecr"
-    end
+  get "/" do |_|
+    # Default to reactive UI
+    render "templates/app.ecr"
   end
 
   # Demo mode: serve placeholder images for demo uploads

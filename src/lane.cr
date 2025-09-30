@@ -36,7 +36,7 @@ module ToCry
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
-      Log.info { "Note '#{new_note.title}' (ID: #{new_note.id}) added to lane '#{self.name}' at position #{actual_position}." }
+      Log.info { "Note '#{new_note.title}' (ID: #{new_note.sepia_id}) added to lane '#{self.name}' at position #{actual_position}." }
       new_note
     rescue ex
       Log.error(exception: ex) { "Failed to add note '#{title}' to lane '#{self.name}'" }
