@@ -712,8 +712,9 @@
       color: inherit;
       margin-left: 0.125rem;
       cursor: pointer;
-      font-size: 0.9em;
-      opacity: 0.6;
+      font-size: 0.7em;
+      font-weight: 500;
+      opacity: 0.5;
       padding: 0;
       line-height: 1;
       display: inline-block;
@@ -721,11 +722,14 @@
       height: auto;
       min-width: auto;
       min-height: auto;
-      transition: opacity 0.2s ease;
+      transition: all 0.2s ease;
+      border-radius: 50%;
+      aspect-ratio: 1;
     }
 
     .tag-remove-btn:hover {
       opacity: 1;
+      background: rgba(0, 0, 0, 0.1);
     }
 
     .expand-indicator {
