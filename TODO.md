@@ -2,15 +2,6 @@
 
 ## High Priority
 
-- [ ] Fix ToastUI Editor not loading in edit modal
-  - Script is being loaded but editor is not initializing
-  - Check if there are loading order issues
-  - Verify global object availability
-  - Consider alternative editor solutions if ToastUI continues to fail
-- [ ] Fix ToastUI Editor text visibility issue
-  - Text in left-side editor pane is invisible (black on black)
-  - Need to adjust CSS for proper contrast in dark mode
-  - Ensure text is visible in both light and dark themes
 - [ ] Move CSS from template to separate file
   - Currently CSS is inline in the ECR template
   - Should be in a separate CSS file for better organization
@@ -61,13 +52,6 @@
   - [x] Implement accessible keyboard navigation in modals
   - [x] Add consistent styling for all modals
 
-- [ ] Evaluate HTMX integration for selective loading
-  - [ ] Research benefits of HTMX vs full SPA approach
-  - [ ] Consider using HTMX for note cards and dialogs
-  - [ ] Keep Alpine.js for reactive components where needed
-  - [ ] Reduce initial page load size
-  - [ ] Improve SEO and accessibility
-  - [ ] Maintain progressive enhancement approach
 
 - [x] Implement lane reordering via drag and drop
   - [x] Add drag handles to lane headers
@@ -114,12 +98,6 @@
   - [x] Test that no `?ui=legacy` parameter is needed
   - [x] Test legacy UI still works with `?ui=legacy`
 
-## Low Priority
-
-- [ ] Improve error handling and user feedback
-- [ ] Add loading states for async operations
-- [ ] Consider adding animations for UI transitions
-- [ ] Test with mobile devices and responsive design
 
 ## Notes
 
