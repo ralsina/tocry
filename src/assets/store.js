@@ -37,6 +37,10 @@ function createToCryStore () {
     draggedLane: null,
     draggedLaneIndex: null,
 
+    // Lane Renaming
+    editingLane: null,
+    editingLaneName: '',
+
     // Scrolling
     canScrollLeft: false,
     canScrollRight: false,
@@ -622,6 +626,59 @@ function createToCryStore () {
       }
     },
 
+    // Lane Renaming Functions
+    startRenamingLane (laneName) {
+      this.editingLane = laneName
+      this.editingLaneName = laneName
+      // Focus the input field after it becomes visible
+      this.$nextTick(() => {
+        const input = this.$refs.laneRenameInput
+        if (input) {
+          input.focus()
+          input.select()
+        }
+      })
+    },
+
+    async confirmLaneRename () {
+      if (!this.editingLane || !this.editingLaneName.trim()) {
+        this.cancelLaneRename()
+        return
+      }
+
+      const newName = this.editingLaneName.trim()
+      if (newName === this.editingLane) {
+        this.cancelLaneRename()
+        return
+      }
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane/${encodeURIComponent(this.editingLane)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane: { name: newName, notes: [] },
+            position: this.currentBoard.lanes.findIndex(l => l.name === this.editingLane)
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to rename lane')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess(`Lane renamed to "${newName}"`)
+      } catch (error) {
+        console.error('Error renaming lane:', error)
+        this.showError('Failed to rename lane')
+      } finally {
+        this.cancelLaneRename()
+      }
+    },
+
+    cancelLaneRename () {
+      this.editingLane = null
+      this.editingLaneName = ''
+    },
+
     // Add a new note
     async addNote (laneName) {
       const title = await this.prompt('Enter note title:')
@@ -922,6 +979,7 @@ function createToCryStore () {
         if (!response.ok) throw new Error('Failed to add lane')
 
         this.newLaneName = ''
+        this.showAddLane = false // Close the modal
         await this.loadBoard(this.currentBoardName)
       } catch (error) {
         console.error('Error adding lane:', error)
@@ -1036,6 +1094,8 @@ function createToCryStore () {
       document.querySelectorAll('.drop-indicator-container').forEach(el => el.remove())
 
       if (!this.draggedNote) {
+        // Handle file drops (images, etc.)
+        await this.handleFileDrop(event, toLaneName)
         return
       }
       try {
@@ -1121,6 +1181,123 @@ function createToCryStore () {
       } catch (error) {
         console.error('Error handling drop:', error)
         await this.showAlert('Error', 'Failed to move note. Please try again.')
+      }
+    },
+
+    // Handle file drops (images, etc.)
+    async handleFileDrop (event, laneName) {
+      const files = event.dataTransfer?.files
+      if (!files || files.length === 0) return
+
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          await this.createNoteWithImage(file, laneName)
+        }
+      }
+    },
+
+    // Handle paste events
+    async handlePaste (event, laneName) {
+      event.preventDefault()
+
+      const text = event.clipboardData?.getData('text/plain')
+      const files = event.clipboardData?.files
+
+      if (files && files.length > 0) {
+        // Handle pasted images
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            await this.createNoteWithImage(file, laneName)
+          }
+        }
+      } else if (text && text.trim()) {
+        // Handle pasted text
+        await this.createNoteWithText(text.trim(), laneName)
+      }
+    },
+
+    // Create a note with an image attachment
+    async createNoteWithImage (file, laneName) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('lane_name', laneName)
+      formData.append('note_title', file.name.replace(/\.[^/.]+$/, '')) // Remove extension
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) throw new Error('Failed to create note with image')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Image note created successfully')
+      } catch (error) {
+        console.error('Error creating image note:', error)
+        this.showError('Failed to create image note')
+      }
+    },
+
+    // Create a note with text content
+    async createNoteWithText (text, laneName) {
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane_name: laneName,
+            note: {
+              title: text.length > 50 ? text.substring(0, 47) + '...' : text,
+              content: text,
+              tags: []
+            }
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to create note')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Note created successfully')
+      } catch (error) {
+        console.error('Error creating note:', error)
+        this.showError('Failed to create note')
+      }
+    },
+
+    // Handle file drops on individual notes (for attachments)
+    async handleNoteDrop (event, note, laneName) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const files = event.dataTransfer?.files
+      if (!files || files.length === 0) return
+
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          await this.addAttachmentToNote(note, file)
+        }
+      }
+    },
+
+    // Add attachment to existing note
+    async addAttachmentToNote (note, file) {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(note.sepia_id)}/attachment`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) throw new Error('Failed to add attachment')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Image added to note successfully')
+      } catch (error) {
+        console.error('Error adding attachment:', error)
+        this.showError('Failed to add image to note')
       }
     },
 
@@ -1244,7 +1421,7 @@ function createToCryStore () {
     },
 
     // Handle file drop for attachments
-    async handleFileDrop (event) {
+    async handleAttachmentFileDrop (event) {
       event.preventDefault()
       event.currentTarget.style.borderColor = 'var(--pico-border-color)'
 

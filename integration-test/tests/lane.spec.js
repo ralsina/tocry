@@ -106,14 +106,14 @@ test.describe('Lane and Note Management', () => {
     const laneContainer = laneTitle.locator('..').locator('..') // Go up to lane container
     await expect(laneTitle).toBeVisible()
 
-    // Find delete button within the lane (gear icon)
-    const deleteButton = laneContainer.locator('button[aria-label*="Delete"]').first()
+    // Find delete button within the lane (× button)
+    const deleteButton = laneContainer.locator('button[title="Delete lane"]').first()
     await expect(deleteButton).toBeVisible()
     await deleteButton.click()
 
-    // Confirm deletion in modal
-    await expect(page.locator('.modal-overlay')).toBeVisible()
-    await page.locator('button:has-text("Delete")').first().click()
+    // Confirm deletion in alert dialog
+    await expect(page.locator('.modal-overlay').filter({ hasText: 'Delete Lane' })).toBeVisible()
+    await page.locator('button:has-text("Delete Anyway")').click()
 
     // Assert lane is no longer visible
     await expect(laneTitle).not.toBeVisible()
@@ -138,17 +138,17 @@ test.describe('Lane and Note Management', () => {
     // Wait for all lanes to be visible
     await page.waitForTimeout(500)
 
-    // Get locators for the lanes by their titles
-    const laneOne = page.locator('.lane-header span').filter({ hasText: 'Lane One' })
-    const laneTwo = page.locator('.lane-header span').filter({ hasText: 'Lane Two' })
-    const laneThree = page.locator('.lane-header span').filter({ hasText: 'Lane Three' })
+    // Get locators for the lanes by their titles (excluding note count spans)
+    const laneOne = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane One' })
+    const laneTwo = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane Two' })
+    const laneThree = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane Three' })
 
     await expect(laneOne).toBeVisible()
     await expect(laneTwo).toBeVisible()
     await expect(laneThree).toBeVisible()
 
-    // Verify initial order
-    await expect(page.locator('.lane .lane-header span')).toHaveText([
+    // Verify initial order (excluding note count spans)
+    await expect(page.locator('.lane .lane-header span:not(.note-count)')).toHaveText([
       'Lane One',
       'Lane Two',
       'Lane Three'
@@ -160,7 +160,7 @@ test.describe('Lane and Note Management', () => {
     // Wait for drag operation to complete
     await page.waitForTimeout(300)
 
-    // Verify the new order: Lane Two, Lane Three, Lane One
-    await expect(page.locator('.lane .lane-header span')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
+    // Verify the new order: Lane Two, Lane Three, Lane One (excluding note count spans)
+    await expect(page.locator('.lane .lane-header span:not(.note-count)')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
   })
 })

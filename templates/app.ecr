@@ -1043,7 +1043,17 @@
                  @dragover="handleLaneDragOver($event)"
                  @drop="handleLaneDrop($event)">
               <div class="lane-header">
-                <span x-text="lane.name"></span>
+                <span x-show="editingLane !== lane.name"
+                      x-text="lane.name"
+                      @dblclick="startRenamingLane(lane.name)"></span>
+                <input x-show="editingLane === lane.name"
+                       x-model="editingLaneName"
+                       @keyup.enter="confirmLaneRename()"
+                       @keyup.escape="cancelLaneRename()"
+                       @blur="confirmLaneRename()"
+                       @click.stop
+                       style="flex: 1; margin: 0; padding: 0.25rem; font-size: inherit; font-family: inherit;"
+                       x-ref="laneRenameInput">
                 <div style="display: flex; align-items: center; gap: 0.25rem;">
                   <span class="note-count" x-text="(lane.notes || []).length"></span>
                   <div class="lane-action-group">
@@ -1063,7 +1073,8 @@
               </div>
               <div class="lane-notes"
                    @dragover="handleDragOver($event, lane.name)"
-                   @drop="handleDrop($event, lane.name)">
+                   @drop="handleDrop($event, lane.name)"
+                   @paste="handlePaste($event, lane.name)">
                 <!-- HTMX will load note cards here -->
                 <template x-for="note in lane.notes || []" :key="note.sepia_id">
                   <div class="note-card"
@@ -1075,6 +1086,7 @@
                        @dragstart="handleDragStart($event, note, lane.name)"
                        @dragend="handleDragEnd($event)"
                        @dragover.prevent
+                       @drop="handleNoteDrop($event, note, lane.name)"
                        x-transition:enter="transition ease-out duration-200"
                        x-transition:enter-start="opacity-0 transform scale-95"
                        x-transition:enter-end="opacity-100 transform scale-100"
@@ -1587,7 +1599,7 @@
                @click="$refs.fileInput.click()"
                @dragover.prevent
                @dragenter.prevent
-               @drop.prevent="handleFileDrop($event)"
+               @drop.prevent="handleAttachmentFileDrop($event)"
                style="border: 2px dashed var(--pico-border-color); border-radius: 0.5rem; padding: 2rem; text-align: center; cursor: pointer; margin-top: 1rem; transition: all 0.2s ease;"
                @dragover="$el.style.borderColor = 'var(--pico-primary)'; $el.style.backgroundColor = 'var(--pico-primary-background)'"
                @dragleave="$el.style.borderColor = 'var(--pico-border-color)'; $el.style.backgroundColor = 'transparent'"

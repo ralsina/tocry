@@ -11,7 +11,8 @@
       "Bash(standard integration-test/tests/*.js)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(shards build:*)"
+      "Bash(shards build:*)",
+      "Bash(./run_integration.sh:*)"
     ],
     "deny": [],
     "ask": []
