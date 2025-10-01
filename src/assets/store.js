@@ -1669,12 +1669,12 @@ function createToCryStore () {
       // First check if this is a note being dragged (not a file)
       if (this.draggedNote) {
         // This is a note being dropped on another note
-        // Find the target position (right after this note)
+        // Find the target position (replace the target note)
         const targetLane = this.currentBoard.lanes.find(l => l.name === laneName)
         if (targetLane) {
           const targetIndex = targetLane.notes.findIndex(n => n.sepia_id === note.sepia_id)
           if (targetIndex !== -1) {
-            this.draggedToIndex = targetIndex + 1
+            this.draggedToIndex = targetIndex
             // Delegate to the main handleDrop function
             await this.handleDrop(event, laneName)
           }
