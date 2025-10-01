@@ -18,48 +18,48 @@
 
 ## Medium Priority
 
-- [ ] Improve note card design to match legacy UI richness
+- [x] Improve note card design to match legacy UI richness
   - [x] Add proper styling for tags
   - [x] Add visual indicators for priority
   - [x] Show start/end dates when note is expanded
   - [x] Add expand/collapse functionality
   - [x] Display file attachments
-  - [ ] Show word count or character count
-  - [ ] Add hover effects and better visual feedback
+  - [x] Show word count or character count
+  - [x] Add hover effects and better visual feedback
 
-- [ ] Restore board header functionality from legacy UI
-  - [ ] Add board rename functionality
-  - [ ] Add board delete functionality
-  - [ ] Add color scheme selector
-  - [ ] Add board sharing features
-  - [ ] Add board statistics (note count, etc.)
-  - [ ] Add last updated timestamp
+- [x] Restore board header functionality from legacy UI
+  - [x] Add board rename functionality
+  - [x] Add board delete functionality
+  - [x] Add color scheme selector
+  - [x] Add board sharing features
+  - [x] Add board statistics (note count, etc.)
+  - [x] Add last updated timestamp
 
-- [ ] Implement search functionality
-  - [ ] Add search input in header
-  - [ ] Search across note titles and content
-  - [ ] Search by tags
-  - [ ] Filter by priority
-  - [ ] Filter by date range
-  - [ ] Highlight search results
-  - [ ] Save search queries
+- [x] Implement search functionality
+  - [x] Add search input in header
+  - [x] Search across note titles and content
+  - [x] Search by tags
+  - [x] Filter by priority
+  - [x] Filter by date range
+  - [x] Highlight search results
+  - [x] Save search queries
 
-- [ ] Add guided onboarding experience for new users
-  - [ ] Show helpful prompts when no boards exist
-  - [ ] Guide users to create their first board
-  - [ ] Show lane creation tips on empty boards
-  - [ ] Show note creation tips on empty lanes
-  - [ ] Add tooltips for UI elements
-  - [ ] Create a quick start guide or tutorial modal
-  - [ ] Track and hide tips once user is familiar with the app
+- [x] Add guided onboarding experience for new users
+  - [x] Show helpful prompts when no boards exist
+  - [x] Guide users to create their first board
+  - [x] Show lane creation tips on empty boards
+  - [x] Show note creation tips on empty lanes
+  - [x] Add tooltips for UI elements
+  - [x] Create a quick start guide or tutorial modal
+  - [x] Track and hide tips once user is familiar with the app
 
-- [ ] Replace browser alerts and prompts with custom modal dialogs
-  - [ ] Create custom modal component for confirmations
-  - [ ] Create custom modal for text input (board/lane creation)
-  - [ ] Create custom modal for note editing with better layout
-  - [ ] Add proper form validation with inline error messages
-  - [ ] Implement accessible keyboard navigation in modals
-  - [ ] Add consistent styling for all modals
+- [x] Replace browser alerts and prompts with custom modal dialogs
+  - [x] Create custom modal component for confirmations
+  - [x] Create custom modal for text input (board/lane creation)
+  - [x] Create custom modal for note editing with better layout
+  - [x] Add proper form validation with inline error messages
+  - [x] Implement accessible keyboard navigation in modals
+  - [x] Add consistent styling for all modals
 
 - [ ] Evaluate HTMX integration for selective loading
   - [ ] Research benefits of HTMX vs full SPA approach
@@ -76,13 +76,13 @@
   - [x] Add visual feedback during dragging
   - [x] Persist lane order after page refresh
 
-- [ ] Improve horizontal lane scrolling experience
-  - [ ] Add navigation buttons for horizontal scrolling
-  - [ ] Implement auto-scroll when dragging notes near edges
-  - [ ] Hide scrollbars while maintaining scroll functionality
-  - [ ] Add smooth scrolling animations
-  - [ ] Support touch gestures for mobile devices
-  - [ ] Add lane overflow indicators
+- [x] Improve horizontal lane scrolling experience
+  - [x] Add navigation buttons for horizontal scrolling
+  - [x] Implement auto-scroll when dragging notes near edges
+  - [x] Hide scrollbars while maintaining scroll functionality
+  - [x] Add smooth scrolling animations
+  - [x] Support touch gestures for mobile devices
+  - [x] Add lane overflow indicators
 
 - [ ] Implement touch/mobile support for note dragging
   - [ ] Add touch event handlers for drag and drop
@@ -92,27 +92,27 @@
   - [ ] Test on various mobile devices and screen sizes
   - [ ] Consider using a touch-friendly drag and drop library
 
-- [ ] Add note expand/collapse functionality
-  - [ ] Add click handler to toggle note expansion
-  - [ ] Show full content when expanded
-  - [ ] Show dates (start/end) when expanded
-  - [ ] Animate expand/collapse transitions
-  - [ ] Persist expanded state in backend
-  - [ ] Show different UI for expanded vs collapsed state
+- [x] Add note expand/collapse functionality
+  - [x] Add click handler to toggle note expansion
+  - [x] Show full content when expanded
+  - [x] Show dates (start/end) when expanded
+  - [x] Animate expand/collapse transitions
+  - [x] Persist expanded state in backend
+  - [x] Show different UI for expanded vs collapsed state
 
-- [ ] Test and verify all core functionality works
-  - [ ] Board creation and switching
-  - [ ] Lane creation and deletion
-  - [ ] Note creation, editing, and deletion
-  - [ ] Drag and drop between lanes
-  - [ ] Drag and drop reordering within lanes
-  - [ ] Tag functionality
-  - [ ] Priority levels
-  - [ ] Date fields
+- [x] Test and verify all core functionality works
+  - [x] Board creation and switching
+  - [x] Lane creation and deletion
+  - [x] Note creation, editing, and deletion
+  - [x] Drag and drop between lanes
+  - [x] Drag and drop reordering within lanes
+  - [x] Tag functionality
+  - [x] Priority levels
+  - [x] Date fields
 
-- [ ] Verify the reactive UI is properly served as default
-  - [ ] Test that no `?ui=legacy` parameter is needed
-  - [ ] Test legacy UI still works with `?ui=legacy`
+- [x] Verify the reactive UI is properly served as default
+  - [x] Test that no `?ui=legacy` parameter is needed
+  - [x] Test legacy UI still works with `?ui=legacy`
 
 ## Low Priority
 
