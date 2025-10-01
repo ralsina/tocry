@@ -706,6 +706,28 @@
       transform: translateY(-1px);
     }
 
+    .tag-remove-btn {
+      background: none;
+      border: none;
+      color: inherit;
+      margin-left: 0.125rem;
+      cursor: pointer;
+      font-size: 0.9em;
+      opacity: 0.6;
+      padding: 0;
+      line-height: 1;
+      display: inline-block;
+      width: auto;
+      height: auto;
+      min-width: auto;
+      min-height: auto;
+      transition: opacity 0.2s ease;
+    }
+
+    .tag-remove-btn:hover {
+      opacity: 1;
+    }
+
     .expand-indicator {
       color: var(--pico-muted-color);
       opacity: 0.6;
@@ -1223,9 +1245,7 @@
                                     @mouseout="$el.style.background = 'var(--pico-secondary-background)'">
                                 <span x-text="'#' + tag"></span>
                                 <button @click.stop="removeQuickTag(note.sepia_id, lane.name, tag)"
-                                        style="background: none; border: none; color: inherit; margin-left: 0.25rem; cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s ease;"
-                                        @mouseover="$el.style.opacity = '1'"
-                                        @mouseout="$el.style.opacity = '0.7'"
+                                        class="tag-remove-btn"
                                         title="Remove tag">×</button>
                               </span>
                             </template>
