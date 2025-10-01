@@ -691,18 +691,22 @@
     .note-tag {
       display: inline-block;
       background: var(--pico-secondary-background);
+      border: 1px dashed var(--pico-secondary-border-color);
       color: var(--pico-secondary);
-      padding: 0.0625rem 0.25rem;
-      border-radius: 0.375rem;
-      font-size: 0.625rem;
-      margin-right: 0.1875rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: var(--pico-border-radius);
+      font-size: 0.75rem;
+      margin-right: 0.25rem;
       font-weight: 500;
       line-height: 1.2;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
 
     .note-tag:hover {
-      background: var(--pico-secondary-background-hover);
+      background: var(--pico-primary);
+      color: white;
+      border-color: var(--pico-primary);
       transform: translateY(-1px);
     }
 
