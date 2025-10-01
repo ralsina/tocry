@@ -12,7 +12,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(shards build:*)",
-      "Bash(./run_integration.sh:*)"
+      "Bash(./run_integration.sh:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

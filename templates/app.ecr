@@ -372,6 +372,94 @@
     .note-title {
       font-weight: 300;
       margin-bottom: 0.5rem;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .note-title:hover {
+      background: rgba(var(--primary-rgb), 0.08);
+      transform: translateY(-1px);
+    }
+
+    .note-title:hover::after {
+      content: '✏️';
+      position: absolute;
+      right: 0.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+
+    .note-title-input {
+      animation: fadeIn 0.2s ease;
+    }
+
+    .note-content-input {
+      animation: fadeIn 0.2s ease;
+    }
+
+    .note-content-input:focus {
+      box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    }
+
+    .note-tags-input {
+      animation: fadeIn 0.2s ease;
+    }
+
+    .note-tags-input:focus {
+      box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    }
+
+    /* Pulse animation for auto-save indicator */
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Enhanced hover states for all editable elements */
+    .note-card-header:hover .note-title:not(:hover) {
+      opacity: 0.8;
+    }
+
+    /* Smooth transitions for better UX */
+    .note-card * {
+      transition: all 0.2s ease;
+    }
+
+    /* Visual feedback for active editing */
+    .editing-indicator {
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border: 2px solid var(--pico-primary);
+      border-radius: 0.5rem;
+      pointer-events: none;
+      animation: editingPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes editingPulse {
+      0%, 100% {
+        opacity: 0.6;
+      }
+      50% {
+        opacity: 1;
+      }
     }
 
     .note-content {
@@ -1096,12 +1184,70 @@
                     <div class="note-card-header">
                       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
-                          <div class="note-title" x-text="note.title"></div>
-                          <!-- Tags always visible -->
-                          <div class="note-tags" x-show="note.tags && note.tags.length > 0">
-                            <template x-for="tag in note.tags" :key="tag">
-                              <span class="note-tag" x-text="'#' + tag"></span>
+                          <div class="note-title"
+                               x-show="editingNoteTitle !== note.sepia_id"
+                               x-text="note.title"
+                               @dblclick="startEditingNoteTitle(note.sepia_id, lane.name, note.title)"
+                               title="Double-click to edit"></div>
+                          <input x-show="editingNoteTitle === note.sepia_id"
+                                 x-model="editingNoteTitleText"
+                                 @keyup.enter="confirmNoteTitleEdit()"
+                                 @keyup.escape="cancelNoteTitleEdit()"
+                                 @blur="confirmNoteTitleEdit()"
+                                 @click.stop
+                                 class="note-title-input"
+                                 :x-ref="`noteTitleInput-${note.sepia_id}`"
+                                 style="flex: 1; margin: 0; padding: 0; font-size: inherit; font-family: inherit; font-weight: 300; background: transparent; border: 1px solid var(--pico-primary); border-radius: 0.25rem; outline: none;">
+                          <!-- Tags always visible with inline editing -->
+                          <div class="note-tags"
+                               x-show="note.tags && note.tags.length > 0 || editingNoteTags === note.sepia_id"
+                               @dblclick="startEditingNoteTags(note.sepia_id, lane.name, note.tags || [])"
+                               title="Double-click to edit tags"
+                               style="min-height: 1.5rem; padding: 0.125rem; border-radius: 0.25rem; cursor: pointer; transition: background 0.2s ease;"
+                               @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.05)'"
+                               @mouseout="$el.style.background = 'transparent'">
+
+                            <!-- View mode: Display tags with remove buttons -->
+                            <template x-for="tag in note.tags || []" :key="tag" x-show="editingNoteTags !== note.sepia_id">
+                              <span class="note-tag"
+                                    style="position: relative; transition: all 0.2s ease;"
+                                    @mouseover="$el.style.background = 'var(--pico-del-color)'"
+                                    @mouseout="$el.style.background = 'var(--pico-secondary-background)'">
+                                <span x-text="'#' + tag"></span>
+                                <button @click.stop="removeQuickTag(note.sepia_id, lane.name, tag)"
+                                        style="background: none; border: none; color: inherit; margin-left: 0.25rem; cursor: pointer; font-size: 0.8em; opacity: 0.7; transition: opacity 0.2s ease;"
+                                        @mouseover="$el.style.opacity = '1'"
+                                        @mouseout="$el.style.opacity = '0.7'"
+                                        title="Remove tag">×</button>
+                              </span>
                             </template>
+
+                            <!-- Add new tag button -->
+                            <button x-show="editingNoteTags !== note.sepia_id && (note.tags || []).length < 5"
+                                    @click.stop="startEditingNoteTags(note.sepia_id, lane.name, note.tags || [])"
+                                    style="background: var(--pico-secondary-background); border: 1px dashed var(--pico-secondary-border-color); color: var(--pico-secondary); padding: 0.125rem 0.375rem; border-radius: var(--pico-border-radius); font-size: 0.75rem; margin-left: 0.25rem; cursor: pointer; transition: all 0.2s ease;"
+                                    @mouseover="$el.style.background = 'var(--pico-primary)'; $el.style.color = 'white'; $el.style.borderColor = 'var(--pico-primary)'"
+                                    @mouseout="$el.style.background = 'var(--pico-secondary-background)'; $el.style.color = 'var(--pico-secondary)'; $el.style.borderColor = 'var(--pico-secondary-border-color)'"
+                                    title="Add tag">+ Tag</button>
+
+                            <!-- Edit mode: Input for editing tags -->
+                            <div x-show="editingNoteTags === note.sepia_id"
+                                 style="display: flex; gap: 0.25rem; align-items: center;">
+                              <input x-model="editingNoteTagsText"
+                                     @keyup.enter="saveNoteTags()"
+                                     @keyup.escape="cancelNoteTagsEdit()"
+                                     @blur="saveNoteTags()"
+                                     :x-ref="`noteTagsInput-${note.sepia_id}`"
+                                     class="note-tags-input"
+                                     placeholder="Enter tags (comma separated)..."
+                                     style="flex: 1; font-size: 0.75rem; padding: 0.125rem 0.375rem; border: 1px solid var(--pico-primary); border-radius: var(--pico-border-radius); background: var(--pico-background-color); color: var(--pico-color); outline: none; min-width: 200px;">
+                              <button @click="saveNoteTags()"
+                                      style="background: var(--pico-primary); color: white; border: none; padding: 0.125rem 0.375rem; border-radius: var(--pico-border-radius); font-size: 0.75rem; cursor: pointer;"
+                                      title="Save tags">✓</button>
+                              <button @click="cancelNoteTagsEdit()"
+                                      style="background: var(--pico-del-color); color: white; border: none; padding: 0.125rem 0.375rem; border-radius: var(--pico-border-radius); font-size: 0.75rem; cursor: pointer;"
+                                      title="Cancel">×</button>
+                            </div>
                           </div>
                         </div>
                         <!-- Action buttons -->
@@ -1186,9 +1332,15 @@
                          :title="`${(note.priority || '').charAt(0).toUpperCase() + (note.priority || '').slice(1)} Priority`">
                     </div>
                     <div class="note-content-wrapper">
+                      <!-- View mode: Rendered markdown -->
                       <div class="note-content"
-                           x-show="note.expanded"
+                           x-show="note.expanded && editingNoteContent !== note.sepia_id"
                            x-cloak
+                           @click="startEditingNoteContent(note.sepia_id, lane.name, note.content)"
+                           title="Click to edit content"
+                           style="cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; transition: background 0.2s ease;"
+                           @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.05)'"
+                           @mouseout="$el.style.background = 'transparent'"
                            x-transition:enter="transition-all duration-500 cubic-bezier(0.68, -0.55, 0.265, 1.55)"
                            x-transition:enter-start="opacity-0 max-height-0 transform scale(95) -translate-y-2"
                            x-transition:enter-end="opacity-100 max-height-1000px transform scale(100) translate-y-0"
@@ -1196,6 +1348,38 @@
                            x-transition:leave-start="opacity-100 max-height-1000px transform scale(100) translate-y-0"
                            x-transition:leave-end="opacity-0 max-height-0 transform scale(95) -translate-y-2"
                            x-html="markdownToHtml(note.content)">
+                      </div>
+
+                      <!-- Edit mode: Textarea for content editing -->
+                      <div class="note-content"
+                           x-show="note.expanded && editingNoteContent === note.sepia_id"
+                           x-cloak
+                           x-transition:enter="transition-all duration-300 ease"
+                           x-transition:enter-start="opacity-0 transform scale(95)"
+                           x-transition:enter-end="opacity-100 transform scale(100)"
+                           style="padding: 0;">
+                        <textarea x-model="editingNoteContentText"
+                                  @input="autoSaveNoteContent()"
+                                  @keydown.enter.ctrl="saveNoteContent()"
+                                  @keydown.esc="cancelNoteContentEdit()"
+                                  @blur="saveNoteContent()"
+                                  :x-ref="`noteContentInput-${note.sepia_id}`"
+                                  class="note-content-input"
+                                  placeholder="Enter note content (markdown supported)..."
+                                  style="width: 100%; min-height: 100px; resize: vertical; font-family: inherit; font-size: 0.875rem; line-height: 1.5; border: 1px solid var(--pico-primary); border-radius: 0.25rem; padding: 0.5rem; background: var(--pico-background-color); color: var(--pico-color); outline: none; transition: border-color 0.2s ease;"
+                                  @focus="$el.style.borderColor = 'var(--pico-primary-focus)'"
+                                  @blur="$el.style.borderColor = 'var(--pico-primary)'"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--pico-muted-color);">
+                          <span>Markdown supported • Ctrl+Enter to save • Esc to cancel</span>
+                          <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span x-show="editingNoteContent && debouncedSaveNoteContent"
+                                  style="display: flex; align-items: center; gap: 0.25rem;">
+                              <span style="width: 8px; height: 8px; background: var(--pico-primary); border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;"></span>
+                              Auto-saving...
+                            </span>
+                            <span x-show="editingNoteContent && !debouncedSaveNoteContent">✓ All changes saved</span>
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Attachments section -->

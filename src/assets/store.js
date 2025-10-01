@@ -41,6 +41,22 @@ function createToCryStore () {
     editingLane: null,
     editingLaneName: '',
 
+    // Note Title Editing
+    editingNoteTitle: null, // Store note ID being edited
+    editingNoteTitleText: '',
+    editingNoteTitleLane: null, // Store lane name for context
+
+    // Note Content Editing
+    editingNoteContent: null, // Store note ID being edited
+    editingNoteContentText: '',
+    editingNoteContentLane: null, // Store lane name for context
+
+    // Note Tag Editing
+    editingNoteTags: null, // Store note ID being edited
+    editingNoteTagsText: '',
+    editingNoteTagsLane: null, // Store lane name for context
+    addingNewTag: false,
+
     // Scrolling
     canScrollLeft: false,
     canScrollRight: false,
@@ -186,6 +202,9 @@ function createToCryStore () {
       await this.loadBoards()
       console.log('Loaded boards:', this.boards, 'Count:', this.boards.length)
 
+      // Setup global keyboard shortcuts
+      this.setupGlobalKeyboardHandler()
+
       // Get board name from URL
       const pathParts = window.location.pathname.split('/')
       if (pathParts[1] === 'b' && pathParts[2]) {
@@ -198,6 +217,100 @@ function createToCryStore () {
         this.currentBoardName = this.boards[0]
         await this.loadBoard(this.boards[0])
       }
+    },
+
+    // Global keyboard handler for enhanced navigation
+    setupGlobalKeyboardHandler () {
+      document.addEventListener('keydown', (e) => {
+        const activeElement = document.activeElement
+        const isEditable = activeElement?.tagName === 'INPUT' ||
+                          activeElement?.tagName === 'TEXTAREA' ||
+                          activeElement?.contentEditable === 'true'
+
+        // Escape key: cancel any ongoing editing
+        if (e.key === 'Escape') {
+          if (this.editingNoteTitle) {
+            this.cancelNoteTitleEdit()
+            e.preventDefault()
+          } else if (this.editingNoteContent) {
+            this.cancelNoteContentEdit()
+            e.preventDefault()
+          } else if (this.editingNoteTags) {
+            this.cancelNoteTagsEdit()
+            e.preventDefault()
+          } else if (this.editingLane) {
+            this.cancelLaneRename()
+            e.preventDefault()
+          } else if (this.showNewBoardModal) {
+            this.showNewBoardModal = false
+            e.preventDefault()
+          } else if (this.showAddLane) {
+            this.showAddLane = false
+            e.preventDefault()
+          } else if (this.editingNote) {
+            this.cancelEditNote()
+            e.preventDefault()
+          }
+        }
+
+        // Tab navigation between editable elements (when not in modal/input)
+        if (e.key === 'Tab' && !isEditable && !e.shiftKey) {
+          // Focus first editable element in visible note
+          const firstNote = document.querySelector('.note-card:not(.search-hidden)')
+          if (firstNote) {
+            const titleElement = firstNote.querySelector('.note-title')
+            if (titleElement) {
+              e.preventDefault()
+              titleElement.click() // This will trigger title editing
+            }
+          }
+        }
+
+        // Ctrl/Cmd + Enter: save current edit
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          if (this.editingNoteContent) {
+            this.saveNoteContent()
+            e.preventDefault()
+          } else if (this.editingNoteTags) {
+            this.saveNoteTags()
+            e.preventDefault()
+          } else if (this.editingNoteTitle) {
+            this.confirmNoteTitleEdit()
+            e.preventDefault()
+          } else if (this.editingLane) {
+            this.confirmLaneRename()
+            e.preventDefault()
+          }
+        }
+
+        // Ctrl/Cmd + K: quick search (alternative to /)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isEditable) {
+          e.preventDefault()
+          this.$nextTick(() => {
+            this.$refs.searchInput?.focus()
+          })
+        }
+
+        // Ctrl/Cmd + N: new note in first lane
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !isEditable) {
+          e.preventDefault()
+          if (this.currentBoard?.lanes?.length > 0) {
+            this.addNote(this.currentBoard.lanes[0].name)
+          }
+        }
+
+        // Ctrl/Cmd + L: new lane
+        if ((e.ctrlKey || e.metaKey) && e.key === 'l' && !isEditable) {
+          e.preventDefault()
+          this.showAddLane = true
+        }
+
+        // Ctrl/Cmd + B: new board
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b' && !isEditable) {
+          e.preventDefault()
+          this.showNewBoardModal = true
+        }
+      })
     },
 
     // Theme and color scheme methods
@@ -677,6 +790,285 @@ function createToCryStore () {
     cancelLaneRename () {
       this.editingLane = null
       this.editingLaneName = ''
+    },
+
+    // Note Title Editing Functions
+    startEditingNoteTitle (noteId, laneName, currentTitle) {
+      this.editingNoteTitle = noteId
+      this.editingNoteTitleText = currentTitle
+      this.editingNoteTitleLane = laneName
+      // Focus the input field after it becomes visible
+      this.$nextTick(() => {
+        const input = this.$refs[`noteTitleInput-${noteId}`]
+        if (input) {
+          input.focus()
+          input.select()
+        }
+      })
+    },
+
+    async confirmNoteTitleEdit () {
+      if (!this.editingNoteTitle || !this.editingNoteTitleText.trim()) {
+        this.cancelNoteTitleEdit()
+        return
+      }
+
+      const newTitle = this.editingNoteTitleText.trim()
+
+      // Find the current note to get its full data
+      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTitleLane)
+      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteTitle)
+
+      if (!note || note.title === newTitle) {
+        this.cancelNoteTitleEdit()
+        return
+      }
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteTitle)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane_name: this.editingNoteTitleLane,
+            note: {
+              ...note,
+              title: newTitle
+            }
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update note title')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Note title updated')
+      } catch (error) {
+        console.error('Error updating note title:', error)
+        this.showError('Failed to update note title')
+      } finally {
+        this.cancelNoteTitleEdit()
+      }
+    },
+
+    cancelNoteTitleEdit () {
+      this.editingNoteTitle = null
+      this.editingNoteTitleText = ''
+      this.editingNoteTitleLane = null
+    },
+
+    // Note Content Editing Functions
+    startEditingNoteContent (noteId, laneName, currentContent) {
+      this.editingNoteContent = noteId
+      this.editingNoteContentText = currentContent || ''
+      this.editingNoteContentLane = laneName
+      // Focus the textarea after it becomes visible
+      this.$nextTick(() => {
+        const textarea = this.$refs[`noteContentInput-${noteId}`]
+        if (textarea) {
+          textarea.focus()
+          // Place cursor at end of content
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+        }
+      })
+    },
+
+    async saveNoteContent () {
+      if (!this.editingNoteContent) {
+        this.cancelNoteContentEdit()
+        return
+      }
+
+      const newContent = this.editingNoteContentText
+
+      // Find the current note to get its full data
+      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteContentLane)
+      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteContent)
+
+      if (!note || note.content === newContent) {
+        this.cancelNoteContentEdit()
+        return
+      }
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteContent)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane_name: this.editingNoteContentLane,
+            note: {
+              ...note,
+              content: newContent
+            }
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update note content')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Note content updated')
+      } catch (error) {
+        console.error('Error updating note content:', error)
+        this.showError('Failed to update note content')
+      } finally {
+        this.cancelNoteContentEdit()
+      }
+    },
+
+    cancelNoteContentEdit () {
+      this.editingNoteContent = null
+      this.editingNoteContentText = ''
+      this.editingNoteContentLane = null
+    },
+
+    // Auto-save with debouncing for content
+    debouncedSaveNoteContent: null,
+
+    autoSaveNoteContent () {
+      // Clear existing timeout
+      if (this.debouncedSaveNoteContent) {
+        clearTimeout(this.debouncedSaveNoteContent)
+      }
+
+      // Set new timeout to save after 1 second of inactivity
+      this.debouncedSaveNoteContent = setTimeout(() => {
+        this.saveNoteContent()
+      }, 1000)
+    },
+
+    // Note Tag Editing Functions
+    startEditingNoteTags (noteId, laneName, currentTags) {
+      this.editingNoteTags = noteId
+      this.editingNoteTagsText = currentTags ? currentTags.join(', ') : ''
+      this.editingNoteTagsLane = laneName
+      // Focus the input field after it becomes visible
+      this.$nextTick(() => {
+        const input = this.$refs[`noteTagsInput-${noteId}`]
+        if (input) {
+          input.focus()
+          // Place cursor at end
+          input.setSelectionRange(input.value.length, input.value.length)
+        }
+      })
+    },
+
+    async saveNoteTags () {
+      if (!this.editingNoteTags) {
+        this.cancelNoteTagsEdit()
+        return
+      }
+
+      // Parse tags from comma-separated text
+      const newTags = this.editingNoteTagsText
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+
+      // Find the current note to get its full data
+      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTagsLane)
+      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteTags)
+
+      if (!note) {
+        this.cancelNoteTagsEdit()
+        return
+      }
+
+      // Check if tags actually changed
+      const currentTags = note.tags || []
+      if (JSON.stringify(currentTags.sort()) === JSON.stringify(newTags.sort())) {
+        this.cancelNoteTagsEdit()
+        return
+      }
+
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteTags)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane_name: this.editingNoteTagsLane,
+            note: {
+              ...note,
+              tags: newTags
+            }
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update note tags')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Note tags updated')
+      } catch (error) {
+        console.error('Error updating note tags:', error)
+        this.showError('Failed to update note tags')
+      } finally {
+        this.cancelNoteTagsEdit()
+      }
+    },
+
+    cancelNoteTagsEdit () {
+      this.editingNoteTags = null
+      this.editingNoteTagsText = ''
+      this.editingNoteTagsLane = null
+      this.addingNewTag = false
+    },
+
+    // Add a new tag quickly
+    addQuickTag (noteId, laneName, tagText) {
+      const trimmedTag = tagText.trim()
+      if (!trimmedTag) return
+
+      // Find the current note
+      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+      const note = lane?.notes.find(n => n.sepia_id === noteId)
+
+      if (!note) return
+
+      const currentTags = note.tags || []
+      const newTags = [...currentTags, trimmedTag]
+
+      this.updateNoteTags(noteId, laneName, newTags)
+    },
+
+    // Remove a tag quickly
+    removeQuickTag (noteId, laneName, tagToRemove) {
+      // Find the current note
+      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+      const note = lane?.notes.find(n => n.sepia_id === noteId)
+
+      if (!note) return
+
+      const currentTags = note.tags || []
+      const newTags = currentTags.filter(tag => tag !== tagToRemove)
+
+      this.updateNoteTags(noteId, laneName, newTags)
+    },
+
+    // Generic function to update note tags
+    async updateNoteTags (noteId, laneName, newTags) {
+      try {
+        const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+        const note = lane?.notes.find(n => n.sepia_id === noteId)
+
+        if (!note) return
+
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(noteId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lane_name: laneName,
+            note: {
+              ...note,
+              tags: newTags
+            }
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update note tags')
+
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Tag updated')
+      } catch (error) {
+        console.error('Error updating note tags:', error)
+        this.showError('Failed to update note tags')
+      }
     },
 
     // Add a new note
