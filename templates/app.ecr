@@ -692,10 +692,18 @@
       display: inline-block;
       background: var(--pico-secondary-background);
       color: var(--pico-secondary);
-      padding: 0.125rem 0.375rem;
-      border-radius: var(--pico-border-radius);
-      font-size: 0.75rem;
-      margin-right: 0.25rem;
+      padding: 0.0625rem 0.25rem;
+      border-radius: 0.375rem;
+      font-size: 0.625rem;
+      margin-right: 0.1875rem;
+      font-weight: 500;
+      line-height: 1.2;
+      transition: all 0.2s ease;
+    }
+
+    .note-tag:hover {
+      background: var(--pico-secondary-background-hover);
+      transform: translateY(-1px);
     }
 
     .expand-indicator {
