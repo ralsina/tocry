@@ -1412,7 +1412,11 @@ function createToCryStore () {
       // Remove any drop indicators and containers
       document.querySelectorAll('.note-drop-indicator').forEach(el => el.remove())
       document.querySelectorAll('.drop-indicator-container').forEach(el => el.remove())
+      // Reset all drag state
+      this.draggedNote = null
+      this.draggedFromLane = null
       this.draggedFromIndex = null
+      this.draggedToIndex = null
     },
 
     handleDragOver (event, laneName) {
@@ -1662,6 +1666,23 @@ function createToCryStore () {
       event.preventDefault()
       event.stopPropagation()
 
+      // First check if this is a note being dragged (not a file)
+      if (this.draggedNote) {
+        // This is a note being dropped on another note
+        // Find the target position (right after this note)
+        const targetLane = this.currentBoard.lanes.find(l => l.name === laneName)
+        if (targetLane) {
+          const targetIndex = targetLane.notes.findIndex(n => n.sepia_id === note.sepia_id)
+          if (targetIndex !== -1) {
+            this.draggedToIndex = targetIndex + 1
+            // Delegate to the main handleDrop function
+            await this.handleDrop(event, laneName)
+          }
+        }
+        return
+      }
+
+      // Handle file drops
       const files = event.dataTransfer?.files
       if (!files || files.length === 0) return
 
