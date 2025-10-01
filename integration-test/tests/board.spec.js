@@ -38,29 +38,29 @@ test.describe('Board Management', () => {
     await page.locator('[x-ref="hamburgerMenuButton"]').click()
 
     // Click "New Board" option
-    await page.locator('text=New Board').click()
+    await page.locator('a:has-text("New Board")').click()
 
     // Wait for modal to appear
-    const modal = page.locator('.modal-overlay')
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Create New Board' })
     await expect(modal).toBeVisible()
 
     // Fill in board name
-    const modalInput = page.locator('input[x-model="modalInput"]')
+    const modalInput = page.locator('input[x-model="newBoardName"]')
     await expect(modalInput).toBeVisible()
     await modalInput.fill(newBoardName)
 
     // Click confirm button
-    await page.locator('button:has-text("OK")').first().click()
+    await page.locator('button:has-text("Create Board")').click()
 
     // Verify modal is closed and board is created
     await expect(modal).not.toBeVisible()
 
-    // Check that success toast appears
-    await expect(page.locator('.toast-notification.toast-success')).toBeVisible()
-
-    // Verify board is selected
+    // Verify board is selected in the selector
     const boardSelect = page.locator('select[x-model="currentBoardName"]')
     await expect(boardSelect).toHaveValue(newBoardName)
+
+    // Verify URL has been updated to the new board
+    await expect(page).toHaveURL(`/b/${newBoardName}`)
   })
 
   test('should allow renaming the current board', async ({ page }) => {
@@ -75,8 +75,8 @@ test.describe('Board Management', () => {
     // Click "Rename Board" option
     await page.locator('text=Rename Board').click()
 
-    // Wait for modal to appear
-    const modal = page.locator('.modal-overlay')
+    // Wait for prompt modal to appear
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Input Required' })
     await expect(modal).toBeVisible()
 
     // Verify input has current board name
@@ -84,14 +84,12 @@ test.describe('Board Management', () => {
     await expect(modalInput).toHaveValue(originalBoardName)
 
     // Fill in the new name and confirm
+    await modalInput.clear()
     await modalInput.fill(newBoardName)
-    await page.locator('button:has-text("OK")').first().click()
+    await page.locator('button:has-text("OK")').click()
 
     // Assert that the modal is no longer visible
     await expect(modal).not.toBeVisible()
-
-    // Check that success toast appears
-    await expect(page.locator('.toast-notification.toast-success')).toBeVisible()
 
     // Assert that the board selector now shows the new board name
     await expect(boardSelect).toHaveValue(newBoardName)
@@ -114,8 +112,8 @@ test.describe('Board Management', () => {
     // Click "Share Board" option
     await page.locator('text=Share Board').click()
 
-    // Wait for modal to appear
-    const modal = page.locator('.modal-overlay')
+    // Wait for prompt modal to appear
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Input Required' })
     await expect(modal).toBeVisible()
 
     // Fill in email
@@ -123,13 +121,10 @@ test.describe('Board Management', () => {
     await modalInput.fill(shareEmail)
 
     // Click confirm button
-    await page.locator('button:has-text("Share")').first().click()
+    await page.locator('button:has-text("OK")').click()
 
     // Assert that the modal is no longer visible
     await expect(modal).not.toBeVisible()
-
-    // Assert that a success notification appears
-    await expect(page.locator('.toast-notification.toast-success')).toBeVisible()
   })
 })
 

@@ -938,6 +938,8 @@ function createToCryStore () {
         this.showNewBoardModal = false
         this.newBoardName = ''
         await this.loadBoards()
+        // Show success notification
+        this.showSuccess(`Board "${this.currentBoardName}" created successfully!`)
       } catch (error) {
         console.error('Error creating board:', error)
         this.error = error.message

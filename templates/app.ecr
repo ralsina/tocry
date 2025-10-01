@@ -992,7 +992,7 @@
                    x-transition:leave-end="opacity-0 scale-95"
                    @click.away="showBoardMenu = false"
                    style="position: absolute; top: 100%; right: 0; z-index: 1000; min-width: 200px; background: var(--pico-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 0.5rem; margin-top: 0.25rem; box-shadow: var(--pico-box-shadow);">
-                <a href="#" @click.prevent="handleNewBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">New Board</a>
+                <a href="#" @click.prevent="showNewBoardModal = true; showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">New Board</a>
                 <a href="#" @click.prevent="handleRenameBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">Rename Board</a>
                 <a href="#" @click.prevent="handleShareBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">Share Board</a>
                 <a href="#" @click.prevent="showAddLane = true; showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">New Lane</a>

@@ -8,7 +8,9 @@
       "Bash(curl:*)",
       "Read(//home/ralsina/code/**)",
       "Bash(standard --fix integration-test/tests/*.js)",
-      "Bash(standard integration-test/tests/*.js)"
+      "Bash(standard integration-test/tests/*.js)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
