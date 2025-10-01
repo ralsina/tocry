@@ -60,8 +60,8 @@ test.beforeEach(async ({ page }) => {
   // Re-initialize lanes to ensure UI reflects API changes
   await page.reload()
   await page.waitForTimeout(500)
-  await expect(page.locator('.lane-title:has-text("Lane A")')).toBeVisible()
-  await expect(page.locator('.lane-title:has-text("Lane B")')).toBeVisible()
+  await expect(page.locator('.lane-header span:has-text("Lane A")')).toBeVisible()
+  await expect(page.locator('.lane-header span:has-text("Lane B")')).toBeVisible()
 })
 
 test.describe('Note Management', () => {
@@ -70,19 +70,19 @@ test.describe('Note Management', () => {
     const noteTitle = 'My First Note'
 
     // Find the lane by its title
-    const laneTitle = page.locator('.lane-title').filter({ hasText: laneName })
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: laneName })
     const laneContainer = laneTitle.locator('..').locator('..')
 
-    // Click add note button for the lane
-    await laneContainer.locator('.add-note-btn').click()
+    // Click add note button for the lane (force click due to animation)
+    await laneContainer.locator('button[title="Add note"]').click({ force: true })
 
-    // Wait for modal to appear
-    const modal = page.locator('.modal-overlay')
+    // Wait for prompt modal to appear
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Input Required' })
     await expect(modal).toBeVisible()
 
     const modalInput = page.locator('input[x-model="modalInput"]')
     await modalInput.fill(noteTitle)
-    await page.locator('button:has-text("OK")').first().click()
+    await page.locator('button:has-text("OK")').click()
 
     // Assert note is visible
     const noteCard = laneContainer.locator('.note-card').filter({ hasText: noteTitle })

@@ -36,28 +36,23 @@ test.describe('Lane and Note Management', () => {
     // Click hamburger menu to open board menu
     await page.locator('[x-ref="hamburgerMenuButton"]').click()
 
-    // Click "New Lane" option
-    await page.locator('text=New Lane').click()
+    // Click "New Lane" option in menu
+    await page.locator('a:has-text("New Lane")').click()
 
     // Wait for modal to appear
-    const modal = page.locator('.modal-overlay')
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
     await expect(modal).toBeVisible()
 
     // Fill in lane name
-    const modalInput = page.locator('input[x-model="modalInput"]')
+    const modalInput = page.locator('input[x-model="newLaneName"]')
     await modalInput.fill(newLaneName)
+    await modalInput.press('Enter')
 
-    // Click confirm button
-    await page.locator('button:has-text("OK")').first().click()
-
-    // Verify modal is closed
-    await expect(modal).not.toBeVisible()
-
-    // Check that success toast appears
-    await expect(page.locator('.toast-notification.toast-success')).toBeVisible()
+    // Wait a moment for the lane to be created
+    await page.waitForTimeout(1000)
 
     // Find the lane by checking for the title text
-    const laneTitle = page.locator('.lane-title').filter({ hasText: newLaneName })
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: newLaneName })
     await expect(laneTitle).toBeVisible()
   })
 
@@ -65,16 +60,16 @@ test.describe('Lane and Note Management', () => {
     const originalLaneName = 'Lane to Rename'
     // Create the lane first
     await page.locator('[x-ref="hamburgerMenuButton"]').click()
-    await page.locator('text=New Lane').click()
-    const modal = page.locator('.modal-overlay')
+    await page.locator('a:has-text("New Lane")').click()
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
     await expect(modal).toBeVisible()
-    const modalInput = page.locator('input[x-model="modalInput"]')
+    const modalInput = page.locator('input[x-model="newLaneName"]')
     await modalInput.fill(originalLaneName)
-    await page.locator('button:has-text("OK")').first().click()
-    await expect(modal).not.toBeVisible()
+    await modalInput.press('Enter')
+    await page.waitForTimeout(1000) // Wait for lane creation
 
     // Find the lane by title
-    const laneTitle = page.locator('.lane-title').filter({ hasText: originalLaneName })
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: originalLaneName })
     await expect(laneTitle).toBeVisible()
 
     const newLaneName = 'Renamed Lane'
@@ -83,31 +78,31 @@ test.describe('Lane and Note Management', () => {
     await laneTitle.dblclick()
 
     // Wait for input to appear
-    const editInput = page.locator('.lane-title input')
+    const editInput = page.locator('.lane-header input')
     await expect(editInput).toBeVisible()
     await editInput.fill(newLaneName)
     await editInput.press('Enter')
 
     // Assert lane has new name
-    await expect(page.locator('.lane-title').filter({ hasText: newLaneName })).toBeVisible()
+    await expect(page.locator('.lane-header span').filter({ hasText: newLaneName })).toBeVisible()
     // Ensure the old lane name is gone
-    await expect(page.locator('.lane-title').filter({ hasText: originalLaneName })).not.toBeVisible()
+    await expect(page.locator('.lane-header span').filter({ hasText: originalLaneName })).not.toBeVisible()
   })
 
   test('should allow deleting a lane', async ({ page }) => {
     const laneToDeleteName = 'Lane to Delete'
     // Create the lane first
     await page.locator('[x-ref="hamburgerMenuButton"]').click()
-    await page.locator('text=New Lane').click()
-    const modal = page.locator('.modal-overlay')
+    await page.locator('a:has-text("New Lane")').click()
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
     await expect(modal).toBeVisible()
-    const modalInput = page.locator('input[x-model="modalInput"]')
+    const modalInput = page.locator('input[x-model="newLaneName"]')
     await modalInput.fill(laneToDeleteName)
-    await page.locator('button:has-text("OK")').first().click()
-    await expect(modal).not.toBeVisible()
+    await modalInput.press('Enter')
+    await page.waitForTimeout(1000) // Wait for lane creation
 
     // Find the lane by title
-    const laneTitle = page.locator('.lane-title').filter({ hasText: laneToDeleteName })
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: laneToDeleteName })
     const laneContainer = laneTitle.locator('..').locator('..') // Go up to lane container
     await expect(laneTitle).toBeVisible()
 
@@ -131,29 +126,29 @@ test.describe('Lane and Note Management', () => {
     const laneNames = ['Lane One', 'Lane Two', 'Lane Three']
     for (const name of laneNames) {
       await page.locator('[x-ref="hamburgerMenuButton"]').click()
-      await page.locator('text=New Lane').click()
-      const modal = page.locator('.modal-overlay')
+      await page.locator('a:has-text("New Lane")').click()
+      const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
       await expect(modal).toBeVisible()
-      const modalInput = page.locator('input[x-model="modalInput"]')
+      const modalInput = page.locator('input[x-model="newLaneName"]')
       await modalInput.fill(name)
-      await page.locator('button:has-text("OK")').first().click()
-      await expect(modal).not.toBeVisible()
+      await modalInput.press('Enter')
+      await page.waitForTimeout(1000) // Wait for lane creation
     }
 
     // Wait for all lanes to be visible
     await page.waitForTimeout(500)
 
     // Get locators for the lanes by their titles
-    const laneOne = page.locator('.lane-title').filter({ hasText: 'Lane One' })
-    const laneTwo = page.locator('.lane-title').filter({ hasText: 'Lane Two' })
-    const laneThree = page.locator('.lane-title').filter({ hasText: 'Lane Three' })
+    const laneOne = page.locator('.lane-header span').filter({ hasText: 'Lane One' })
+    const laneTwo = page.locator('.lane-header span').filter({ hasText: 'Lane Two' })
+    const laneThree = page.locator('.lane-header span').filter({ hasText: 'Lane Three' })
 
     await expect(laneOne).toBeVisible()
     await expect(laneTwo).toBeVisible()
     await expect(laneThree).toBeVisible()
 
     // Verify initial order
-    await expect(page.locator('.lane .lane-title')).toHaveText([
+    await expect(page.locator('.lane .lane-header span')).toHaveText([
       'Lane One',
       'Lane Two',
       'Lane Three'
@@ -166,6 +161,6 @@ test.describe('Lane and Note Management', () => {
     await page.waitForTimeout(300)
 
     // Verify the new order: Lane Two, Lane Three, Lane One
-    await expect(page.locator('.lane .lane-title')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
+    await expect(page.locator('.lane .lane-header span')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
   })
 })

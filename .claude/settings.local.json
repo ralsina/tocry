@@ -10,7 +10,8 @@
       "Bash(standard --fix integration-test/tests/*.js)",
       "Bash(standard integration-test/tests/*.js)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(shards build:*)"
     ],
     "deny": [],
     "ask": []

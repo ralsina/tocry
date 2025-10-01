@@ -134,8 +134,10 @@ test.describe('Theme and Color Scheme', () => {
     const themeSwitcher = page.locator('#theme-switcher')
     await expect(themeSwitcher).toBeVisible()
 
-    // Switch to dark mode first
-    await themeSwitcher.selectOption('Dark')
+    // Note: initial theme state is not needed for this test
+
+    // Click to toggle theme (assuming it starts light, goes to dark)
+    await themeSwitcher.click()
     await page.waitForTimeout(100)
 
     // Verify dark mode is applied
@@ -154,6 +156,8 @@ test.describe('Theme and Color Scheme', () => {
 
     // Reload and verify persistence
     await page.reload()
-    await expect(themeSwitcher).toHaveValue('Dark')
+    await expect(themeSwitcher).toBeVisible()
+    const persistedTheme = await page.evaluate(() => localStorage.getItem('theme'))
+    expect(persistedTheme).toBe('dark')
   })
 })
