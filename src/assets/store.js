@@ -503,7 +503,7 @@ function createToCryStore () {
               console.log('Applied board color scheme:', boardDetails.color_scheme)
               // Clear loadingBoardFromUrl after everything is loaded and color is applied
               this.loadingBoardFromUrl = false
-            }, 1500) // 1.5 second delay
+            }, 500) // 0.5 second delay
           } else {
             // Clear loadingBoardFromUrl immediately if no color scheme delay
             this.loadingBoardFromUrl = false
