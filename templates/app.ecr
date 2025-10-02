@@ -42,7 +42,7 @@
             type="search"
             class="search-input"
             name="search"
-            placeholder="Search notes..."
+            placeholder="Search notes... (use #tag for exact tag match)"
             x-model="searchQuery"
             @input="performSearch"
             x-ref="searchInput"
@@ -316,8 +316,9 @@
                         <template x-for="tag in note.tags || []" :key="tag" x-show="editingNoteTags !== note.sepia_id">
                           <span class="note-tag"
                                 style="position: relative; transition: all 0.2s ease;"
-                                @mouseover="$el.style.background = 'var(--pico-del-color)'"
-                                @mouseout="$el.style.background = 'var(--pico-secondary-background)'">
+                                @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.2)'"
+                                @mouseout="$el.style.background = 'rgba(var(--primary-rgb), 0.1)'"
+                                @click="searchByTag(tag)">
                             <span x-text="'#' + tag"></span>
                             <button @click.stop="removeQuickTag(note.sepia_id, lane.name, tag)"
                                     class="tag-remove-btn"

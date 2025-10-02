@@ -414,16 +414,29 @@ function createToCryStore () {
         return
       }
 
+      // Check if this is a tag search (starts with #)
+      const isTagSearch = query.startsWith('#')
+      const searchTag = isTagSearch ? query.substring(1) : query
+
       // Hide/show notes based on search
       if (this.currentBoard && this.currentBoard.lanes) {
         this.currentBoard.lanes.forEach(lane => {
           if (lane.notes && Array.isArray(lane.notes)) {
             lane.notes.forEach(note => {
               if (note) {
-                const matches =
-                  (note.title && note.title.toLowerCase().includes(query)) ||
-                  (note.content && note.content.toLowerCase().includes(query)) ||
-                  (note.tags && Array.isArray(note.tags) && note.tags.some(tag => tag && tag.toLowerCase().includes(query)))
+                let matches = false
+
+                if (isTagSearch) {
+                  // Tag search: match notes with tags that start with the search term
+                  matches = note.tags && Array.isArray(note.tags) &&
+                    note.tags.some(tag => tag && tag.toLowerCase().startsWith(searchTag))
+                } else {
+                  // Regular search: match title, content, or tags containing the query
+                  matches =
+                    (note.title && note.title.toLowerCase().includes(query)) ||
+                    (note.content && note.content.toLowerCase().includes(query)) ||
+                    (note.tags && Array.isArray(note.tags) && note.tags.some(tag => tag && tag.toLowerCase().includes(query)))
+                }
 
                 note._hidden = !matches
               }
@@ -434,6 +447,18 @@ function createToCryStore () {
 
       // Force reactivity
       this.currentBoard = { ...this.currentBoard }
+    },
+
+    // Search by tag (sets search query to #tag)
+    searchByTag (tag) {
+      this.searchQuery = `#${tag}`
+      this.performSearch()
+      // Focus the search input so user can see the search query
+      this.$nextTick(() => {
+        if (this.$refs.searchInput) {
+          this.$refs.searchInput.focus()
+        }
+      })
     },
 
     // Load all boards

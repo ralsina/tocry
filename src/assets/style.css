@@ -376,15 +376,6 @@
       transform: translateY(-1px);
     }
 
-    .note-title:hover::after {
-      content: '✏️';
-      position: absolute;
-      right: 0.25rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.75rem;
-      opacity: 0.6;
-    }
 
     .note-title-input {
       animation: fadeIn 0.2s ease;
