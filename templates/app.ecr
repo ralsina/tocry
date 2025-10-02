@@ -536,7 +536,7 @@
         <p style="font-size: 1.25rem; margin-bottom: 2rem; color: var(--pico-muted-color);">Choose a board to start organizing your tasks</p>
 
         <div style="background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 2rem; margin-bottom: 2rem; max-height: 60vh; overflow-y: auto;">
-          <h3 style="margin-bottom: 1.5rem; position: sticky; top: 0; background: var(--pico-background-color); padding-bottom: 0.5rem; z-index: 1;">Your Boards</h3>
+          <h3 style="margin-bottom: 1.5rem; position: sticky; top: -2rem; background: var(--pico-background-color); padding: 2rem 2rem 0.5rem 2rem; margin: -2rem -2rem 1.5rem -2rem; z-index: 1; border-bottom: 1px solid var(--pico-border-color);">Your Boards</h3>
           <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
             <template x-for="board in boards" :key="board">
               <button @click="loadBoard(board)"
