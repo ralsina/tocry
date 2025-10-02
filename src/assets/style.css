@@ -2,6 +2,27 @@
       --pico-font-family: 'Chivo', sans-serif;
     }
 
+    /* Smooth transitions for color scheme changes */
+    body, [data-theme] {
+      transition:
+        background-color 1.5s ease-in-out,
+        color 1.5s ease-in-out,
+        border-color 1.5s ease-in-out;
+    }
+
+    /* Smooth transitions for all primary color elements */
+    button, .btn, a,
+    .note-card, .lane,
+    input:focus, select:focus, textarea:focus,
+    [role="button"],
+    ::selection {
+      transition:
+        background-color 1.5s ease-in-out,
+        color 1.5s ease-in-out,
+        border-color 1.5s ease-in-out,
+        box-shadow 1.5s ease-in-out;
+    }
+
     /* ToastUI Editor visibility fixes */
     .toastui-editor-md-tab-container {
       background: var(--pico-background-color);

@@ -452,24 +452,48 @@ function createToCryStore () {
       this.boardNotFound = false
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(boardName)}/lanes`)
-        if (!response.ok) {
-          if (response.status === 404) {
+        // Load both board details and lanes in parallel
+        const [lanesResponse, detailsResponse] = await Promise.all([
+          fetch(`/boards/${encodeURIComponent(boardName)}/lanes`),
+          fetch(`/boards/${encodeURIComponent(boardName)}`)
+        ])
+
+        if (!lanesResponse.ok) {
+          if (lanesResponse.status === 404) {
             this.error = `Board '${boardName}' not found. It may have been deleted or you may not have access to it.`
             this.boardNotFound = true
           } else {
             throw new Error('Failed to load board')
           }
         } else {
-          const lanes = await response.json()
+          const lanes = await lanesResponse.json()
+          let boardDetails = { color_scheme: null }
+
+          // Load board details if available
+          if (detailsResponse.ok) {
+            boardDetails = await detailsResponse.json()
+            console.log('Loaded board details:', boardDetails)
+          }
+
           console.log('Loaded lanes for board', boardName, ':', lanes)
           this.currentBoard = {
             name: boardName,
-            lanes
+            lanes,
+            colorScheme: boardDetails.color_scheme
           }
           console.log('Set currentBoard:', this.currentBoard)
           this.currentBoardName = boardName
           this.boardNotFound = false
+
+          // Apply board color scheme with delay for smooth transition
+          if (boardDetails.color_scheme && boardDetails.color_scheme !== this.currentColorScheme) {
+            // Delay color scheme application to make it look intentional
+            setTimeout(() => {
+              this.currentColorScheme = boardDetails.color_scheme
+              this.updateColorScheme()
+              console.log('Applied board color scheme:', boardDetails.color_scheme)
+            }, 1500) // 1.5 second delay
+          }
 
           // Update URL without reload
           history.pushState({ board: boardName }, '', `/b/${boardName}`)
