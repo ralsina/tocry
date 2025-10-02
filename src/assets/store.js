@@ -199,15 +199,22 @@ function createToCryStore () {
         this.updateColorScheme()
       }
 
+      // Check if we're loading a specific board from URL
+      const pathParts = window.location.pathname.split('/')
+      const hasBoardInUrl = pathParts[1] === 'b' && pathParts[2]
+
+      if (hasBoardInUrl) {
+        // Set loading state when loading a specific board to prevent Welcome Screen flash
+        this.loading = true
+      }
+
       await this.loadBoards()
       console.log('Loaded boards:', this.boards, 'Count:', this.boards.length)
 
       // Setup global keyboard shortcuts
       this.setupGlobalKeyboardHandler()
 
-      // Get board name from URL
-      const pathParts = window.location.pathname.split('/')
-      if (pathParts[1] === 'b' && pathParts[2]) {
+      if (hasBoardInUrl) {
         const boardName = decodeURIComponent(pathParts[2])
         this.currentBoardName = boardName
         await this.loadBoard(boardName)
