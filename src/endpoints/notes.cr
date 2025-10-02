@@ -6,6 +6,7 @@ require "./helpers"
 require "uuid"
 require "file_utils"
 require "time"
+require "uri"
 
 module ToCry::Endpoints::Notes
   # Helper function to validate date format (YYYY-MM-DD)
@@ -94,6 +95,66 @@ module ToCry::Endpoints::Notes
   # Expects the note ID in the URL path, e.g.:
   # PUT /note/some-uuid-123
   # Expects a JSON body like:
+  # Form handler for note edit/delete (HTMX)
+  post "/boards/:board_name/note/:id" do |env|
+    note_id = env.params.url["note_id"].as(String)
+    board = ToCry::Endpoints::Helpers.get_board_from_context(env)
+
+    # Handle DELETE via _method parameter
+    if env.params.body["_method"]? == "DELETE"
+      # Find and delete the note
+      board.lanes.each do |lane|
+        note = lane.notes.find { |note_to_delete| note_to_delete.sepia_id == note_id }
+        if note
+          lane.notes.delete(note)
+          board.save
+
+          # Return success response for HTMX
+          env.response.content_type = "text/html"
+          next "<script>window.location.reload();</script>"
+        end
+      end
+
+      env.response.status_code = 404
+      next "Note not found"
+    end
+
+    # Parse form data for update
+    # Note: lane_name from form is not used since moving is handled by JSON API
+    title = env.params.body["note"]["title"].as(String)
+    tags_string = env.params.body["tags_string"]?.as?(String) || ""
+    content = env.params.body["note"]["content"]?.as?(String) || ""
+    priority = env.params.body["note"]["priority"]?.as?(String)
+    start_date = env.params.body["note"]["start_date"]?.as?(String)
+    end_date = env.params.body["note"]["end_date"]?.as?(String)
+
+    # Parse tags
+    tags = tags_string.split(",").map(&.strip).reject(&.empty?)
+
+    # Find and update the note
+    board.lanes.each do |lane|
+      note = lane.notes.find { |note_to_update| note_to_update.sepia_id == note_id }
+      if note
+        note.title = title
+        note.content = content
+        note.tags = tags
+        note.priority = parse_priority(priority)
+        note.start_date = start_date
+        note.end_date = end_date
+
+        # Save the board
+        board.save
+
+        # Return success response for HTMX
+        env.response.content_type = "text/html"
+        next "<script>window.location.reload();</script>"
+      end
+    end
+
+    env.response.status_code = 404
+    "Note not found"
+  end
+
   # {
   #   "note": { "title": "Updated Title", "tags": ["new"], "content": "Updated content." },
   #   "lane_name": "In Progress", // Optional: to move the note
@@ -262,7 +323,7 @@ module ToCry::Endpoints::Notes
     sanitized_base_filename = ToCry::Endpoints::Helpers.sanitize_filename(base_filename)
     unique_filename = "#{UUID.random}_#{sanitized_base_filename}#{extension}"
     save_path = File.join(attachments_dir, unique_filename)
-    relative_path = File.join("uploads", "attachments", note_id, unique_filename)
+    relative_path = File.join("attachments", note_id, unique_filename)
 
     # Save the file
     File.open(save_path, "w") do |outf|
@@ -287,10 +348,11 @@ module ToCry::Endpoints::Notes
     existing_note.save
 
     ToCry::Endpoints::Helpers.success_response(env, {
-      success:   "File '#{original_filename}' attached to note '#{note_id}'.",
-      filename:  unique_filename,
-      upload_id: upload.upload_id,
-      file_size: upload.file_size,
+      success:       "File '#{original_filename}' attached to note '#{note_id}'.",
+      filename:      unique_filename,
+      relative_path: relative_path,
+      upload_id:     upload.upload_id,
+      file_size:     upload.file_size,
     })
   end
 
@@ -346,5 +408,16 @@ module ToCry::Endpoints::Notes
     existing_note.save
 
     ToCry::Endpoints::Helpers.success_response(env, {success: "Attachment '#{attachment_uuid}' removed from note '#{note_uuid}'."})
+  end
+
+  # Helper to extract generation number from sepia_id
+  # Sepia IDs are in format: {type}-{uuid}.{generation}
+  private def self.extract_generation_from_sepia_id(sepia_id : String) : Int64
+    parts = sepia_id.split('.')
+    if parts.size > 1
+      parts.last.to_i64
+    else
+      0_i64 # Default generation if not specified
+    end
   end
 end

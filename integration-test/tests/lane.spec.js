@@ -21,71 +21,102 @@ test.beforeEach(async ({ page }) => {
   await page.addStyleTag({ content: '* { animation: none !important; }' })
 
   // Ensure the app is loaded and ready
-  await expect(page.locator('#add-lane-btn')).toBeVisible()
-  await expect(page.locator('#board-selector')).toBeVisible()
+  await expect(page.locator('[x-ref="hamburgerMenuButton"]')).toBeVisible()
 
-  // Select the newly created board in the selector (it should be auto-selected if it's the only one)
-  await expect(page.locator('#board-selector')).toHaveValue(uniqueBoardName)
+  // Wait for board to be loaded (check select element with x-model)
+  const boardSelect = page.locator('select[x-model="currentBoardName"]')
+  await expect(boardSelect).toBeVisible()
+  await expect(boardSelect).toHaveValue(uniqueBoardName)
 })
 
 test.describe('Lane and Note Management', () => {
   test('should allow creating a new lane', async ({ page }) => {
     const newLaneName = 'My New Test Lane'
 
-    await page.locator('#add-lane-btn').click()
+    // Click hamburger menu to open board menu
+    await page.locator('[x-ref="hamburgerMenuButton"]').click()
 
-    const promptDialog = page.locator('#custom-prompt-dialog')
-    await expect(promptDialog).toBeVisible()
+    // Click "New Lane" option in menu
+    await page.locator('a:has-text("New Lane")').click()
 
-    await promptDialog.locator('#prompt-dialog-input').fill(newLaneName)
-    await promptDialog.locator('#prompt-dialog-ok-btn').click()
+    // Wait for modal to appear
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
+    await expect(modal).toBeVisible()
 
-    await expect(promptDialog).not.toBeVisible()
+    // Fill in lane name
+    const modalInput = page.locator('input[x-model="newLaneName"]')
+    await modalInput.fill(newLaneName)
+    await modalInput.press('Enter')
 
-    const newLane = page.locator(`.lane[data-lane-name="${newLaneName}"]`)
-    await expect(newLane).toBeVisible()
-    await expect(newLane.locator('.lane-title')).toHaveText(newLaneName)
+    // Wait a moment for the lane to be created
+    await page.waitForTimeout(1000)
+
+    // Find the lane by checking for the title text
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: newLaneName })
+    await expect(laneTitle).toBeVisible()
   })
 
   test('should allow renaming a lane', async ({ page }) => {
     const originalLaneName = 'Lane to Rename'
     // Create the lane first
-    await page.locator('#add-lane-btn').click()
-    await page.locator('#custom-prompt-dialog #prompt-dialog-input').fill(originalLaneName)
-    await page.locator('#custom-prompt-dialog #prompt-dialog-ok-btn').click()
-    await expect(page.locator(`.lane[data-lane-name="${originalLaneName}"]`)).toBeVisible()
+    await page.locator('[x-ref="hamburgerMenuButton"]').click()
+    await page.locator('a:has-text("New Lane")').click()
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
+    await expect(modal).toBeVisible()
+    const modalInput = page.locator('input[x-model="newLaneName"]')
+    await modalInput.fill(originalLaneName)
+    await modalInput.press('Enter')
+    await page.waitForTimeout(1000) // Wait for lane creation
+
+    // Find the lane by title
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: originalLaneName })
+    await expect(laneTitle).toBeVisible()
 
     const newLaneName = 'Renamed Lane'
-    const laneTitleElement = page.locator(`.lane[data-lane-name="${originalLaneName}"] .lane-title`)
 
-    await laneTitleElement.click() // Click to make editable
-    // Fill new name and blur to save
-    await laneTitleElement.fill(newLaneName)
-    await page.locator('body').click() // Blur to save
+    // Double-click to edit lane title
+    await laneTitle.dblclick()
+
+    // Wait for input to appear
+    const editInput = page.locator('.lane-header input')
+    await expect(editInput).toBeVisible()
+    await editInput.fill(newLaneName)
+    await editInput.press('Enter')
 
     // Assert lane has new name
-    await expect(page.locator(`.lane[data-lane-name="${newLaneName}"] .lane-title`)).toHaveText(newLaneName)
-    // Ensure the old lane is gone (by name)
-    await expect(page.locator(`.lane[data-lane-name="${originalLaneName}"]`)).not.toBeVisible()
+    await expect(page.locator('.lane-header span').filter({ hasText: newLaneName })).toBeVisible()
+    // Ensure the old lane name is gone
+    await expect(page.locator('.lane-header span').filter({ hasText: originalLaneName })).not.toBeVisible()
   })
 
   test('should allow deleting a lane', async ({ page }) => {
     const laneToDeleteName = 'Lane to Delete'
     // Create the lane first
-    await page.locator('#add-lane-btn').click()
-    await page.locator('#custom-prompt-dialog #prompt-dialog-input').fill(laneToDeleteName)
-    await page.locator('#custom-prompt-dialog #prompt-dialog-ok-btn').click()
-    const laneToDelete = page.locator(`.lane[data-lane-name="${laneToDeleteName}"]`)
-    await expect(laneToDelete).toBeVisible()
+    await page.locator('[x-ref="hamburgerMenuButton"]').click()
+    await page.locator('a:has-text("New Lane")').click()
+    const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
+    await expect(modal).toBeVisible()
+    const modalInput = page.locator('input[x-model="newLaneName"]')
+    await modalInput.fill(laneToDeleteName)
+    await modalInput.press('Enter')
+    await page.waitForTimeout(1000) // Wait for lane creation
 
-    // Click delete button and confirm
-    await laneToDelete.locator('.delete-lane-btn').click()
-    const confirmDialog = page.locator('#custom-confirm-dialog')
-    await expect(confirmDialog).toBeVisible()
-    await confirmDialog.locator('#confirm-dialog-ok-btn').click()
+    // Find the lane by title
+    const laneTitle = page.locator('.lane-header span').filter({ hasText: laneToDeleteName })
+    const laneContainer = laneTitle.locator('..').locator('..') // Go up to lane container
+    await expect(laneTitle).toBeVisible()
+
+    // Find delete button within the lane (× button)
+    const deleteButton = laneContainer.locator('button[title="Delete lane"]').first()
+    await expect(deleteButton).toBeVisible()
+    await deleteButton.click()
+
+    // Confirm deletion in alert dialog
+    await expect(page.locator('.modal-overlay').filter({ hasText: 'Delete Lane' })).toBeVisible()
+    await page.locator('button:has-text("Delete Anyway")').click()
 
     // Assert lane is no longer visible
-    await expect(laneToDelete).not.toBeVisible()
+    await expect(laneTitle).not.toBeVisible()
   })
 
   test('should allow reordering lanes via drag and drop', async ({ page }) => {
@@ -94,33 +125,42 @@ test.describe('Lane and Note Management', () => {
     // Create three lanes via UI
     const laneNames = ['Lane One', 'Lane Two', 'Lane Three']
     for (const name of laneNames) {
-      await page.locator('#add-lane-btn').click()
-      await expect(page.locator('#custom-prompt-dialog')).toBeVisible()
-      await page.locator('#custom-prompt-dialog #prompt-dialog-input').fill(name)
-      await page.locator('#custom-prompt-dialog #prompt-dialog-ok-btn').click()
-      await expect(page.locator('#custom-prompt-dialog')).not.toBeVisible()
-      await expect(page.locator(`.lane[data-lane-name="${name}"]`)).toBeVisible()
+      await page.locator('[x-ref="hamburgerMenuButton"]').click()
+      await page.locator('a:has-text("New Lane")').click()
+      const modal = page.locator('.modal-overlay').filter({ hasText: 'Add New Lane' })
+      await expect(modal).toBeVisible()
+      const modalInput = page.locator('input[x-model="newLaneName"]')
+      await modalInput.fill(name)
+      await modalInput.press('Enter')
+      await page.waitForTimeout(1000) // Wait for lane creation
     }
 
-    // Get locators for the lanes
-    // The `data-lane-name` attribute is set in render.js and used for identification.
-    const laneOne = page.locator('.lane[data-lane-name="Lane One"]')
-    page.locator('.lane[data-lane-name="Lane Two"]')
-    const laneThree = page.locator('.lane[data-lane-name="Lane Three"]')
+    // Wait for all lanes to be visible
+    await page.waitForTimeout(500)
 
-    // Verify initial order. Assuming new lanes are added to the beginning of the list,
-    // new lanes are appended to the array, so the display order is the creation order.
-    await expect(page.locator('.lane .lane-title')).toHaveText([
+    // Get locators for the lanes by their titles (excluding note count spans)
+    const laneOne = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane One' })
+    const laneTwo = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane Two' })
+    const laneThree = page.locator('.lane-header span:not(.note-count)').filter({ hasText: 'Lane Three' })
+
+    await expect(laneOne).toBeVisible()
+    await expect(laneTwo).toBeVisible()
+    await expect(laneThree).toBeVisible()
+
+    // Verify initial order (excluding note count spans)
+    await expect(page.locator('.lane .lane-header span:not(.note-count)')).toHaveText([
       'Lane One',
       'Lane Two',
       'Lane Three'
     ])
 
-    // Drag 'Lane One' (currently at index 0) to 'Lane Three' (currently at index 2).
-    // This should move 'Lane One' to the end of the list.
+    // Drag 'Lane One' to 'Lane Three'
     await laneOne.dragTo(laneThree)
 
-    // Verify the new order: Lane Two, Lane Three, Lane One
-    await expect(page.locator('.lane .lane-title')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
+    // Wait for drag operation to complete
+    await page.waitForTimeout(300)
+
+    // Verify the new order: Lane Two, Lane Three, Lane One (excluding note count spans)
+    await expect(page.locator('.lane .lane-header span:not(.note-count)')).toHaveText(['Lane Two', 'Lane Three', 'Lane One'])
   })
 })

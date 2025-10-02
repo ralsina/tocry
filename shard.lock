@@ -46,4 +46,4 @@ shards:
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.1.0+git.commit.b78de181b31b1496bb56677355b84d3396e90c8f
+    version: 0.1.0+git.commit.c958631f569a52a902f1c0c2e7779339d3a06e65

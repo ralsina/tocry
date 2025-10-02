@@ -191,3 +191,5 @@ data/
 - Ameba linting has specific exclusions for certain files and rules (see .ameba.yml)
 - CLI arguments use docopt with options: `--data-path`, `--safe-mode`, `--port`, `--bind`
 - Kemal sessions configured for security with specific timeout and secret settings
+- Never commit without an explicit request from the user
+- The server is constantly being rebuilt on demand on every saved change, no need to kill it and start it to test it
