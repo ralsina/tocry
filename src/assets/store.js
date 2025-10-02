@@ -8,6 +8,7 @@ function createToCryStore () {
     currentBoardName: '',
     currentBoard: null,
     loading: false,
+    loadingBoardFromUrl: false,
     error: null,
     boardNotFound: false,
 
@@ -204,8 +205,9 @@ function createToCryStore () {
       const hasBoardInUrl = pathParts[1] === 'b' && pathParts[2]
 
       if (hasBoardInUrl) {
-        // Set loading state when loading a specific board to prevent Welcome Screen flash
+        // Set loading states when loading a specific board to prevent Welcome Screen flash
         this.loading = true
+        this.loadingBoardFromUrl = true
       }
 
       await this.loadBoards()
@@ -499,7 +501,12 @@ function createToCryStore () {
               this.currentColorScheme = boardDetails.color_scheme
               this.updateColorScheme()
               console.log('Applied board color scheme:', boardDetails.color_scheme)
+              // Clear loadingBoardFromUrl after everything is loaded and color is applied
+              this.loadingBoardFromUrl = false
             }, 1500) // 1.5 second delay
+          } else {
+            // Clear loadingBoardFromUrl immediately if no color scheme delay
+            this.loadingBoardFromUrl = false
           }
 
           // Update URL without reload
@@ -2174,7 +2181,7 @@ function createToCryStore () {
     // Board scrolling functionality
     updateScrollButtons () {
       if (!this.$refs.kanbanBoard) {
-        console.log('No kanban board reference found')
+        // console.log('No kanban board reference found')
         return
       }
 
@@ -2187,15 +2194,15 @@ function createToCryStore () {
       this.canScrollLeft = hasOverflow && canScrollLeft
       this.canScrollRight = hasOverflow && canScrollRight
 
-      console.log('updateScrollButtons:', {
-        scrollLeft: board.scrollLeft,
-        scrollWidth: board.scrollWidth,
-        clientWidth: board.clientWidth,
-        hasOverflow,
-        canScrollLeft,
-        canScrollRight,
-        overflow: board.scrollWidth - board.clientWidth
-      })
+      // console.log('updateScrollButtons:', {
+      //   scrollLeft: board.scrollLeft,
+      //   scrollWidth: board.scrollWidth,
+      //   clientWidth: board.clientWidth,
+      //   hasOverflow,
+      //   canScrollLeft,
+      //   canScrollRight,
+      //   overflow: board.scrollWidth - board.clientWidth
+      // })
     },
 
     scrollBoard (direction) {
