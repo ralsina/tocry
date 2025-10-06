@@ -77,6 +77,39 @@ module ToCry::Endpoints::Lanes
     ToCry::Endpoints::Helpers.success_response(env, existing_lane)
   end
 
+  # API Endpoint to reorder all lanes
+  # Expects a JSON body with ordered lane names, e.g.:
+  # { "lanes": ["Lane 1", "Lane 2", "Lane 3"] }
+  post "/boards/:board_name/lanes/reorder" do |env|
+    board = ToCry::Endpoints::Helpers.get_board_from_context(env)
+    json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+    payload = ToCry::Endpoints::Helpers::ReorderLanesPayload.from_json(json_body)
+
+    # Create a new array with lanes in the requested order
+    new_lanes_order = [] of ToCry::Lane
+
+    payload.lanes.each do |lane_name|
+      lane = board.lanes.find { |existing_lane| existing_lane.name == lane_name }
+      if lane
+        new_lanes_order << lane
+      else
+        ToCry::Endpoints::Helpers.error_response(env, "Lane '#{lane_name}' not found", 400)
+      end
+    end
+
+    # Ensure all lanes are included
+    if new_lanes_order.size != board.lanes.size
+      ToCry::Endpoints::Helpers.error_response(env, "Not all lanes included in reorder request", 400)
+      next
+    end
+
+    # Update the board's lanes order
+    board.lanes = new_lanes_order
+    board.save
+
+    ToCry::Endpoints::Helpers.success_response(env, {success: "Lanes reordered successfully."})
+  end
+
   # API Endpoint to delete a lane by name
   # Expects the lane name in the URL path, e.g.:
   # DELETE /lane/My%20Lane%20Name

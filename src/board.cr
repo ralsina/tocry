@@ -13,13 +13,15 @@ module ToCry
     property name : String
     property lanes : Array(Lane)
     property color_scheme : String?
+    property first_visible_lane : Int32 = 0
+    property show_hidden_lanes : Bool = false
 
     # Constructor that accepts a name, which will be used as sepia_id.
-    def initialize(@name : String, @lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil)
+    def initialize(@name : String, @lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @show_hidden_lanes : Bool = false)
     end
 
     # Default constructor for deserialization (Sepia needs this)
-    def initialize(@lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil)
+    def initialize(@lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @show_hidden_lanes : Bool = false)
       @name = "Untitled Board" # Default name if not provided
     end
 

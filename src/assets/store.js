@@ -1,5 +1,285 @@
 // Alpine.js store for ToCry reactive app
 /* global toastui, history, marked, hljs, localStorage, ResizeObserver */
+
+// Modern API Service for board operations
+class BoardApiService {
+  constructor (store) {
+    this.store = store
+    this.baseURL = ''
+    this.loadingStates = new Set()
+    this.requestQueue = new Map()
+  }
+
+  // Generic HTTP request helper with enhanced error handling and loading states
+  async request (endpoint, options = {}) {
+    const { method = 'GET', body, headers = {}, silent = false } = options
+    const url = `${this.baseURL}${endpoint}`
+    const requestKey = `${method}:${endpoint}`
+
+    // Manage request deduplication
+    if (this.requestQueue.has(requestKey)) {
+      return this.requestQueue.get(requestKey)
+    }
+
+    // Set loading state
+    if (!silent) {
+      this.setLoading(requestKey, true)
+    }
+
+    const requestPromise = this.executeRequest(url, method, body, headers, silent, requestKey)
+    this.requestQueue.set(requestKey, requestPromise)
+
+    try {
+      const result = await requestPromise
+      return result
+    } finally {
+      this.requestQueue.delete(requestKey)
+      if (!silent) {
+        this.setLoading(requestKey, false)
+      }
+    }
+  }
+
+  async executeRequest (url, method, body, headers, silent, requestKey) {
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+      ...headers
+    }
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: defaultHeaders,
+        body: body ? JSON.stringify(body) : undefined
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`
+
+        if (!silent) {
+          this.store.showError(errorMessage)
+        }
+        throw new Error(errorMessage)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error(`API request failed: ${method} ${url}`, error)
+
+      if (!silent && error.name !== 'TypeError') { // Don't show network errors twice
+        this.store.showError(`Request failed: ${error.message}`)
+      }
+      throw error
+    }
+  }
+
+  setLoading (requestKey, isLoading) {
+    if (isLoading) {
+      this.loadingStates.add(requestKey)
+    } else {
+      this.loadingStates.delete(requestKey)
+    }
+
+    // Update global loading state
+    this.store.apiLoading = this.loadingStates.size > 0
+  }
+
+  isLoading (method, endpoint) {
+    const requestKey = `${method}:${endpoint}`
+    return this.loadingStates.has(requestKey)
+  }
+
+  // Board operations using new enhanced endpoints
+  async getBoard (boardName) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}`)
+  }
+
+  async updateBoard (boardName, updates) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}`, {
+      method: 'PUT',
+      body: updates
+    })
+  }
+
+  async createBoard (boardData) {
+    return this.request('/boards', {
+      method: 'POST',
+      body: boardData
+    })
+  }
+
+  async deleteBoard (boardName) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async getAllBoards () {
+    return this.request('/boards')
+  }
+
+  // State-based lane management
+  async updateBoardLanes (boardName, lanes) {
+    return this.updateBoard(boardName, { lanes })
+  }
+
+  // Note operations using enhanced endpoints
+  async createNote (boardName, laneName, noteData) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/note`, {
+      method: 'POST',
+      body: {
+        lane_name: laneName,
+        note: noteData
+      }
+    })
+  }
+
+  async updateNote (boardName, noteId, noteData) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/note/${noteId}`, {
+      method: 'PUT',
+      body: noteData
+    })
+  }
+
+  async deleteNote (boardName, noteId) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/note/${noteId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // File upload operations
+  async uploadImage (formData) {
+    const response = await fetch('/upload/image', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload image: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  async uploadAttachment (noteId, formData) {
+    const response = await fetch(`/n/${noteId}/attach`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload attachment: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  async deleteAttachment (noteId, filename) {
+    return this.request(`/n/${noteId}/${filename}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Auth operations
+  async getAuthMode () {
+    return this.request('/auth_mode')
+  }
+
+  async getCurrentUser () {
+    const response = await fetch('/me')
+
+    if (!response.ok) {
+      throw new Error(`Failed to get current user: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  // Utility operations
+  async shareBoard (boardName, email) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/share`, {
+      method: 'POST',
+      body: { to_user_email: email }
+    })
+  }
+
+  async updateColorScheme (boardName, colorScheme) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/color-scheme`, {
+      method: 'PUT',
+      body: { color_scheme: colorScheme }
+    })
+  }
+
+  // Lane operations
+  async createLane (boardName, laneName) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/lane`, {
+      method: 'POST',
+      body: { name: laneName.trim() }
+    })
+  }
+
+  async updateLane (boardName, oldLaneName, laneData, position) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/lane/${encodeURIComponent(oldLaneName)}`, {
+      method: 'PUT',
+      body: { lane: laneData, position }
+    })
+  }
+
+  async deleteLane (boardName, laneName) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/lane/${encodeURIComponent(laneName)}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async reorderLanes (boardName, laneOrder) {
+    return this.request(`/boards/${encodeURIComponent(boardName)}/lanes/reorder`, {
+      method: 'PUT',
+      body: { lane_order: laneOrder }
+    })
+  }
+
+  // Optimistic update helper
+  async withOptimisticUpdate (updateFn, rollbackFn, errorMessage = 'Operation failed') {
+    const previousState = JSON.parse(JSON.stringify(this.store.currentBoard))
+
+    try {
+      // Apply optimistic update
+      updateFn()
+
+      // Execute API call
+      const result = await updateFn()
+      return result
+    } catch (error) {
+      // Rollback on error
+      if (rollbackFn) {
+        rollbackFn(previousState)
+      }
+
+      this.store.showError(`${errorMessage}: ${error.message}`)
+      throw error
+    }
+  }
+
+  // Debounced update helper
+  debouncedUpdate (fn, delay = 1000) {
+    let timeout
+    return (...args) => {
+      clearTimeout(timeout)
+      return new Promise((resolve) => {
+        timeout = setTimeout(async () => {
+          try {
+            const result = await fn(...args)
+            resolve(result)
+          } catch (error) {
+            resolve({ error })
+          }
+        }, delay)
+      })
+    }
+  }
+}
+
 // eslint-disable-next-line no-unused-vars
 function createToCryStore () {
   return {
@@ -166,6 +446,9 @@ function createToCryStore () {
 
     // Initialize
     async init () {
+      // Initialize API service
+      this.api = new BoardApiService(this)
+
       console.log('ToastUI available on init:', typeof window.ToastUI?.Editor !== 'undefined')
 
       // Add keyboard shortcut for search
@@ -368,7 +651,7 @@ function createToCryStore () {
         // Save to backend only if we have a current board
         if (this.currentBoardName && this.currentBoardName !== '') {
           try {
-            const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/color-scheme`, {
+            const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ color_scheme: this.currentColorScheme })
@@ -464,14 +747,14 @@ function createToCryStore () {
     // Load all boards
     async loadBoards () {
       try {
-        const response = await fetch('/boards')
-        if (!response.ok) throw new Error('Failed to load boards')
-        this.boards = await response.json()
+        this.boards = await this.api.getAllBoards()
+        console.log('Loaded boards:', this.boards, 'Count:', this.boards.length)
         // Empty list is valid, don't set error
         this.boardNotFound = false
       } catch (error) {
         console.error('Error loading boards:', error)
         this.error = error.message
+        this.showError(`Failed to load boards: ${error.message}`)
       }
     },
 
@@ -486,63 +769,55 @@ function createToCryStore () {
       this.boardNotFound = false
 
       try {
-        // Load both board details and lanes in parallel
-        const [lanesResponse, detailsResponse] = await Promise.all([
-          fetch(`/boards/${encodeURIComponent(boardName)}/lanes`),
-          fetch(`/boards/${encodeURIComponent(boardName)}`)
-        ])
+        // Use enhanced API to get complete board state in single call
+        const boardData = await this.api.getBoard(boardName)
+        console.log('Loaded board data:', boardData)
 
-        if (!lanesResponse.ok) {
-          if (lanesResponse.status === 404) {
-            this.error = `Board '${boardName}' not found. It may have been deleted or you may not have access to it.`
-            this.boardNotFound = true
-          } else {
-            throw new Error('Failed to load board')
-          }
-        } else {
-          const lanes = await lanesResponse.json()
-          let boardDetails = { color_scheme: null }
-
-          // Load board details if available
-          if (detailsResponse.ok) {
-            boardDetails = await detailsResponse.json()
-            console.log('Loaded board details:', boardDetails)
-          }
-
-          console.log('Loaded lanes for board', boardName, ':', lanes)
-          this.currentBoard = {
-            name: boardName,
-            lanes,
-            colorScheme: boardDetails.color_scheme
-          }
-          console.log('Set currentBoard:', this.currentBoard)
-          this.currentBoardName = boardName
-          this.boardNotFound = false
-
-          // Apply board color scheme with delay for smooth transition
-          if (boardDetails.color_scheme && boardDetails.color_scheme !== this.currentColorScheme) {
-            // Delay color scheme application to make it look intentional
-            setTimeout(() => {
-              this.currentColorScheme = boardDetails.color_scheme
-              this.updateColorScheme()
-              console.log('Applied board color scheme:', boardDetails.color_scheme)
-              // Clear loadingBoardFromUrl after everything is loaded and color is applied
-              this.loadingBoardFromUrl = false
-            }, 500) // 0.5 second delay
-          } else {
-            // Clear loadingBoardFromUrl immediately if no color scheme delay
-            this.loadingBoardFromUrl = false
-          }
-
-          // Update URL without reload
-          history.pushState({ board: boardName }, '', `/b/${boardName}`)
-
-          // Initialize scroll watcher after board is loaded
-          this.initScrollWatcher()
+        this.currentBoard = {
+          name: boardData.name,
+          lanes: boardData.lanes || [],
+          colorScheme: boardData.color_scheme,
+          first_visible_lane: boardData.first_visible_lane || 0,
+          show_hidden_lanes: boardData.show_hidden_lanes || false
         }
+        console.log('Set currentBoard:', this.currentBoard)
+        this.currentBoardName = boardName
+        this.boardNotFound = false
+
+        // Set initial scroll position after DOM is updated
+        this.$nextTick(() => {
+          this.setInitialScrollPosition()
+        })
+
+        // Apply board color scheme with delay for smooth transition
+        if (boardData.color_scheme && boardData.color_scheme !== this.currentColorScheme) {
+          // Delay color scheme application to make it look intentional
+          setTimeout(() => {
+            this.currentColorScheme = boardData.color_scheme
+            this.updateColorScheme()
+            console.log('Applied board color scheme:', boardData.color_scheme)
+            // Clear loadingBoardFromUrl after everything is loaded and color is applied
+            this.loadingBoardFromUrl = false
+          }, 500) // 0.5 second delay
+        } else {
+          // Clear loadingBoardFromUrl immediately if no color scheme delay
+          this.loadingBoardFromUrl = false
+        }
+
+        // Update URL without reload
+        history.pushState({ board: boardName }, '', `/b/${boardName}`)
+
+        // Initialize scroll watcher after board is loaded
+        this.initScrollWatcher()
       } catch (error) {
         console.error('Error loading board:', error)
-        this.error = error.message
+        if (error.message.includes('not found') || error.message.includes('404')) {
+          this.error = `Board '${boardName}' not found. It may have been deleted or you may not have access to it.`
+          this.boardNotFound = true
+        } else {
+          this.error = error.message
+          this.showError(`Failed to load board: ${error.message}`)
+        }
       } finally {
         this.loading = false
       }
@@ -563,15 +838,20 @@ function createToCryStore () {
       const laneName = await this.prompt('Enter lane name:')
       if (!laneName) return
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: laneName })
-        })
-        if (!response.ok) throw new Error('Failed to add lane')
-        await this.loadBoard(this.currentBoardName)
+        // Use optimistic updates for better UX
+        const optimisticLane = { name: laneName, notes: [] }
+
+        // Optimistically add lane to local state
+        this.currentBoard.lanes.push(optimisticLane)
+        this.showInfo(`Adding lane "${laneName}"...`)
+
+        // Use state-based API to update the complete board
+        await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
+        await this.saveBoard()
         this.showSuccess(`Lane "${laneName}" added successfully.`)
       } catch (error) {
+        // Revert optimistic update on error
+        this.currentBoard.lanes.pop() // Remove the optimistic lane
         this.showError(`Failed to add lane: ${error.message}`)
       }
     },
@@ -714,66 +994,23 @@ function createToCryStore () {
       if (!laneName) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(boardName)}/lane`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: laneName })
-        })
+        // Use optimistic updates for better UX
+        const optimisticLane = { name: laneName, notes: [] }
 
-        if (!response.ok) throw new Error('Failed to add lane')
+        // Optimistically add lane to local state
+        this.currentBoard.lanes.push(optimisticLane)
+        this.showInfo(`Adding lane "${laneName}"...`)
 
-        await this.loadBoard(boardName)
+        // Use state-based API to update the complete board
+        await this.api.updateBoardLanes(boardName, this.currentBoard.lanes)
+        await this.saveBoard()
         this.showSuccess('Lane added successfully')
       } catch (error) {
+        // Revert optimistic update on error
+        this.currentBoard.lanes.pop() // Remove the optimistic lane
         console.error('Error adding lane:', error)
         this.error = error.message
         this.showError('Failed to add lane')
-      }
-    },
-
-    // Handle create lane template action
-    async handleCreateLaneTemplate (templateType) {
-      await this.createLaneTemplate(templateType)
-    },
-
-    // Create lanes from a template
-    async createLaneTemplate (templateType) {
-      const templates = {
-        simple: ['Todo', 'In Progress', 'Done'],
-        taskmgmt: ['Backlog', 'To Do', 'In Progress', 'Review', 'Done'],
-        timebased: ['Today', 'This Week', 'Someday', 'Done']
-      }
-
-      const lanes = templates[templateType]
-      if (!lanes) {
-        this.showError('Invalid template type')
-        return
-      }
-
-      this.showInfo(`Creating ${lanes.length} lanes...`)
-
-      try {
-        // Create lanes one by one from left to right
-        // Backend appends to array, so we create in correct order
-        for (let i = 0; i < lanes.length; i++) {
-          const laneName = lanes[i]
-          const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: laneName })
-          })
-
-          if (!response.ok) {
-            throw new Error(`Failed to create lane "${laneName}"`)
-          }
-        }
-
-        await this.loadBoard(this.currentBoardName)
-        this.showSuccess(`Created ${lanes.length} lanes successfully`)
-      } catch (error) {
-        console.error('Error creating lane template:', error)
-        this.error = error.message
-        this.showError('Failed to create lanes')
       }
     },
 
@@ -786,16 +1023,34 @@ function createToCryStore () {
       )
       if (!confirmed) return
 
+      // Declare variables in the outer scope
+      let laneIndex = -1
+      let deletedLane = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane/${encodeURIComponent(laneName)}`, {
-          method: 'DELETE'
-        })
+        // Use optimistic updates for better UX
+        laneIndex = this.currentBoard.lanes.findIndex(l => l.name === laneName)
 
-        if (!response.ok) throw new Error('Failed to delete lane')
+        if (laneIndex === -1) {
+          this.showError('Lane not found')
+          return
+        }
 
-        await this.loadBoard(this.currentBoardName)
+        deletedLane = this.currentBoard.lanes[laneIndex]
+
+        // Optimistically remove lane from local state
+        this.currentBoard.lanes.splice(laneIndex, 1)
+        this.showInfo(`Deleting lane "${laneName}"...`)
+
+        // Use state-based API to update the complete board
+        await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
+        await this.saveBoard()
         this.showSuccess('Lane deleted successfully')
       } catch (error) {
+        // Revert optimistic update on error
+        if (laneIndex !== -1 && deletedLane) {
+          this.currentBoard.lanes.splice(laneIndex, 0, deletedLane)
+        }
         console.error('Error deleting lane:', error)
         this.error = error.message
         this.showError('Failed to delete lane')
@@ -828,21 +1083,34 @@ function createToCryStore () {
         return
       }
 
+      // Declare variables in the outer scope
+      let laneIndex = -1
+      let originalName = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane/${encodeURIComponent(this.editingLane)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane: { name: newName, notes: [] },
-            position: this.currentBoard.lanes.findIndex(l => l.name === this.editingLane)
-          })
-        })
+        // Use optimistic updates for better UX
+        laneIndex = this.currentBoard.lanes.findIndex(l => l.name === this.editingLane)
+        originalName = laneIndex !== -1 ? this.currentBoard.lanes[laneIndex].name : null
 
-        if (!response.ok) throw new Error('Failed to rename lane')
+        if (laneIndex === -1) {
+          this.showError('Lane not found')
+          this.cancelLaneRename()
+          return
+        }
 
-        await this.loadBoard(this.currentBoardName)
+        // Optimistically update lane name in local state
+        this.currentBoard.lanes[laneIndex].name = newName
+        this.showInfo(`Renaming lane to "${newName}"...`)
+
+        // Use state-based API to update the complete board
+        await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
+        await this.saveBoard()
         this.showSuccess(`Lane renamed to "${newName}"`)
       } catch (error) {
+        // Revert optimistic update on error
+        if (originalName && laneIndex !== -1) {
+          this.currentBoard.lanes[laneIndex].name = originalName
+        }
         console.error('Error renaming lane:', error)
         this.showError('Failed to rename lane')
       } finally {
@@ -887,24 +1155,28 @@ function createToCryStore () {
         return
       }
 
+      // Declare variable in the outer scope
+      let originalTitle = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteTitle)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: this.editingNoteTitleLane,
-            note: {
-              ...note,
-              title: newTitle
-            }
-          })
+        // Use optimistic updates for better UX
+        originalTitle = note.title
+        note.title = newTitle
+        this.showInfo('Updating note title...')
+
+        // Use API service to update the note
+        await this.api.updateNote(this.currentBoardName, this.editingNoteTitle, {
+          ...note,
+          lane_name: this.editingNoteTitleLane
         })
 
-        if (!response.ok) throw new Error('Failed to update note title')
-
-        await this.loadBoard(this.currentBoardName)
+        await this.saveBoard()
         this.showSuccess('Note title updated')
       } catch (error) {
+        // Revert optimistic update on error
+        if (originalTitle !== null) {
+          note.title = originalTitle
+        }
         console.error('Error updating note title:', error)
         this.showError('Failed to update note title')
       } finally {
@@ -951,24 +1223,28 @@ function createToCryStore () {
         return
       }
 
+      // Declare variable in the outer scope
+      let originalContent = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteContent)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: this.editingNoteContentLane,
-            note: {
-              ...note,
-              content: newContent
-            }
-          })
+        // Use optimistic updates for better UX
+        originalContent = note.content
+        note.content = newContent
+        this.showInfo('Updating note content...')
+
+        // Use API service to update the note
+        await this.api.updateNote(this.currentBoardName, this.editingNoteContent, {
+          ...note,
+          lane_name: this.editingNoteContentLane
         })
 
-        if (!response.ok) throw new Error('Failed to update note content')
-
-        await this.loadBoard(this.currentBoardName)
+        await this.saveBoard()
         this.showSuccess('Note content updated')
       } catch (error) {
+        // Revert optimistic update on error
+        if (originalContent !== null) {
+          note.content = originalContent
+        }
         console.error('Error updating note content:', error)
         this.showError('Failed to update note content')
       } finally {
@@ -1041,24 +1317,27 @@ function createToCryStore () {
         return
       }
 
+      // Declare variable in the outer scope
+      let originalTags = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(this.editingNoteTags)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: this.editingNoteTagsLane,
-            note: {
-              ...note,
-              tags: newTags
-            }
-          })
+        // Use optimistic updates for better UX
+        originalTags = [...currentTags]
+        note.tags = newTags
+        this.showInfo('Updating note tags...')
+
+        // Use API service to update the note - no need for separate saveBoard() call
+        await this.api.updateNote(this.currentBoardName, this.editingNoteTags, {
+          ...note,
+          lane_name: this.editingNoteTagsLane
         })
 
-        if (!response.ok) throw new Error('Failed to update note tags')
-
-        await this.loadBoard(this.currentBoardName)
         this.showSuccess('Note tags updated')
       } catch (error) {
+        // Revert optimistic update on error
+        if (originalTags !== null) {
+          note.tags = originalTags
+        }
         console.error('Error updating note tags:', error)
         this.showError('Failed to update note tags')
       } finally {
@@ -1073,62 +1352,36 @@ function createToCryStore () {
       this.addingNewTag = false
     },
 
-    // Add a new tag quickly
-    addQuickTag (noteId, laneName, tagText) {
-      const trimmedTag = tagText.trim()
-      if (!trimmedTag) return
-
-      // Find the current note
-      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
-      const note = lane?.notes.find(n => n.sepia_id === noteId)
-
-      if (!note) return
-
-      const currentTags = note.tags || []
-      const newTags = [...currentTags, trimmedTag]
-
-      this.updateNoteTags(noteId, laneName, newTags)
-    },
-
-    // Remove a tag quickly
-    removeQuickTag (noteId, laneName, tagToRemove) {
-      // Find the current note
-      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
-      const note = lane?.notes.find(n => n.sepia_id === noteId)
-
-      if (!note) return
-
-      const currentTags = note.tags || []
-      const newTags = currentTags.filter(tag => tag !== tagToRemove)
-
-      this.updateNoteTags(noteId, laneName, newTags)
-    },
-
     // Generic function to update note tags
     async updateNoteTags (noteId, laneName, newTags) {
+      // Declare variable in the outer scope
+      let originalTags = null
+
       try {
         const lane = this.currentBoard.lanes.find(l => l.name === laneName)
         const note = lane?.notes.find(n => n.sepia_id === noteId)
 
         if (!note) return
 
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(noteId)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: laneName,
-            note: {
-              ...note,
-              tags: newTags
-            }
-          })
+        // Use optimistic updates for better UX
+        originalTags = [...(note.tags || [])]
+        note.tags = newTags
+        this.showInfo('Updating tag...')
+
+        // Use API service to update the note - no need for separate saveBoard() call
+        await this.api.updateNote(this.currentBoardName, noteId, {
+          ...note,
+          lane_name: laneName
         })
 
-        if (!response.ok) throw new Error('Failed to update note tags')
-
-        await this.loadBoard(this.currentBoardName)
         this.showSuccess('Tag updated')
       } catch (error) {
+        // Revert optimistic update on error - need to find note again as it might have moved
+        const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+        const note = lane?.notes.find(n => n.sepia_id === noteId)
+        if (note && originalTags !== null) {
+          note.tags = originalTags
+        }
         console.error('Error updating note tags:', error)
         this.showError('Failed to update note tags')
       }
@@ -1139,26 +1392,58 @@ function createToCryStore () {
       const title = await this.prompt('Enter note title:')
       if (!title) return
 
+      // Declare variable in the outer scope
+      let originalNotes = null
+
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: laneName,
-            note: {
-              title,
-              content: '',
-              tags: []
-            }
-          })
+        // Create optimistic note for better UX
+        const newNote = {
+          sepia_id: 'temp-' + Date.now(), // Temporary ID
+          title,
+          content: '',
+          tags: [],
+          expanded: false,
+          public: false,
+          attachments: [],
+          start_date: null,
+          end_date: null,
+          priority: null
+        }
+
+        // Find the lane and optimistically add the note
+        const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+        if (!lane) {
+          this.showError('Lane not found')
+          return
+        }
+
+        originalNotes = [...lane.notes]
+        lane.notes.push(newNote)
+        this.showInfo('Adding note...')
+
+        // Use API service to create the note
+        const createdNote = await this.api.createNote(this.currentBoardName, laneName, {
+          title,
+          content: '',
+          tags: []
         })
 
-        if (!response.ok) throw new Error('Failed to add note')
+        // Replace the optimistic note with the real one
+        const noteIndex = lane.notes.findIndex(n => n.sepia_id === newNote.sepia_id)
+        if (noteIndex !== -1) {
+          lane.notes[noteIndex] = createdNote
+        }
 
-        await this.loadBoard(this.currentBoardName)
+        this.showSuccess('Note added successfully')
       } catch (error) {
+        // Revert optimistic update on error
+        const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+        if (lane && originalNotes !== null) {
+          lane.notes = originalNotes
+        }
         console.error('Error adding note:', error)
         this.error = error.message
+        this.showError('Failed to add note')
       }
     },
 
@@ -1777,106 +2062,6 @@ function createToCryStore () {
       }
     },
 
-    // Lane Drag and Drop Handlers
-    handleLaneDragStart (event, lane) {
-      this.draggedLane = lane
-      this.draggedLaneIndex = this.currentBoard.lanes.indexOf(lane)
-      event.target.classList.add('dragging')
-      event.dataTransfer.effectAllowed = 'move'
-    },
-
-    handleLaneDragEnd (event) {
-      event.target.classList.remove('dragging')
-      // Remove any drop indicators
-      document.querySelectorAll('.lane-drop-indicator').forEach(el => el.remove())
-      this.draggedLane = null
-      this.draggedLaneIndex = null
-    },
-
-    handleLaneDragOver (event) {
-      event.preventDefault()
-      // Only show lane drop indicator if we're dragging a lane, not a note
-      if (!this.draggedLane) {
-        return
-      }
-      event.dataTransfer.dropEffect = 'move'
-
-      // Remove any existing drop indicators
-      document.querySelectorAll('.lane-drop-indicator').forEach(el => el.remove())
-
-      // Always show indicator at the top (insert before)
-      const indicator = document.createElement('div')
-      indicator.className = 'lane-drop-indicator'
-      indicator.style.position = 'absolute'
-      indicator.style.height = '2px'
-      indicator.style.backgroundColor = 'var(--pico-primary)'
-      indicator.style.width = '100%'
-      indicator.style.left = '0'
-      indicator.style.top = '0'
-      indicator.style.zIndex = '1000'
-
-      event.currentTarget.style.position = 'relative'
-      event.currentTarget.appendChild(indicator)
-    },
-
-    async handleLaneDrop (event) {
-      event.preventDefault()
-      if (!this.draggedLane) return
-
-      // Remove any drop indicators
-      document.querySelectorAll('.lane-drop-indicator').forEach(el => el.remove())
-
-      const lanes = this.currentBoard.lanes
-      const targetLane = event.currentTarget
-      const allLanes = Array.from(targetLane.parentNode.children)
-      const targetIndex = allLanes.indexOf(targetLane)
-
-      // The drop indicator shows exactly where the lane should go
-      // When indicator shows on lane at targetIndex, move dragged lane there
-      let targetPosition = targetIndex
-      if (targetIndex <= this.draggedLaneIndex) {
-        targetPosition -= 1
-      }
-
-      // Only return if trying to drop on self
-      if (this.draggedLaneIndex === targetPosition) return
-
-      try {
-        // Insert at target position first
-        lanes.splice(targetPosition, 0, this.draggedLane)
-
-        // Remove from old position (adjusting for the insertion)
-        const oldPosition = targetPosition <= this.draggedLaneIndex ? this.draggedLaneIndex + 1 : this.draggedLaneIndex
-        lanes.splice(oldPosition, 1)
-
-        // Update lane positions via API
-        for (let i = 0; i < lanes.length; i++) {
-          const lane = lanes[i]
-          const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane/${encodeURIComponent(lane.name)}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lane: { name: lane.name, notes: [] },
-              position: i
-            })
-          })
-
-          if (!response.ok) {
-            throw new Error(`Failed to update lane position for ${lane.name}`)
-          }
-        }
-
-        // Force reactivity
-        this.currentBoard = { ...this.currentBoard }
-        console.log('Lane order updated successfully')
-      } catch (error) {
-        console.error('Error moving lane:', error)
-        await this.showAlert('Error', 'Failed to move lane. Please try again.')
-        // Reload the board to restore correct order
-        await this.loadBoard(this.currentBoardName)
-      }
-    },
-
     // Convert markdown to HTML
     markdownToHtml (markdown) {
       if (!markdown) return ''
@@ -2243,6 +2428,75 @@ function createToCryStore () {
       }
     },
 
+    // Update kanban board padding to ensure sufficient scrollable space for hidden lanes
+    updateKanbanPadding () {
+      const kanbanBoard = document.querySelector('.kanban-board')
+      if (!kanbanBoard || !this.currentBoard) return
+
+      const firstVisibleLane = this.currentBoard.first_visible_lane || 0
+      if (firstVisibleLane === 0) {
+        // No hidden lanes, no extra padding needed
+        kanbanBoard.style.paddingRight = ''
+        return
+      }
+
+      // Get actual lane dimensions from DOM
+      const firstLane = kanbanBoard.querySelector('.lane')
+      const laneWidth = firstLane ? firstLane.offsetWidth : 280
+      const boardStyle = window.getComputedStyle(kanbanBoard)
+      const gapValue = boardStyle.gap || '0.75rem'
+      const laneGap = parseInt(gapValue) || 12
+
+      const viewportWidth = window.innerWidth
+
+      // Calculate required kanban width
+      const totalLanes = this.currentBoard.lanes.length
+      const allLanesWidth = totalLanes * (laneWidth + laneGap)
+
+      let requiredKanbanWidth
+
+      if (this.currentBoard.show_hidden_lanes) {
+        // When showing hidden lanes, kanban should fit all lanes or window width, whichever is larger
+        requiredKanbanWidth = Math.max(allLanesWidth, viewportWidth)
+      } else {
+        // When hiding lanes, kanban should fit:
+        // 1. All visible lanes, OR
+        // 2. All hidden lanes + window width (so we can scroll hidden lanes completely off-screen)
+        // 3. Window width (minimum)
+
+        const visibleLanes = totalLanes - firstVisibleLane
+        const visibleLanesWidth = visibleLanes * (laneWidth + laneGap)
+        const hiddenLanesWidth = firstVisibleLane * (laneWidth + laneGap)
+
+        requiredKanbanWidth = Math.max(
+          visibleLanesWidth,
+          hiddenLanesWidth + viewportWidth,
+          viewportWidth
+        )
+      }
+
+      // Calculate the right padding needed to achieve this width
+      const currentContentWidth = allLanesWidth
+      const rightPadding = Math.max(0, requiredKanbanWidth - currentContentWidth)
+
+      kanbanBoard.style.paddingRight = `${rightPadding}px`
+
+      console.log('Dynamic padding:', {
+        firstVisibleLane,
+        laneWidth,
+        laneGap,
+        totalLanes,
+        allLanesWidth,
+        viewportWidth,
+        showHiddenLanes: this.currentBoard.show_hidden_lanes,
+        visibleLanes: totalLanes - firstVisibleLane,
+        visibleLanesWidth: (totalLanes - firstVisibleLane) * (laneWidth + laneGap),
+        hiddenLanesWidth: firstVisibleLane * (laneWidth + laneGap),
+        requiredKanbanWidth,
+        rightPadding
+      })
+    },
+
     // Initialize scroll watchers
     initScrollWatcher () {
       this.$nextTick(() => {
@@ -2269,6 +2523,21 @@ function createToCryStore () {
           window.addEventListener('resize', () => {
             this.updateScrollButtons()
           })
+
+          // Add debounced resize listener for dynamic padding
+          let resizeTimeout
+          const debouncedResize = () => {
+            clearTimeout(resizeTimeout)
+            resizeTimeout = setTimeout(() => {
+              this.updateKanbanPadding()
+              // Re-scroll to maintain hidden lanes state after resize
+              this.setInitialScrollPosition()
+            }, 250) // Debounce for 250ms
+          }
+          window.addEventListener('resize', debouncedResize)
+
+          // Initial padding calculation
+          this.updateKanbanPadding()
 
           // Check periodically for the first few seconds
           let checks = 0
@@ -2458,6 +2727,195 @@ function createToCryStore () {
             detail: { type: 'error', message: 'Failed to copy link' }
           }))
         }
+      }
+    },
+
+    getSeparatorPosition () {
+      if (!this.currentBoard || !this.currentBoard.lanes) return 0
+
+      const laneIndex = this.currentBoard.first_visible_lane || 0
+      if (laneIndex === 0) return 0
+
+      // Get actual lane width from computed styles
+      const firstLane = document.querySelector('.lane')
+      const laneWidth = firstLane ? firstLane.offsetWidth : 280
+
+      // Get gap from kanban board computed style
+      const kanbanBoard = document.querySelector('.kanban-board')
+      if (kanbanBoard) {
+        const boardStyle = window.getComputedStyle(kanbanBoard)
+        const gapValue = boardStyle.gap || '0.75rem'
+        const laneGap = parseInt(gapValue) || 12
+
+        // Position separator with its RIGHT EDGE at the LEFT EDGE of the first visible lane
+        // This is simply: (laneWidth + laneGap) * laneIndex - laneGap
+        return (laneWidth + laneGap) * laneIndex - laneGap
+      }
+
+      // Fallback calculation
+      return laneIndex * 292 - 12 // 292 = 280+12, 12 = gap
+    },
+
+    isLaneHidden (index) {
+      if (!this.currentBoard || !this.currentBoard.lanes) return false
+      return index < (this.currentBoard.first_visible_lane || 0)
+    },
+
+    setInitialScrollPosition () {
+      if (!this.currentBoard || !this.currentBoard.lanes) return
+
+      const kanbanBoard = document.querySelector('.kanban-board')
+      if (!kanbanBoard) return
+
+      // Update padding first to ensure sufficient scrollable space
+      this.updateKanbanPadding()
+
+      const firstVisibleLane = this.currentBoard.first_visible_lane || 0
+
+      if (this.currentBoard.show_hidden_lanes) {
+        // Show all lanes from the beginning
+        kanbanBoard.scrollLeft = 0
+      } else {
+        // Scroll to position first_visible_lane at the left edge
+        if (firstVisibleLane === 0) {
+          kanbanBoard.scrollLeft = 0
+          return
+        }
+
+        // Use same calculation as getSeparatorPosition() for consistency
+        const firstLane = kanbanBoard.querySelector('.lane')
+        const laneWidth = firstLane ? firstLane.offsetWidth : 280
+        const boardStyle = window.getComputedStyle(kanbanBoard)
+        const gapValue = boardStyle.gap || '0.75rem'
+        const laneGap = parseInt(gapValue) || 12
+
+        // Scroll position needed to bring first_visible_lane to left edge
+        const scrollPosition = (laneWidth + laneGap) * firstVisibleLane
+        kanbanBoard.scrollLeft = scrollPosition
+      }
+    },
+
+    // Lane dragging functions
+    handleLaneDragStart (event, lane) {
+      this.draggedLane = lane
+      this.draggedLaneIndex = this.currentBoard.lanes.findIndex(l => l.name === lane.name)
+      event.target.classList.add('dragging')
+      event.dataTransfer.effectAllowed = 'move'
+    },
+
+    handleLaneDragEnd (event) {
+      event.target.classList.remove('dragging')
+      // Remove any existing drop indicators
+      const indicator = document.querySelector('.lane-drop-indicator')
+      if (indicator) {
+        indicator.remove()
+      }
+      this.draggedLane = null
+      this.draggedLaneIndex = null
+    },
+
+    handleLaneDragOver (event) {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+
+      // No visual indicator needed - just handle the drag over
+    },
+
+    handleLaneDrop (event) {
+      event.preventDefault()
+
+      if (!this.draggedLane || this.draggedLaneIndex === null) {
+        return
+      }
+
+      // Get cursor position to determine drop location
+      const kanbanBoard = document.querySelector('.kanban-board')
+      if (!kanbanBoard) return
+
+      const boardRect = kanbanBoard.getBoundingClientRect()
+      const cursorX = event.clientX - boardRect.left
+      const laneElements = kanbanBoard.querySelectorAll('.lane')
+
+      // Find which gap position to insert at
+      let targetPosition = 0
+      for (let i = 0; i < laneElements.length; i++) {
+        const laneElement = laneElements[i]
+        const laneRect = laneElement.getBoundingClientRect()
+        const laneCenterX = laneRect.left - boardRect.left + laneRect.width / 2
+
+        if (cursorX < laneCenterX) {
+          targetPosition = i
+          break
+        }
+        targetPosition = i + 1
+      }
+
+      // Don't do anything if dropping in the same position
+      if (targetPosition === this.draggedLaneIndex) {
+        return
+      }
+
+      // Create a copy of the lanes array
+      const lanes = [...this.currentBoard.lanes]
+
+      // Remove from original position
+      lanes.splice(this.draggedLaneIndex, 1)
+
+      // Insert at new position
+      lanes.splice(targetPosition, 0, this.draggedLane)
+
+      // Update the board
+      this.currentBoard.lanes = lanes
+
+      // Save to server
+      this.saveLaneOrder()
+    },
+
+    async saveLaneOrder () {
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lanes/reorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lanes: this.currentBoard.lanes.map(lane => lane.name)
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to save lane order')
+      } catch (error) {
+        console.error('Error saving lane order:', error)
+        this.showError('Failed to save lane order')
+      }
+    },
+
+    // Toggle show_hidden_lanes property and update scroll position
+    async toggleShowHiddenLanes () {
+      if (!this.currentBoard) return
+
+      // Toggle the property
+      this.currentBoard.show_hidden_lanes = !this.currentBoard.show_hidden_lanes
+
+      // Save to backend
+      try {
+        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            show_hidden_lanes: this.currentBoard.show_hidden_lanes
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update show hidden lanes setting')
+
+        // Update scroll position after property change
+        this.$nextTick(() => {
+          this.setInitialScrollPosition()
+        })
+      } catch (error) {
+        console.error('Error updating show hidden lanes:', error)
+        this.showError('Failed to update show hidden lanes setting')
+        // Revert the change on error
+        this.currentBoard.show_hidden_lanes = !this.currentBoard.show_hidden_lanes
       }
     }
 

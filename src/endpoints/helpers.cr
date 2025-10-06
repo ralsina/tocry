@@ -144,9 +144,50 @@ module ToCry::Endpoints::Helpers
     property to_user_email : String
   end
 
-  struct ColorSchemePayload
+  # Payload structure for lane definitions in board management operations
+  # Each lane represents a column/state in the Kanban board
+  struct LanePayload
     include JSON::Serializable
-    property color_scheme : String
+
+    # The name/title of the lane (e.g., "Todo", "In Progress", "Done")
+    property name : String
+
+    # Optional position index for explicit ordering
+    # If not provided, lanes will be ordered according to their array position
+    property position : Int32?
+  end
+
+  # Payload structure for comprehensive board updates
+  # Supports all board properties including complete lane state management
+  struct UpdateBoardPayload
+    include JSON::Serializable
+
+    # Optional new board name (renames the board if provided)
+    property new_name : String?
+
+    # Optional index of which lane should be displayed first
+    # Used for horizontal scrolling when there are many lanes
+    property first_visible_lane : Int32?
+
+    # Optional flag to control visibility of hidden lanes
+    # When true, shows lanes that might otherwise be hidden
+    property show_hidden_lanes : Bool?
+
+    # Optional color scheme for board theming
+    # Examples: "Blue", "Green", "Red", etc.
+    property color_scheme : String?
+
+    # Optional complete lane state definition
+    # When provided, represents the FULL target state of board lanes:
+    # - Lanes in the array are kept (created if new, reordered if existing)
+    # - Lanes NOT in the array are deleted
+    # - Each lane is a fresh object (no sharing between boards)
+    property lanes : Array(LanePayload)?
+  end
+
+  struct ReorderLanesPayload
+    include JSON::Serializable
+    property lanes : Array(String)
   end
 
   # Helper function to find a note across all user-accessible boards
