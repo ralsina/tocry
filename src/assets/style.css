@@ -173,7 +173,7 @@
       gap: 0.75rem;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 1rem 1rem 1rem 0;
+      padding: 1rem 300px 1rem 0;
       height: calc(100% - 2rem);
       min-height: 0;
       scrollbar-width: none;
@@ -891,6 +891,7 @@
       transition: all 0.2s ease-out;
     }
 
+
     /* Note card hover effects */
     .note-card:hover {
       transform: translateY(-2px);
@@ -1017,4 +1018,72 @@
       transform: scale(1.1);
       background: var(--pico-primary-background-color);
       color: var(--pico-primary-inverse);
+    }
+
+    /* Lane Separator and Hidden Lanes */
+    .lane-separator {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0.75rem; /* Same as kanban board gap */
+      z-index: 100;
+      cursor: col-resize;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--pico-primary-rgb), 0.15);
+      transition: background-color 0.2s ease;
+    }
+
+    .lane-separator:hover {
+      background: rgba(var(--pico-primary-rgb), 0.2);
+    }
+
+    .lane-separator.dragging {
+      background: var(--pico-primary);
+      opacity: 0.8;
+    }
+
+    .separator-line {
+      position: absolute;
+      left: 50%;
+      top: 10%;
+      bottom: 10%;
+      width: 2px;
+      background: var(--pico-primary);
+      transform: translateX(-50%);
+      border-radius: 1px;
+    }
+
+    .separator-handle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--pico-primary);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .lane-hidden {
+      /* Visual styling for lanes that are conceptually "hidden" */
+      opacity: 0.7;
+      filter: grayscale(30%);
+      transition: all 0.3s ease;
+    }
+
+    .lane-hidden:hover {
+      opacity: 0.4;
+    }
+
+    /* Ensure kanban board has relative positioning for separator */
+    .kanban-board {
+      position: relative;
     }

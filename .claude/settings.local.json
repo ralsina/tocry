@@ -14,7 +14,11 @@
       "Bash(shards build:*)",
       "Bash(./run_integration.sh:*)",
       "Bash(timeout:*)",
-      "Bash(./run_unit.sh:*)"
+      "Bash(./run_unit.sh:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(standard --fix:*)",
+      "Bash(standard src/assets/store.js)"
     ],
     "deny": [],
     "ask": []

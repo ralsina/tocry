@@ -159,8 +159,19 @@
         <!-- Kanban Board -->
         <div class="kanban-board" x-ref="kanbanBoard"
              x-show="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 0">
-          <template x-for="lane in currentBoard?.lanes || []" :key="lane.name">
+
+          <!-- Visual Separator -->
+          <div class="lane-separator"
+               x-show="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 1"
+               :style="`left: ${getSeparatorPosition()}px;`"
+               title="Shows which lanes are hidden">
+            <div class="separator-line"></div>
+          </div>
+
+          <template x-for="(lane, index) in currentBoard?.lanes || []" :key="lane.name">
             <div class="lane"
+                 :class="{ 'lane-hidden': isLaneHidden(index) }"
+                 :data-lane-name="lane.name"
                  draggable="true"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 transform translate-x-4"

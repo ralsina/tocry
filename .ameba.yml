@@ -11,6 +11,7 @@ Naming/QueryBoolMethods:
   - src/board_manager.cr
   - src/user.cr
   - src/note.cr
+  - src/board.cr
   Enabled: true
   Severity: Convention
 
