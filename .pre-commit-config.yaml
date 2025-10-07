@@ -40,15 +40,9 @@ repos:
 
   - repo: local
     hooks:
-      # - id: integration-tests
-      #   name: Run integration tests
-      #   entry: ./run_integration.sh
-      #   pass_filenames: false
-      #   language: script
-      #   stages: [pre-commit]
-      - id: unit-tests
-        name: Run unit tests
-        entry: ./run_unit.sh
+      - id: tests
+        name: Run tests
+        entry: ./scripts/run_tests.sh
         pass_filenames: false
         language: script
         stages: [pre-commit]

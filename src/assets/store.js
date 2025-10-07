@@ -1,20 +1,18 @@
 // Alpine.js store for ToCry reactive app
-/* global toastui, history, marked, hljs, localStorage, ResizeObserver */
+/* global toastui, history, marked, hljs, localStorage, ResizeObserver, ToCryApiClient */
 
-// Modern API Service for board operations
+// Modern API Service using generated ToCryApiClient
 class BoardApiService {
   constructor (store) {
     this.store = store
-    this.baseURL = ''
+    this.apiClient = new window.ToCryApiClient()
     this.loadingStates = new Set()
     this.requestQueue = new Map()
   }
 
   // Generic HTTP request helper with enhanced error handling and loading states
-  async request (endpoint, options = {}) {
-    const { method = 'GET', body, headers = {}, silent = false } = options
-    const url = `${this.baseURL}${endpoint}`
-    const requestKey = `${method}:${endpoint}`
+  async request (apiCall, silent = false) {
+    const requestKey = apiCall.toString()
 
     // Manage request deduplication
     if (this.requestQueue.has(requestKey)) {
@@ -26,7 +24,7 @@ class BoardApiService {
       this.setLoading(requestKey, true)
     }
 
-    const requestPromise = this.executeRequest(url, method, body, headers, silent, requestKey)
+    const requestPromise = this.executeRequest(apiCall, silent, requestKey)
     this.requestQueue.set(requestKey, requestPromise)
 
     try {
@@ -40,32 +38,11 @@ class BoardApiService {
     }
   }
 
-  async executeRequest (url, method, body, headers, silent, requestKey) {
-    const defaultHeaders = {
-      'Content-Type': 'application/json',
-      ...headers
-    }
-
+  async executeRequest (apiCall, silent, requestKey) {
     try {
-      const response = await fetch(url, {
-        method,
-        headers: defaultHeaders,
-        body: body ? JSON.stringify(body) : undefined
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`
-
-        if (!silent) {
-          this.store.showError(errorMessage)
-        }
-        throw new Error(errorMessage)
-      }
-
-      return await response.json()
+      return await apiCall()
     } catch (error) {
-      console.error(`API request failed: ${method} ${url}`, error)
+      console.error(`API request failed: ${requestKey}`, error)
 
       if (!silent && error.name !== 'TypeError') { // Don't show network errors twice
         this.store.showError(`Request failed: ${error.message}`)
@@ -85,38 +62,29 @@ class BoardApiService {
     this.store.apiLoading = this.loadingStates.size > 0
   }
 
-  isLoading (method, endpoint) {
-    const requestKey = `${method}:${endpoint}`
+  isLoading (requestKey) {
     return this.loadingStates.has(requestKey)
   }
 
-  // Board operations using new enhanced endpoints
+  // Board operations using generated API client
   async getBoard (boardName) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}`)
+    return this.request(() => this.apiClient.getBoard(boardName))
   }
 
   async updateBoard (boardName, updates) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}`, {
-      method: 'PUT',
-      body: updates
-    })
+    return this.request(() => this.apiClient.updateBoard(boardName, updates))
   }
 
   async createBoard (boardData) {
-    return this.request('/boards', {
-      method: 'POST',
-      body: boardData
-    })
+    return this.request(() => this.apiClient.createBoard(boardData.name, boardData.color_scheme))
   }
 
   async deleteBoard (boardName) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}`, {
-      method: 'DELETE'
-    })
+    return this.request(() => this.apiClient.deleteBoard(boardName))
   }
 
   async getAllBoards () {
-    return this.request('/boards')
+    return this.request(() => this.apiClient.getBoards())
   }
 
   // State-based lane management
@@ -124,70 +92,43 @@ class BoardApiService {
     return this.updateBoard(boardName, { lanes })
   }
 
-  // Note operations using enhanced endpoints
+  // Note operations using generated API client
   async createNote (boardName, laneName, noteData) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/note`, {
-      method: 'POST',
-      body: {
-        lane_name: laneName,
-        note: noteData
-      }
-    })
+    return this.request(() => this.apiClient.createNote(boardName, laneName, noteData))
   }
 
-  async updateNote (boardName, noteId, noteData) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/note/${noteId}`, {
-      method: 'PUT',
-      body: noteData
-    })
+  async updateNote (boardName, noteId, noteData, options = {}) {
+    return this.request(() => this.apiClient.updateNote(boardName, noteId, noteData, {
+      laneName: options.laneName,
+      position: options.position
+    }))
   }
 
   async deleteNote (boardName, noteId) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/note/${noteId}`, {
-      method: 'DELETE'
-    })
+    return this.request(() => this.apiClient.deleteNote(boardName, noteId))
   }
 
-  // File upload operations
-  async uploadImage (formData) {
-    const response = await fetch('/upload/image', {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload image: ${response.statusText}`)
-    }
-
-    return response.json()
+  // File upload operations using generated API client
+  async uploadImage (file) {
+    return this.request(() => this.apiClient.uploadImage(file))
   }
 
-  async uploadAttachment (noteId, formData) {
-    const response = await fetch(`/n/${noteId}/attach`, {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload attachment: ${response.statusText}`)
-    }
-
-    return response.json()
+  async uploadAttachment (boardName, noteId, file) {
+    return this.request(() => this.apiClient.attachFileToNote(boardName, noteId, file))
   }
 
-  async deleteAttachment (noteId, filename) {
-    return this.request(`/n/${noteId}/${filename}`, {
-      method: 'DELETE'
-    })
+  async deleteAttachment (boardName, noteId, attachment) {
+    return this.request(() => this.apiClient.deleteAttachment(boardName, noteId, attachment))
   }
 
-  // Auth operations
+  // Auth operations using generated API client
   async getAuthMode () {
-    return this.request('/auth_mode')
+    return this.request(() => this.apiClient.getAuthMode())
   }
 
   async getCurrentUser () {
-    const response = await fetch('/me')
+    // This endpoint doesn't exist in the generated client, keep manual fetch
+    const response = await fetch('/api/v1/me')
 
     if (!response.ok) {
       throw new Error(`Failed to get current user: ${response.statusText}`)
@@ -196,47 +137,53 @@ class BoardApiService {
     return response.json()
   }
 
-  // Utility operations
+  // Utility operations using generated API client
   async shareBoard (boardName, email) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/share`, {
-      method: 'POST',
-      body: { to_user_email: email }
-    })
+    return this.request(() => this.apiClient.shareBoard(boardName, email))
   }
 
   async updateColorScheme (boardName, colorScheme) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/color-scheme`, {
-      method: 'PUT',
-      body: { color_scheme: colorScheme }
-    })
+    return this.updateBoard(boardName, { color_scheme: colorScheme })
   }
 
-  // Lane operations
+  // Lane operations using generated API client
   async createLane (boardName, laneName) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/lane`, {
-      method: 'POST',
-      body: { name: laneName.trim() }
-    })
+    const newLanes = [...this.store.currentBoard.lanes, { name: laneName.trim() }]
+    return this.updateBoard(boardName, { lanes: newLanes })
   }
 
   async updateLane (boardName, oldLaneName, laneData, position) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/lane/${encodeURIComponent(oldLaneName)}`, {
-      method: 'PUT',
-      body: { lane: laneData, position }
-    })
+    const laneIndex = this.store.currentBoard.lanes.findIndex(l => l.name === oldLaneName)
+    if (laneIndex === -1) return this.store.showError('Lane not found')
+
+    const newLanes = [...this.store.currentBoard.lanes]
+    newLanes[laneIndex] = { name: laneData.name || oldLaneName, position: position || 0 }
+    return this.updateBoard(boardName, { lanes: newLanes })
   }
 
   async deleteLane (boardName, laneName) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/lane/${encodeURIComponent(laneName)}`, {
-      method: 'DELETE'
-    })
+    const confirmed = await this.store.showAlert(
+      'Delete Lane',
+      'Are you sure you want to delete this lane? All notes in it will be deleted.',
+      'Delete Anyway'
+    )
+    if (!confirmed) return
+
+    try {
+      // Find the lane index
+      const laneIndex = this.store.currentBoard.lanes.findIndex(l => l.name === laneName)
+      if (laneIndex === -1) return this.store.showError('Lane not found')
+
+      // Remove lane from lanes array
+      const newLanes = [...this.store.currentBoard.lanes.slice(0, laneIndex), ...this.store.currentBoard.lanes.slice(laneIndex + 1)]
+      return this.updateBoard(boardName, { lanes: newLanes })
+    } catch (error) {
+      this.store.showError('Failed to delete lane')
+    }
   }
 
   async reorderLanes (boardName, laneOrder) {
-    return this.request(`/boards/${encodeURIComponent(boardName)}/lanes/reorder`, {
-      method: 'PUT',
-      body: { lane_order: laneOrder }
-    })
+    return this.updateBoard(boardName, { lanes: laneOrder })
   }
 
   // Optimistic update helper
@@ -502,12 +449,12 @@ function createToCryStore () {
       if (hasBoardInUrl) {
         const boardName = decodeURIComponent(pathParts[2])
         this.currentBoardName = boardName
-        await this.loadBoard(boardName)
+        await this.loadBoard(boardName, true)
       } else if (this.boards.length === 1) {
         // If there's only one board, show it by default
         console.log('Auto-loading single board:', this.boards[0])
         this.currentBoardName = this.boards[0]
-        await this.loadBoard(this.boards[0])
+        await this.loadBoard(this.boards[0], true)
       }
     },
 
@@ -651,15 +598,7 @@ function createToCryStore () {
         // Save to backend only if we have a current board
         if (this.currentBoardName && this.currentBoardName !== '') {
           try {
-            const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ color_scheme: this.currentColorScheme })
-            })
-
-            if (!response.ok) {
-              throw new Error('Failed to save color scheme')
-            }
+            await this.api.updateBoard(this.currentBoardName, { colorScheme: this.currentColorScheme })
           } catch (error) {
             console.error('Error saving color scheme:', error)
             this.showError('Failed to save color scheme')
@@ -759,7 +698,7 @@ function createToCryStore () {
     },
 
     // Load a specific board
-    async loadBoard (boardName) {
+    async loadBoard (boardName, scrollToInitialPosition = false) {
       if (!boardName) {
         return
       }
@@ -776,26 +715,28 @@ function createToCryStore () {
         this.currentBoard = {
           name: boardData.name,
           lanes: boardData.lanes || [],
-          colorScheme: boardData.color_scheme,
-          first_visible_lane: boardData.first_visible_lane || 0,
-          show_hidden_lanes: boardData.show_hidden_lanes || false
+          colorScheme: boardData.colorScheme,
+          firstVisibleLane: boardData.firstVisibleLane || 0,
+          showHiddenLanes: boardData.showHiddenLanes || false
         }
         console.log('Set currentBoard:', this.currentBoard)
         this.currentBoardName = boardName
         this.boardNotFound = false
 
         // Set initial scroll position after DOM is updated
-        this.$nextTick(() => {
-          this.setInitialScrollPosition()
-        })
+        if (scrollToInitialPosition) {
+          this.$nextTick(() => {
+            this.setInitialScrollPosition()
+          })
+        }
 
         // Apply board color scheme with delay for smooth transition
-        if (boardData.color_scheme && boardData.color_scheme !== this.currentColorScheme) {
+        if (boardData.colorScheme && boardData.colorScheme !== this.currentColorScheme) {
           // Delay color scheme application to make it look intentional
           setTimeout(() => {
-            this.currentColorScheme = boardData.color_scheme
+            this.currentColorScheme = boardData.colorScheme
             this.updateColorScheme()
-            console.log('Applied board color scheme:', boardData.color_scheme)
+            console.log('Applied board color scheme:', boardData.colorScheme)
             // Clear loadingBoardFromUrl after everything is loaded and color is applied
             this.loadingBoardFromUrl = false
           }, 500) // 0.5 second delay
@@ -895,17 +836,10 @@ function createToCryStore () {
     // Create a new board
     async createBoard (name) {
       try {
-        const response = await fetch('/boards', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        })
-
-        if (!response.ok) throw new Error('Failed to create board')
-
+        await this.api.createBoard({ name })
         await this.loadBoards()
         this.currentBoardName = name
-        await this.loadBoard(name)
+        await this.loadBoard(name, true)
       } catch (error) {
         console.error('Error creating board:', error)
         this.error = error.message
@@ -915,12 +849,7 @@ function createToCryStore () {
     // Rename a board
     async renameBoard (oldName, newName) {
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(oldName)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ new_name: newName })
-        })
-        if (!response.ok) throw new Error('Failed to rename board')
+        await this.api.updateBoard(oldName, { newName })
         await this.loadBoards()
         this.currentBoardName = newName
         await this.loadBoard(newName)
@@ -934,13 +863,7 @@ function createToCryStore () {
     // Share a board
     async shareBoard (boardName, toUserEmail) {
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(boardName)}/share`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to_user_email: toUserEmail })
-        })
-        if (!response.ok) throw new Error('Failed to share board')
-        return await response.json()
+        return await this.api.shareBoard(boardName, toUserEmail)
       } catch (error) {
         console.error('Error sharing board:', error)
         throw error
@@ -949,10 +872,7 @@ function createToCryStore () {
     // Delete a board
     async deleteBoard (boardName) {
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(boardName)}`, {
-          method: 'DELETE'
-        })
-        if (!response.ok) throw new Error('Failed to delete board')
+        await this.api.deleteBoard(boardName)
         await this.loadBoards()
         // Load first available board or clear current board
         if (this.boards.length > 0) {
@@ -1148,7 +1068,7 @@ function createToCryStore () {
 
       // Find the current note to get its full data
       const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTitleLane)
-      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteTitle)
+      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteTitle)
 
       if (!note || note.title === newTitle) {
         this.cancelNoteTitleEdit()
@@ -1166,8 +1086,17 @@ function createToCryStore () {
 
         // Use API service to update the note
         await this.api.updateNote(this.currentBoardName, this.editingNoteTitle, {
-          ...note,
-          lane_name: this.editingNoteTitleLane
+          title: newTitle,
+          tags: note.tags || [],
+          content: note.content || '',
+          expanded: note.expanded,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
+        }, {
+          laneName: this.editingNoteTitleLane
         })
 
         await this.saveBoard()
@@ -1216,7 +1145,7 @@ function createToCryStore () {
 
       // Find the current note to get its full data
       const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteContentLane)
-      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteContent)
+      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteContent)
 
       if (!note || note.content === newContent) {
         this.cancelNoteContentEdit()
@@ -1234,8 +1163,17 @@ function createToCryStore () {
 
         // Use API service to update the note
         await this.api.updateNote(this.currentBoardName, this.editingNoteContent, {
-          ...note,
-          lane_name: this.editingNoteContentLane
+          title: note.title,
+          tags: note.tags || [],
+          content: newContent,
+          expanded: note.expanded,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
+        }, {
+          laneName: this.editingNoteContentLane
         })
 
         await this.saveBoard()
@@ -1303,7 +1241,7 @@ function createToCryStore () {
 
       // Find the current note to get its full data
       const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTagsLane)
-      const note = lane?.notes.find(n => n.sepia_id === this.editingNoteTags)
+      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteTags)
 
       if (!note) {
         this.cancelNoteTagsEdit()
@@ -1328,8 +1266,17 @@ function createToCryStore () {
 
         // Use API service to update the note - no need for separate saveBoard() call
         await this.api.updateNote(this.currentBoardName, this.editingNoteTags, {
-          ...note,
-          lane_name: this.editingNoteTagsLane
+          title: note.title,
+          tags: newTags,
+          content: note.content || '',
+          expanded: note.expanded,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
+        }, {
+          laneName: this.editingNoteTagsLane
         })
 
         this.showSuccess('Note tags updated')
@@ -1359,7 +1306,7 @@ function createToCryStore () {
 
       try {
         const lane = this.currentBoard.lanes.find(l => l.name === laneName)
-        const note = lane?.notes.find(n => n.sepia_id === noteId)
+        const note = lane?.notes.find(n => n.sepiaId === noteId)
 
         if (!note) return
 
@@ -1370,15 +1317,24 @@ function createToCryStore () {
 
         // Use API service to update the note - no need for separate saveBoard() call
         await this.api.updateNote(this.currentBoardName, noteId, {
-          ...note,
-          lane_name: laneName
+          title: note.title,
+          tags: newTags,
+          content: note.content || '',
+          expanded: note.expanded,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
+        }, {
+          laneName
         })
 
         this.showSuccess('Tag updated')
       } catch (error) {
         // Revert optimistic update on error - need to find note again as it might have moved
         const lane = this.currentBoard.lanes.find(l => l.name === laneName)
-        const note = lane?.notes.find(n => n.sepia_id === noteId)
+        const note = lane?.notes.find(n => n.sepiaId === noteId)
         if (note && originalTags !== null) {
           note.tags = originalTags
         }
@@ -1425,13 +1381,19 @@ function createToCryStore () {
         const createdNote = await this.api.createNote(this.currentBoardName, laneName, {
           title,
           content: '',
-          tags: []
+          tags: [],
+          expanded: false,
+          public: false,
+          attachments: [],
+          start_date: null,
+          end_date: null,
+          priority: null
         })
 
         // Replace the optimistic note with the real one
-        const noteIndex = lane.notes.findIndex(n => n.sepia_id === newNote.sepia_id)
+        const noteIndex = lane.notes.findIndex(n => n.sepiaId === newNote.sepiaId)
         if (noteIndex !== -1) {
-          lane.notes[noteIndex] = createdNote
+          lane.notes[noteIndex] = createdNote.note
         }
 
         this.showSuccess('Note added successfully')
@@ -1456,7 +1418,7 @@ function createToCryStore () {
       this.editingNote = true
       this.noteEdit = { ...note }
       // Store the note ID for uploads (persists even if modal is closed)
-      this.currentEditingNoteId = note.sepia_id
+      this.currentEditingNoteId = note.sepiaId
       this.noteEditTagsString = note.tags ? note.tags.join(', ') : ''
       this.editorInitialized = false
 
@@ -1498,21 +1460,12 @@ function createToCryStore () {
             hooks: {
               addImageBlobHook: async (blob, callback) => {
                 try {
-                  // Create FormData for the image upload
-                  const formData = new FormData()
-                  formData.append('file', blob, blob.name || 'image.png')
-
-                  // Upload the image
-                  const response = await fetch(`/n/${this.noteEdit.sepia_id}/attach`, {
-                    method: 'POST',
-                    body: formData
-                  })
-
-                  if (!response.ok) {
-                    throw new Error('Failed to upload image')
+                  // Upload the image using the generated API client
+                  const boardName = this.currentBoardName
+                  if (!boardName) {
+                    throw new Error('No board selected - cannot upload image')
                   }
-
-                  const result = await response.json()
+                  const result = await this.api.uploadAttachment(boardName, this.noteEdit.sepiaId, blob)
 
                   // Get the URL for the uploaded image
                   const imageUrl = `/${result.relative_path}`
@@ -1597,17 +1550,20 @@ function createToCryStore () {
           content
         }
 
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${noteData.sepia_id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            note: noteData,
-            lane_name: this.draggedFromLane,
-            position: null
-          })
+        await this.api.updateNote(this.currentBoardName, noteData.sepiaId, {
+          title: noteData.title,
+          tags: noteData.tags || [],
+          content,
+          expanded: noteData.expanded,
+          public: noteData.public || false,
+          start_date: noteData.startDate || null,
+          end_date: noteData.endDate || null,
+          priority: noteData.priority || null,
+          attachments: noteData.attachments || []
+        }, {
+          laneName: this.draggedFromLane,
+          position: null
         })
-
-        if (!response.ok) throw new Error('Failed to save note')
 
         this.cancelEditNote()
         await this.loadBoard(this.currentBoardName)
@@ -1629,11 +1585,7 @@ function createToCryStore () {
       if (!confirmed) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${this.noteEdit.sepia_id}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) throw new Error('Failed to delete note')
+        await this.api.deleteNote(this.currentBoardName, this.noteEdit.sepiaId)
 
         this.cancelEditNote()
         await this.loadBoard(this.currentBoardName)
@@ -1669,7 +1621,7 @@ function createToCryStore () {
       // Find the note in the current board
       let note = null
       this.currentBoard.lanes.forEach(lane => {
-        const found = lane.notes.find(n => n.sepia_id === noteId)
+        const found = lane.notes.find(n => n.sepiaId === noteId)
         if (found) note = found
       })
       if (note) {
@@ -1687,11 +1639,7 @@ function createToCryStore () {
       if (!confirmed) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${noteId}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) throw new Error('Failed to delete note')
+        await this.api.deleteNote(this.currentBoardName, noteId)
 
         // Reload the board to show the changes
         await this.loadBoard(this.currentBoardName)
@@ -1710,19 +1658,45 @@ function createToCryStore () {
       if (!this.newLaneName.trim()) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lane`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: this.newLaneName.trim() })
-        })
-
-        if (!response.ok) throw new Error('Failed to add lane')
+        // Use the API service to create a new lane
+        await this.api.createLane(this.currentBoardName, this.newLaneName.trim())
 
         this.newLaneName = ''
         this.showAddLane = false // Close the modal
         await this.loadBoard(this.currentBoardName)
       } catch (error) {
         console.error('Error adding lane:', error)
+        this.error = error.message
+      }
+    },
+
+    // Handle creating lanes from a template
+    async handleCreateLaneTemplate (templateType) {
+      const templates = {
+        simple: ['Todo', 'In Progress', 'Done'],
+        taskmgmt: ['Backlog', 'To Do', 'In Progress', 'Review', 'Done'],
+        timebased: ['Today', 'This Week', 'Someday', 'Done']
+      }
+
+      const laneNames = templates[templateType]
+      if (!laneNames) {
+        console.error('Unknown template type:', templateType)
+        return
+      }
+
+      try {
+        // Get current lanes and add all template lanes at once
+        const currentLanes = this.currentBoard?.lanes || []
+        const newLanes = [...currentLanes, ...laneNames.map(name => ({ name }))]
+
+        // Update the board with all lanes in a single API call
+        await this.api.updateBoard(this.currentBoardName, { lanes: newLanes })
+
+        // Reload the board to show the new lanes
+        await this.loadBoard(this.currentBoardName)
+        this.showSuccess(`Created ${laneNames.length} lanes from ${templateType} template`)
+      } catch (error) {
+        console.error('Error creating lanes from template:', error)
         this.error = error.message
       }
     },
@@ -1757,9 +1731,6 @@ function createToCryStore () {
     handleDragEnd (event) {
       event.stopPropagation()
       event.target.classList.remove('dragging')
-      // Remove any drop indicators and containers
-      document.querySelectorAll('.note-drop-indicator').forEach(el => el.remove())
-      document.querySelectorAll('.drop-indicator-container').forEach(el => el.remove())
       // Reset all drag state
       this.draggedNote = null
       this.draggedFromLane = null
@@ -1769,79 +1740,88 @@ function createToCryStore () {
 
     handleDragOver (event, laneName) {
       event.preventDefault()
-      // Remove any existing drop indicators and containers
-      document.querySelectorAll('.note-drop-indicator').forEach(el => el.remove())
-      document.querySelectorAll('.drop-indicator-container').forEach(el => el.remove())
+      event.dataTransfer.dropEffect = 'move'
 
-      // Find the note card we're dragging over
-      const noteCards = event.currentTarget.querySelectorAll('.note-card')
-      const afterElement = this.getDragAfterElement(event.currentTarget, event.clientY)
-
-      if (afterElement == null) {
-        // If we're at the bottom, add to the end
-        this.draggedToIndex = noteCards.length
-        // Show indicator at the bottom of the lane
-        const laneContainer = event.currentTarget
-
-        // Create indicator
-        const indicator = document.createElement('div')
-        indicator.className = 'note-drop-indicator'
-        indicator.style.cssText = `
-          height: 3px;
-          background-color: var(--pico-primary);
-          width: 100%;
-          box-shadow: 0 0 4px rgba(var(--primary-rgb), 0.5);
-        `
-
-        // Insert at the bottom of the lane, before any existing container
-        laneContainer.appendChild(indicator)
-        console.log('Added bottom indicator to lane')
-      } else {
-        // Otherwise, insert before the element we're over
-        this.draggedToIndex = Array.from(noteCards).indexOf(afterElement)
-        // Show indicator above the element
-        const indicator = document.createElement('div')
-        indicator.className = 'note-drop-indicator'
-        indicator.style.cssText = `
-          position: absolute;
-          height: 2px;
-          background-color: var(--pico-primary);
-          width: 100%;
-          left: 0;
-          top: -1px;
-          z-index: 1000;
-        `
-        afterElement.style.position = 'relative'
-        afterElement.appendChild(indicator)
-      }
-    },
-
-    getDragAfterElement (container, y) {
-      const draggableElements = [...container.querySelectorAll('.note-card:not(.dragging)')]
-      console.log('getDragAfterElement:', { y, draggableElements: draggableElements.length })
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect()
-        const offset = y - box.top - box.height / 2
-        console.log('Checking element:', { offset, closestOffset: closest.offset, element: child })
-        if (offset < 0 && offset > closest.offset) {
-          return { offset, element: child }
-        } else {
-          return closest
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element
+      // No visual indicators needed - just handle the drag over
     },
 
     async handleDrop (event, toLaneName) {
       event.preventDefault()
-      // Remove any drop indicators and containers
-      document.querySelectorAll('.note-drop-indicator').forEach(el => el.remove())
-      document.querySelectorAll('.drop-indicator-container').forEach(el => el.remove())
 
       if (!this.draggedNote) {
         // Handle file drops (images, etc.)
         await this.handleFileDrop(event, toLaneName)
         return
       }
+
+      // Get cursor position to determine drop location within the lane
+      // Find the actual lane-notes container (not the note card itself)
+      let laneElement = event.currentTarget
+      if (laneElement.classList.contains('note-card')) {
+        // If we got a note card, find its parent lane-notes container
+        laneElement = laneElement.closest('.lane-notes')
+      }
+
+      const laneRect = laneElement.getBoundingClientRect()
+      const cursorY = event.clientY - laneRect.top
+      const noteElements = laneElement.querySelectorAll('.note-card')
+
+      console.log('=== DRAG DEBUG ===')
+      console.log('draggedNote:', this.draggedNote.title)
+      console.log('fromLane:', this.draggedFromLane)
+      console.log('toLane:', toLaneName)
+      console.log('cursorY:', cursorY)
+      console.log('FIXED laneElement tagName:', laneElement.tagName)
+      console.log('FIXED laneElement className:', laneElement.className)
+      console.log('FIXED noteElements count:', noteElements.length)
+      console.log('FIXED All children in lane:', Array.from(laneElement.children).map(child => ({ tagName: child.tagName, className: child.className })))
+      console.log('FIXED Total children count:', laneElement.children.length)
+
+      // Find which note the cursor is on, with special handling for dragged note
+      let targetNoteIndex = -1
+      const draggedNoteElement = Array.from(noteElements).find(el =>
+        el.getAttribute('data-note-id') === this.draggedNote.sepiaId
+      )
+
+      // Find the current index of the dragged note
+      const noteIndex = Array.from(noteElements).findIndex(el =>
+        el.getAttribute('data-note-id') === this.draggedNote.sepiaId
+      )
+
+      for (let i = 0; i < noteElements.length; i++) {
+        const noteElement = noteElements[i]
+        const noteRect = noteElement.getBoundingClientRect()
+        const noteTop = noteRect.top - laneRect.top
+        const noteCenterY = noteTop + noteRect.height / 2
+
+        // Special handling for the dragged note
+        if (draggedNoteElement && noteElement === draggedNoteElement) {
+          if (cursorY < noteCenterY) {
+            // Cursor is in upper half of dragged note, move it up one position
+            targetNoteIndex = Math.max(0, noteIndex - 1)
+            break
+          } else {
+            // Cursor is in lower half of dragged note, move to next position
+            targetNoteIndex = i + 1
+            continue
+          }
+        }
+
+        // For other notes, check if cursor is before this note
+        if (cursorY < noteCenterY) {
+          targetNoteIndex = i
+          break
+        }
+        targetNoteIndex = i + 1
+      }
+
+      // If no notes in the lane (empty lane), place at position 0
+      if (noteElements.length === 0) {
+        targetNoteIndex = 0
+      }
+
+      console.log('cursor is over note index:', targetNoteIndex)
+
       try {
         // Find the lanes
         const fromLane = this.currentBoard.lanes.find(l => l.name === this.draggedFromLane)
@@ -1849,72 +1829,57 @@ function createToCryStore () {
         if (!fromLane || !toLane) {
           return
         }
+
         // Find the note index
-        const noteIndex = fromLane.notes.findIndex(n => n.sepia_id === this.draggedNote.sepia_id)
+        const noteIndex = fromLane.notes.findIndex(n => n.sepiaId === this.draggedNote.sepiaId)
         if (noteIndex === -1) {
           return
         }
         const note = fromLane.notes[noteIndex]
 
-        // Calculate the target index
-        const insertIndex = this.draggedToIndex !== null ? this.draggedToIndex : toLane.notes.length
+        console.log('moving note from index', noteIndex, 'to index', targetNoteIndex)
 
-        // Check if the note is being dropped in the same position
-        if (this.draggedFromLane === toLaneName) {
-          // Adjust insert index if removing the note would affect the position
-          const adjustedInsertIndex = insertIndex > noteIndex ? insertIndex - 1 : insertIndex
-          if (noteIndex === adjustedInsertIndex) {
-            // Dropped in the same position, do nothing
-            this.draggedNote = null
-            this.draggedFromLane = null
-            this.draggedFromIndex = null
-            this.draggedToIndex = null
-            return
-          }
+        // If moving within the same lane and same position, do nothing
+        if (this.draggedFromLane === toLaneName && noteIndex === targetNoteIndex) {
+          console.log('SAME POSITION - CANCELLING')
+          this.draggedNote = null
+          this.draggedFromLane = null
+          this.draggedFromIndex = null
+          return
         }
 
-        // If moving within the same lane
-        if (this.draggedFromLane === toLaneName) {
-          // Remove from old position
-          fromLane.notes.splice(noteIndex, 1)
-          // Insert at new position
-          fromLane.notes.splice(insertIndex, 0, note)
-          this.draggedToIndex = null
-        } else {
-          // Remove from old lane
-          fromLane.notes.splice(noteIndex, 1)
-          // Insert at the correct position in the new lane
-          toLane.notes.splice(insertIndex, 0, note)
-        }
-        // Save the changes using the API
-        const url = `/boards/${encodeURIComponent(this.currentBoardName)}/note/${note.sepia_id}`
-        const body = JSON.stringify({
-          note,
-          lane_name: toLaneName,
-          position: this.draggedToIndex !== null ? this.draggedToIndex : toLane.notes.length - 1
+        // Remove note from original position
+        fromLane.notes.splice(noteIndex, 1)
+
+        // Insert note at target position
+        toLane.notes.splice(targetNoteIndex, 0, note)
+
+        console.log('new note order:', toLane.notes.map(n => n.title))
+
+        console.log('CALLING API UPDATE...')
+        // Save the changes using the API service
+        await this.api.updateNote(this.currentBoardName, note.sepiaId, {
+          title: note.title,
+          tags: note.tags || [],
+          content: note.content || '',
+          expanded: note.expanded,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
+        }, {
+          laneName: toLaneName,
+          position: targetNoteIndex
         })
-        console.log('Moving note:', { url, body: body.substring(0, 200) + '...' })
-
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('API Error:', response.status, errorText)
-          throw new Error(`Failed to move/reorder note: ${response.status} ${errorText}`)
-        }
 
         this.draggedNote = null
         this.draggedFromLane = null
         this.draggedFromIndex = null
-        this.draggedToIndex = null
 
         // Add success animation to the dropped note
         this.$nextTick(() => {
-          const noteElement = document.querySelector(`[data-note-id="${note.sepia_id}"]`)
+          const noteElement = document.querySelector(`[data-note-id="${note.sepiaId}"]`)
           if (noteElement) {
             noteElement.classList.add('drop-success')
             setTimeout(() => {
@@ -1968,12 +1933,22 @@ function createToCryStore () {
       formData.append('note_title', file.name.replace(/\.[^/.]+$/, '')) // Remove extension
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note`, {
-          method: 'POST',
-          body: formData
+        // Create note first, then upload image as attachment
+        const noteTitle = file.name.replace(/\.[^/.]+$/, '') // Remove extension
+        const createdNote = await this.api.createNote(this.currentBoardName, laneName, {
+          title: noteTitle,
+          content: '',
+          tags: [],
+          expanded: false,
+          public: false,
+          attachments: [],
+          start_date: null,
+          end_date: null,
+          priority: null
         })
 
-        if (!response.ok) throw new Error('Failed to create note with image')
+        // Upload image as attachment to the created note
+        await this.api.uploadAttachment(this.currentBoardName, createdNote.note.sepiaId, file)
 
         await this.loadBoard(this.currentBoardName)
         this.showSuccess('Image note created successfully')
@@ -1986,20 +1961,17 @@ function createToCryStore () {
     // Create a note with text content
     async createNoteWithText (text, laneName) {
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lane_name: laneName,
-            note: {
-              title: text.length > 50 ? text.substring(0, 47) + '...' : text,
-              content: text,
-              tags: []
-            }
-          })
+        await this.api.createNote(this.currentBoardName, laneName, {
+          title: text.length > 50 ? text.substring(0, 47) + '...' : text,
+          content: text,
+          tags: [],
+          expanded: false,
+          public: false,
+          attachments: [],
+          start_date: null,
+          end_date: null,
+          priority: null
         })
-
-        if (!response.ok) throw new Error('Failed to create note')
 
         await this.loadBoard(this.currentBoardName)
         this.showSuccess('Note created successfully')
@@ -2020,7 +1992,7 @@ function createToCryStore () {
         // Find the target position (replace the target note)
         const targetLane = this.currentBoard.lanes.find(l => l.name === laneName)
         if (targetLane) {
-          const targetIndex = targetLane.notes.findIndex(n => n.sepia_id === note.sepia_id)
+          const targetIndex = targetLane.notes.findIndex(n => n.sepiaId === note.sepiaId)
           if (targetIndex !== -1) {
             this.draggedToIndex = targetIndex
             // Delegate to the main handleDrop function
@@ -2043,16 +2015,8 @@ function createToCryStore () {
 
     // Add attachment to existing note
     async addAttachmentToNote (note, file) {
-      const formData = new FormData()
-      formData.append('file', file)
-
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${encodeURIComponent(note.sepia_id)}/attachment`, {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!response.ok) throw new Error('Failed to add attachment')
+        await this.api.uploadAttachment(this.currentBoardName, note.sepiaId, file)
 
         await this.loadBoard(this.currentBoardName)
         this.showSuccess('Image added to note successfully')
@@ -2103,7 +2067,7 @@ function createToCryStore () {
       if (!this.currentBoard || !this.currentBoard.lanes) return null
 
       for (const lane of this.currentBoard.lanes) {
-        const noteIndex = lane.notes.findIndex(n => n.sepia_id === noteId)
+        const noteIndex = lane.notes.findIndex(n => n.sepiaId === noteId)
         if (noteIndex !== -1) {
           const note = lane.notes[noteIndex]
           // Apply the update function
@@ -2127,18 +2091,12 @@ function createToCryStore () {
 
       try {
         // Use attachmentNote first, then fallback to noteEdit for note ID
-        const noteId = this.attachmentNote?.sepia_id || this.noteEdit?.sepia_id
+        const noteId = this.attachmentNote?.sepiaId || this.noteEdit?.sepiaId
         if (!noteId) {
           throw new Error('No note ID available')
         }
 
-        const response = await fetch(`/n/${noteId}/${filename}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to delete attachment')
-        }
+        await this.api.deleteAttachment(this.currentBoardName, noteId, filename)
 
         // Remove from attachments array in noteEdit
         if (this.noteEdit.attachments) {
@@ -2170,9 +2128,9 @@ function createToCryStore () {
       console.log('attachmentNote:', this.attachmentNote)
       console.log('currentEditingNoteId:', this.currentEditingNoteId)
       console.log('noteEdit:', this.noteEdit)
-      console.log('noteEdit.sepia_id:', this.noteEdit?.sepia_id)
+      console.log('noteEdit.sepiaId:', this.noteEdit?.sepiaId)
 
-      const noteId = this.attachmentNote?.sepia_id || this.currentEditingNoteId || this.noteEdit?.sepia_id
+      const noteId = this.attachmentNote?.sepiaId || this.currentEditingNoteId || this.noteEdit?.sepiaId
 
       console.log('uploadAttachments called, noteId:', noteId)
 
@@ -2190,21 +2148,14 @@ function createToCryStore () {
         }
 
         try {
-          const formData = new FormData()
-          formData.append('file', file)
-
-          const response = await fetch(`/n/${noteId}/attach`, {
-            method: 'POST',
-            body: formData
-          })
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('Server response:', response.status, errorText)
-            throw new Error(`Failed to upload attachment: ${errorText}`)
+          // Use generated API client for secure attachment upload
+          const boardName = this.currentBoardName
+          if (!boardName) {
+            await this.showAlert('Error', 'No board selected - cannot upload attachment')
+            continue
           }
 
-          const result = await response.json()
+          const result = await this.api.uploadAttachment(boardName, noteId, file)
 
           // Add to attachments array if not already there
           if (!this.noteEdit.attachments) {
@@ -2261,18 +2212,12 @@ function createToCryStore () {
 
       try {
         // Use attachmentNote first, then fallback to noteEdit for note ID
-        const noteId = this.attachmentNote?.sepia_id || this.noteEdit?.sepia_id
+        const noteId = this.attachmentNote?.sepiaId || this.noteEdit?.sepiaId
         if (!noteId) {
           throw new Error('No note ID available')
         }
 
-        const response = await fetch(`/n/${noteId}/${filename}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to remove attachment')
-        }
+        await this.api.deleteAttachment(this.currentBoardName, noteId, filename)
 
         // Remove from attachments array in noteEdit
         if (this.noteEdit.attachments) {
@@ -2308,13 +2253,13 @@ function createToCryStore () {
       }
 
       try {
-        const response = await fetch(`/n/${note.sepia_id}/${attachment}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to delete attachment')
+        // Use board-scoped endpoint for secure attachment deletion
+        const boardName = this.currentBoardName
+        if (!boardName) {
+          throw new Error('No board selected - cannot delete attachment')
         }
+
+        await this.api.deleteAttachment(boardName, note.sepiaId, attachment)
 
         // Remove attachment from note's attachments array
         note.attachments = note.attachments.filter(a => a !== attachment)
@@ -2323,7 +2268,7 @@ function createToCryStore () {
         this.currentBoard = { ...this.currentBoard }
 
         // If we're editing this note, update the edit copy too
-        if (this.editingNote && this.noteEdit.sepia_id === note.sepia_id) {
+        if (this.editingNote && this.noteEdit.sepiaId === note.sepiaId) {
           this.noteEdit.attachments = note.attachments
         }
         this.showSuccess('Attachment deleted successfully')
@@ -2339,30 +2284,18 @@ function createToCryStore () {
       const newExpandedState = !note.expanded
 
       try {
-        // Create the request body
-        const requestBody = {
-          note: {
-            title: note.title,
-            tags: note.tags || [],
-            content: note.content || '',
-            expanded: newExpandedState,
-            public: note.public || false,
-            start_date: note.start_date || null,
-            end_date: note.end_date || null,
-            priority: note.priority || null
-          }
-        }
-
-        // Save the expanded state to backend
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/note/${note.sepia_id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
+        // Save the expanded state to backend using generated API client
+        await this.api.updateNote(this.currentBoardName, note.sepiaId, {
+          title: note.title,
+          tags: note.tags || [],
+          content: note.content || '',
+          expanded: newExpandedState,
+          public: note.public || false,
+          start_date: note.startDate || null,
+          end_date: note.endDate || null,
+          priority: note.priority || null,
+          attachments: note.attachments || []
         })
-
-        if (!response.ok) {
-          throw new Error('Failed to update note expansion state')
-        }
 
         // Update local state only after successful save
         note.expanded = newExpandedState
@@ -2373,7 +2306,7 @@ function createToCryStore () {
         if (newExpandedState) {
           // Use setTimeout to wait for DOM update
           setTimeout(() => {
-            const noteElement = document.querySelector(`[data-note-id="${note.sepia_id}"]`)
+            const noteElement = document.querySelector(`[data-note-id="${note.sepiaId}"]`)
             if (noteElement) {
               const contentElement = noteElement.querySelector('.note-content')
               this.applyHighlighting(contentElement)
@@ -2419,13 +2352,57 @@ function createToCryStore () {
       if (!this.$refs.kanbanBoard) return
 
       const board = this.$refs.kanbanBoard
-      const scrollAmount = board.clientWidth * 0.8 // Scroll 80% of visible width
+      const lanes = board.querySelectorAll('.lane')
+
+      if (lanes.length === 0) return
+
+      const currentScrollLeft = board.scrollLeft
+      const viewportWidth = board.clientWidth
+
+      let targetLane = null
+      let targetScrollPosition = currentScrollLeft
 
       if (direction === 'left') {
-        board.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+        // Find the next lane to the left whose LEFT edge should align with window LEFT, but offset by 1rem to show previous lane
+        for (let i = lanes.length - 1; i >= 0; i--) {
+          const lane = lanes[i]
+          const laneLeft = lane.offsetLeft
+
+          if (laneLeft < currentScrollLeft - 5) { // -5px tolerance
+            targetLane = lane
+            targetScrollPosition = laneLeft - 16 // 1rem = 16px offset to show previous lane
+            break
+          }
+        }
+
+        // If no lane found to the left, scroll to the very beginning with 1rem offset (0 to avoid negative scroll)
+        if (!targetLane) {
+          targetScrollPosition = 0
+        }
       } else {
-        board.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+        // Find the next lane to the right whose RIGHT edge should align with window RIGHT, but offset by 1rem to show next lane
+        for (let i = 0; i < lanes.length; i++) {
+          const lane = lanes[i]
+          const laneRight = lane.offsetLeft + lane.offsetWidth
+
+          if (laneRight > currentScrollLeft + viewportWidth + 5) { // +5px tolerance
+            targetLane = lane
+            targetScrollPosition = laneRight - viewportWidth + 16 // 1rem = 16px offset to show next lane
+            break
+          }
+        }
+
+        // If no lane found to the right, scroll to the very end
+        if (!targetLane) {
+          targetScrollPosition = board.scrollWidth - viewportWidth
+        }
       }
+
+      // Ensure we don't scroll beyond boundaries
+      targetScrollPosition = Math.max(0, Math.min(targetScrollPosition, board.scrollWidth - viewportWidth))
+
+      // Scroll to the target position with smooth behavior
+      board.scrollTo({ left: targetScrollPosition, behavior: 'smooth' })
     },
 
     // Update kanban board padding to ensure sufficient scrollable space for hidden lanes
@@ -2433,7 +2410,7 @@ function createToCryStore () {
       const kanbanBoard = document.querySelector('.kanban-board')
       if (!kanbanBoard || !this.currentBoard) return
 
-      const firstVisibleLane = this.currentBoard.first_visible_lane || 0
+      const firstVisibleLane = this.currentBoard.firstVisibleLane || 0
       if (firstVisibleLane === 0) {
         // No hidden lanes, no extra padding needed
         kanbanBoard.style.paddingRight = ''
@@ -2626,7 +2603,7 @@ function createToCryStore () {
         let laneName = null
 
         this.currentBoard.lanes.forEach(lane => {
-          const found = lane.notes.find(n => n.sepia_id === noteId)
+          const found = lane.notes.find(n => n.sepiaId === noteId)
           if (found) {
             note = found
             laneName = lane.name
@@ -2639,42 +2616,26 @@ function createToCryStore () {
         note.public = isPublic
 
         // If we're editing this note, update the edit copy too
-        if (this.noteEdit && this.noteEdit.sepia_id === noteId) {
+        if (this.noteEdit && this.noteEdit.sepiaId === noteId) {
           this.noteEdit.public = isPublic
         }
 
-        // Save to backend
-        const url = `/boards/${encodeURIComponent(this.currentBoardName)}/note/${noteId}`
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            note: {
-              title: note.title,
-              tags: note.tags,
-              content: note.content,
-              expanded: note.expanded,
-              public: isPublic,
-              start_date: note.start_date,
-              end_date: note.end_date,
-              priority: note.priority
-            },
-            lane_name: laneName
+        // Save to backend using generated API client
+        try {
+          await this.api.updateNote(this.currentBoardName, noteId, {
+            title: note.title,
+            tags: note.tags || [],
+            content: note.content || '',
+            expanded: note.expanded,
+            public: isPublic,
+            start_date: note.startDate || null,
+            end_date: note.endDate || null,
+            priority: note.priority || null,
+            attachments: note.attachments || []
+          }, {
+            laneName
           })
-        })
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Failed to update note public status:', errorText)
-          // Revert the change on error
-          note.public = !isPublic
-          if (this.noteEdit && this.noteEdit.sepia_id === noteId) {
-            this.noteEdit.public = !isPublic
-          }
-          window.dispatchEvent(new CustomEvent('show-toast', {
-            detail: { type: 'error', message: 'Failed to update note sharing' }
-          }))
-        } else {
           if (isPublic) {
             window.dispatchEvent(new CustomEvent('show-toast', {
               detail: { type: 'info', message: 'Note is now public!' }
@@ -2684,6 +2645,16 @@ function createToCryStore () {
               detail: { type: 'info', message: 'Note is now private' }
             }))
           }
+        } catch (error) {
+          console.error('Failed to update note public status:', error)
+          // Revert the change on error
+          note.public = !isPublic
+          if (this.noteEdit && this.noteEdit.sepiaId === noteId) {
+            this.noteEdit.public = !isPublic
+          }
+          window.dispatchEvent(new CustomEvent('show-toast', {
+            detail: { type: 'error', message: 'Failed to update note sharing' }
+          }))
         }
       } catch (error) {
         console.error('Error updating note public status:', error)
@@ -2733,8 +2704,7 @@ function createToCryStore () {
     getSeparatorPosition () {
       if (!this.currentBoard || !this.currentBoard.lanes) return 0
 
-      const laneIndex = this.currentBoard.first_visible_lane || 0
-      if (laneIndex === 0) return 0
+      const laneIndex = this.currentBoard.firstVisibleLane || 0
 
       // Get actual lane width from computed styles
       const firstLane = document.querySelector('.lane')
@@ -2758,7 +2728,78 @@ function createToCryStore () {
 
     isLaneHidden (index) {
       if (!this.currentBoard || !this.currentBoard.lanes) return false
-      return index < (this.currentBoard.first_visible_lane || 0)
+      return index < (this.currentBoard.firstVisibleLane || 0)
+    },
+
+    // Lane visibility control methods
+    canDecreaseFirstVisibleLane () {
+      if (!this.currentBoard || !this.currentBoard.lanes) return false
+      return (this.currentBoard.firstVisibleLane || 0) > 0
+    },
+
+    canIncreaseFirstVisibleLane () {
+      if (!this.currentBoard || !this.currentBoard.lanes) return false
+      return (this.currentBoard.firstVisibleLane || 0) < this.currentBoard.lanes.length
+    },
+
+    async decreaseFirstVisibleLane () {
+      if (!this.canDecreaseFirstVisibleLane()) return
+
+      try {
+        const newFirstVisible = (this.currentBoard.firstVisibleLane || 0) - 1
+
+        console.log('Decreasing firstVisibleLane from', this.currentBoard.firstVisibleLane, 'to', newFirstVisible)
+
+        // Update local state immediately for responsive UI
+        this.currentBoard.firstVisibleLane = newFirstVisible
+
+        // Save to server
+        console.log('Calling updateBoard with:', { firstVisibleLane: newFirstVisible })
+        const result = await this.api.updateBoard(this.currentBoardName, { firstVisibleLane: newFirstVisible })
+        console.log('updateBoard result:', result)
+
+        // Reload board to verify persistence
+        const updatedBoard = await this.api.getBoard(this.currentBoardName)
+        console.log('After update, board firstVisibleLane is:', updatedBoard.firstVisibleLane)
+
+        // Update scroll position after a brief delay to allow DOM to update
+        this.$nextTick(() => {
+          // Scrolling is now handled by the HTML template click handlers
+        })
+      } catch (error) {
+        console.error('Error decreasing first visible lane:', error)
+        this.showError('Failed to show more lanes')
+      }
+    },
+
+    async increaseFirstVisibleLane () {
+      if (!this.canIncreaseFirstVisibleLane()) return
+
+      try {
+        const newFirstVisible = (this.currentBoard.firstVisibleLane || 0) + 1
+
+        console.log('Increasing firstVisibleLane from', this.currentBoard.firstVisibleLane, 'to', newFirstVisible)
+
+        // Update local state immediately for responsive UI
+        this.currentBoard.firstVisibleLane = newFirstVisible
+
+        // Save to server
+        console.log('Calling updateBoard with:', { firstVisibleLane: newFirstVisible })
+        const result = await this.api.updateBoard(this.currentBoardName, { firstVisibleLane: newFirstVisible })
+        console.log('updateBoard result:', result)
+
+        // Reload board to verify persistence
+        const updatedBoard = await this.api.getBoard(this.currentBoardName)
+        console.log('After update, board firstVisibleLane is:', updatedBoard.firstVisibleLane)
+
+        // Update scroll position after a brief delay to allow DOM to update
+        this.$nextTick(() => {
+          // Scrolling is now handled by the HTML template click handlers
+        })
+      } catch (error) {
+        console.error('Error increasing first visible lane:', error)
+        this.showError('Failed to hide lanes')
+      }
     },
 
     setInitialScrollPosition () {
@@ -2770,7 +2811,7 @@ function createToCryStore () {
       // Update padding first to ensure sufficient scrollable space
       this.updateKanbanPadding()
 
-      const firstVisibleLane = this.currentBoard.first_visible_lane || 0
+      const firstVisibleLane = this.currentBoard.firstVisibleLane || 0
 
       if (this.currentBoard.show_hidden_lanes) {
         // Show all lanes from the beginning
@@ -2873,15 +2914,9 @@ function createToCryStore () {
 
     async saveLaneOrder () {
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}/lanes/reorder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lanes: this.currentBoard.lanes.map(lane => lane.name)
-          })
+        await this.api.updateBoard(this.currentBoardName, {
+          lanes: this.currentBoard.lanes.map(lane => ({ name: lane.name }))
         })
-
-        if (!response.ok) throw new Error('Failed to save lane order')
       } catch (error) {
         console.error('Error saving lane order:', error)
         this.showError('Failed to save lane order')
@@ -2897,15 +2932,7 @@ function createToCryStore () {
 
       // Save to backend
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.currentBoardName)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            show_hidden_lanes: this.currentBoard.show_hidden_lanes
-          })
-        })
-
-        if (!response.ok) throw new Error('Failed to update show hidden lanes setting')
+        await this.api.updateBoard(this.currentBoardName, { showHiddenLanes: this.currentBoard.show_hidden_lanes })
 
         // Update scroll position after property change
         this.$nextTick(() => {

@@ -42,5 +42,20 @@ module ToCry
       Log.error(exception: ex) { "Failed to add note '#{title}' to lane '#{self.name}'" }
       raise ex
     end
+
+    # OpenAPI schema definition for Lane
+    def self.schema
+      {
+        type: "object",
+        properties: {
+          name: {type: "string", description: "Lane name"},
+          notes: {
+            type: "array",
+            description: "Array of notes in this lane",
+            items: {"$ref": "#/components/schemas/Note"}
+          }
+        }
+      }
+    end
   end
 end

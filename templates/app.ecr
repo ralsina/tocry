@@ -22,9 +22,71 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
+  <!-- Generated TypeScript API Client (with adapter for compatibility) -->
+  <!-- Load as regular script (uses dynamic imports internally) -->
+  <script src="/api-client-adapter.js"></script>
 
-  <!-- Alpine.js for reactive UI -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Explicit sequential loading: adapter -> store -> app -> Alpine -->
+  <script>
+    // Wait for ToCryApiClient, then load scripts in strict sequence
+    function loadScriptSequence() {
+      // Step 1: Wait for API client module to set window.ToCryApiClient
+      function waitForApiClient() {
+        if (window.ToCryApiClient) {
+          console.log('✓ API Client ready');
+          loadStore();
+        } else {
+          setTimeout(waitForApiClient, 10);
+        }
+      }
+
+      // Step 2: Load store.js
+      function loadStore() {
+        const storeScript = document.createElement('script');
+        storeScript.src = '/store.js';
+        storeScript.onload = () => {
+          console.log('✓ Store loaded');
+          loadApp();
+        };
+        storeScript.onerror = () => console.error('✗ Failed to load store.js');
+        document.head.appendChild(storeScript);
+      }
+
+      // Step 3: Load app.js
+      function loadApp() {
+        const appScript = document.createElement('script');
+        appScript.src = '/app.js';
+        appScript.onload = () => {
+          console.log('✓ App loaded');
+          loadAlpine();
+        };
+        appScript.onerror = () => console.error('✗ Failed to load app.js');
+        document.head.appendChild(appScript);
+      }
+
+      // Step 4: Load Alpine.js last
+      function loadAlpine() {
+        const alpineScript = document.createElement('script');
+        alpineScript.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+        alpineScript.defer = true;
+        alpineScript.onload = () => {
+          console.log('✓ Alpine.js loaded and initialized');
+        };
+        alpineScript.onerror = () => console.error('✗ Failed to load Alpine.js');
+        document.head.appendChild(alpineScript);
+      }
+
+      // Start the sequence
+      waitForApiClient();
+    }
+
+    // Start loading when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadScriptSequence);
+    } else {
+      loadScriptSequence();
+    }
+  </script>
 
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -160,12 +222,34 @@
         <div class="kanban-board" x-ref="kanbanBoard"
              x-show="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 0">
 
-          <!-- Visual Separator -->
+          <!-- Visual Separator with Controls -->
           <div class="lane-separator"
                x-show="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 1"
                :style="`left: ${getSeparatorPosition()}px;`"
-               title="Shows which lanes are hidden">
+               title="Shows which lanes are hidden - use arrows to show/hide lanes">
+            <!-- Left button: show more lanes (decrease first_visible_lane) -->
+            <button class="separator-control separator-control-left"
+                    @click="decreaseFirstVisibleLane(); scrollBoard('left')"
+                    :disabled="!canDecreaseFirstVisibleLane()"
+                    title="Show more lanes to the left"
+                    aria-label="Show more lanes">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
             <div class="separator-line"></div>
+
+            <!-- Right button: hide more lanes (increase first_visible_lane) -->
+            <button class="separator-control separator-control-right"
+                    @click="increaseFirstVisibleLane(); scrollBoard('right')"
+                    :disabled="!canIncreaseFirstVisibleLane()"
+                    title="Hide more lanes to the left"
+                    aria-label="Hide more lanes">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
           </div>
 
           <template x-for="(lane, index) in currentBoard?.lanes || []" :key="lane.name">
@@ -217,11 +301,11 @@
                    @drop="handleDrop($event, lane.name)"
                    @paste="handlePaste($event, lane.name)">
                 <!-- HTMX will load note cards here -->
-                <template x-for="note in lane.notes || []" :key="note.sepia_id">
+                <template x-for="note in lane.notes || []" :key="note.sepiaId">
                   <div class="note-card"
                        :class="{ 'search-hidden': note._hidden }"
                        draggable="true"
-                       :data-note-id="note.sepia_id"
+                       :data-note-id="note.sepiaId"
                        :data-lane-name="lane.name"
                        @click="toggleNoteExpansion(note)"
                        @dragstart="handleDragStart($event, note, lane.name)"
@@ -238,18 +322,18 @@
                       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                           <div class="note-title"
-                               x-show="editingNoteTitle !== note.sepia_id"
+                               x-show="editingNoteTitle !== note.sepiaId"
                                x-text="note.title"
-                               @dblclick="startEditingNoteTitle(note.sepia_id, lane.name, note.title)"
+                               @dblclick="startEditingNoteTitle(note.sepiaId, lane.name, note.title)"
                                title="Double-click to edit"></div>
-                          <input x-show="editingNoteTitle === note.sepia_id"
+                          <input x-show="editingNoteTitle === note.sepiaId"
                                  x-model="editingNoteTitleText"
                                  @keyup.enter="confirmNoteTitleEdit()"
                                  @keyup.escape="cancelNoteTitleEdit()"
                                  @blur="confirmNoteTitleEdit()"
                                  @click.stop
                                  class="note-title-input"
-                                 :x-ref="`noteTitleInput-${note.sepia_id}`"
+                                 :x-ref="`noteTitleInput-${note.sepiaId}`"
                                  style="flex: 1; margin: 0; padding: 0; font-size: inherit; font-family: inherit; font-weight: 300; background: transparent; border: 1px solid var(--pico-primary); border-radius: 0.25rem; outline: none;">
                           </div>
                         <!-- Action buttons -->
@@ -257,7 +341,7 @@
                           <div class="note-action-group">
                             <!-- Share button (when private) -->
                             <button x-show="!note.public"
-                                    @click.stop="updateNotePublic(note.sepia_id, true)"
+                                    @click.stop="updateNotePublic(note.sepiaId, true)"
                                     class="edit-note-btn"
                                     style="opacity: 1; transform: scale(1);"
                                     title="Make note public to share">
@@ -272,7 +356,7 @@
 
                             <!-- Lock button (when public) -->
                             <button x-show="note.public"
-                                    @click.stop="updateNotePublic(note.sepia_id, false)"
+                                    @click.stop="updateNotePublic(note.sepiaId, false)"
                                     class="edit-note-btn"
                                     style="opacity: 1; transform: scale(1);"
                                     title="Make note private">
@@ -284,7 +368,7 @@
 
                             <!-- Link button (when public) -->
                             <button x-show="note.public"
-                                    @click.stop="copyPermalink(note.sepia_id)"
+                                    @click.stop="copyPermalink(note.sepiaId)"
                                     class="edit-note-btn"
                                     style="opacity: 1; transform: scale(1);"
                                     title="Copy public link">
@@ -294,7 +378,7 @@
                               </svg>
                             </button>
 
-                            <button @click.stop="editNoteById(note.sepia_id, lane.name)"
+                            <button @click.stop="editNoteById(note.sepiaId, lane.name)"
                                     class="edit-note-btn"
                                     style="opacity: 1; transform: scale(1);"
                                     title="Edit note">
@@ -316,43 +400,43 @@
 
                       <!-- Tags always visible with inline editing - full width -->
                       <div class="note-tags"
-                           x-show="note.tags && note.tags.length > 0 || editingNoteTags === note.sepia_id"
-                           @dblclick="startEditingNoteTags(note.sepia_id, lane.name, note.tags || [])"
+                           x-show="note.tags && note.tags.length > 0 || editingNoteTags === note.sepiaId"
+                           @dblclick="startEditingNoteTags(note.sepiaId, lane.name, note.tags || [])"
                            title="Double-click to edit tags"
                            style="min-height: 1.5rem; padding: 0.125rem; border-radius: 0.25rem; cursor: pointer; transition: background 0.2s ease;"
                            @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.05)'"
                            @mouseout="$el.style.background = 'transparent'">
 
                         <!-- View mode: Display tags with remove buttons -->
-                        <template x-for="tag in note.tags || []" :key="tag" x-show="editingNoteTags !== note.sepia_id">
+                        <template x-for="tag in note.tags || []" :key="tag" x-show="editingNoteTags !== note.sepiaId">
                           <span class="note-tag"
                                 style="position: relative; transition: all 0.2s ease;"
                                 @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.2)'"
                                 @mouseout="$el.style.background = 'rgba(var(--primary-rgb), 0.1)'"
                                 @click="searchByTag(tag)">
                             <span x-text="'#' + tag"></span>
-                            <button @click.stop="removeQuickTag(note.sepia_id, lane.name, tag)"
+                            <button @click.stop="removeQuickTag(note.sepiaId, lane.name, tag)"
                                     class="tag-remove-btn"
                                     title="Remove tag">×</button>
                           </span>
                         </template>
 
                         <!-- Add new tag button -->
-                        <button x-show="editingNoteTags !== note.sepia_id && (note.tags || []).length < 5"
-                                @click.stop="startEditingNoteTags(note.sepia_id, lane.name, note.tags || [])"
+                        <button x-show="editingNoteTags !== note.sepiaId && (note.tags || []).length < 5"
+                                @click.stop="startEditingNoteTags(note.sepiaId, lane.name, note.tags || [])"
                                 style="background: var(--pico-secondary-background); border: 1px dashed var(--pico-secondary-border-color); color: var(--pico-secondary); padding: 0.125rem 0.375rem; border-radius: var(--pico-border-radius); font-size: 0.75rem; margin-left: 0.25rem; cursor: pointer; transition: all 0.2s ease;"
                                 @mouseover="$el.style.background = 'var(--pico-primary)'; $el.style.color = 'white'; $el.style.borderColor = 'var(--pico-primary)'"
                                 @mouseout="$el.style.background = 'var(--pico-secondary-background)'; $el.style.color = 'var(--pico-secondary)'; $el.style.borderColor = 'var(--pico-secondary-border-color)'"
                                 title="Add tag">+</button>
 
                         <!-- Edit mode: Input for editing tags -->
-                        <div x-show="editingNoteTags === note.sepia_id"
+                        <div x-show="editingNoteTags === note.sepiaId"
                              style="display: flex; gap: 0.25rem; align-items: center;">
                           <input x-model="editingNoteTagsText"
                                  @keyup.enter="saveNoteTags()"
                                  @keyup.escape="cancelNoteTagsEdit()"
                                  @blur="saveNoteTags()"
-                                 :x-ref="`noteTagsInput-${note.sepia_id}`"
+                                 :x-ref="`noteTagsInput-${note.sepiaId}`"
                                  class="note-tags-input"
                                  placeholder="Enter tags (comma separated)..."
                                  style="flex: 1; font-size: 0.75rem; padding: 0.125rem 0.375rem; border: 1px solid var(--pico-primary); border-radius: var(--pico-border-radius); background: var(--pico-background-color); color: var(--pico-color); outline: none; min-width: 200px;">
@@ -388,9 +472,9 @@
                     <div class="note-content-wrapper">
                       <!-- View mode: Rendered markdown -->
                       <div class="note-content"
-                           x-show="note.expanded && editingNoteContent !== note.sepia_id"
+                           x-show="note.expanded && editingNoteContent !== note.sepiaId"
                            x-cloak
-                           @click="startEditingNoteContent(note.sepia_id, lane.name, note.content)"
+                           @click="startEditingNoteContent(note.sepiaId, lane.name, note.content)"
                            title="Click to edit content"
                            style="cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; transition: background 0.2s ease;"
                            @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.05)'"
@@ -406,7 +490,7 @@
 
                       <!-- Edit mode: Textarea for content editing -->
                       <div class="note-content"
-                           x-show="note.expanded && editingNoteContent === note.sepia_id"
+                           x-show="note.expanded && editingNoteContent === note.sepiaId"
                            x-cloak
                            x-transition:enter="transition-all duration-300 ease"
                            x-transition:enter-start="opacity-0 transform scale(95)"
@@ -417,7 +501,7 @@
                                   @keydown.enter.ctrl="saveNoteContent()"
                                   @keydown.esc="cancelNoteContentEdit()"
                                   @blur="saveNoteContent()"
-                                  :x-ref="`noteContentInput-${note.sepia_id}`"
+                                  :x-ref="`noteContentInput-${note.sepiaId}`"
                                   class="note-content-input"
                                   placeholder="Enter note content (markdown supported)..."
                                   style="width: 100%; min-height: 100px; resize: vertical; font-family: inherit; font-size: 0.875rem; line-height: 1.5; border: 1px solid var(--pico-primary); border-radius: 0.25rem; padding: 0.5rem; background: var(--pico-background-color); color: var(--pico-color); outline: none; transition: border-color 0.2s ease;"
@@ -448,7 +532,7 @@
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                           <template x-for="attachment in note.attachments" :key="attachment">
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.25rem 0; gap: 0.5rem;">
-                              <a :href="`/attachments/${note.sepia_id}/${attachment}`"
+                              <a :href="`/attachments/${note.sepiaId}/${attachment}`"
                                  target="_blank"
                                  @click.stop
                                  style="display: flex; align-items: center; gap: 0.5rem; color: var(--pico-primary); text-decoration: none; font-size: 0.875rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -706,7 +790,7 @@
 
             <!-- Share button (when private) -->
             <button x-show="!noteEdit.public"
-                    @click="updateNotePublic(noteEdit.sepia_id, true)"
+                    @click="updateNotePublic(noteEdit.sepiaId, true)"
                     class="edit-note-btn"
                     style="opacity: 1; transform: scale(1);"
                     title="Make note public to share">
@@ -721,7 +805,7 @@
 
             <!-- Lock button (when public) -->
             <button x-show="noteEdit.public"
-                    @click="updateNotePublic(noteEdit.sepia_id, false)"
+                    @click="updateNotePublic(noteEdit.sepiaId, false)"
                     class="edit-note-btn"
                     style="opacity: 1; transform: scale(1);"
                     title="Make note private">
@@ -733,7 +817,7 @@
 
             <!-- Link button (when public) -->
             <button x-show="noteEdit.public"
-                    @click="copyPermalink(noteEdit.sepia_id)"
+                    @click="copyPermalink(noteEdit.sepiaId)"
                     class="edit-note-btn"
                     style="opacity: 1; transform: scale(1);"
                     title="Copy public link">
@@ -758,9 +842,9 @@
               <label>Priority</label>
               <select x-model="noteEdit.priority">
                 <option value="">None</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </select>
             </div>
             <div style="flex: 1;">
@@ -779,7 +863,7 @@
           </div>
         <div class="modal-footer">
           <button @click="cancelEditNote()">Cancel</button>
-          <button @click="deleteNote()" x-show="noteEdit.sepia_id" class="contrast">Delete</button>
+          <button @click="deleteNote()" x-show="noteEdit.sepiaId" class="contrast">Delete</button>
           <button @click="saveNote()">Save</button>
         </div>
       </div>
@@ -1002,9 +1086,5 @@
       font-weight: 500 !important;
     }
   </style>
-
-  <!-- App JavaScript -->
-  <script src="/store.js"></script>
-  <script src="/app.js"></script>
 </body>
 </html>

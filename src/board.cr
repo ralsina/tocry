@@ -63,5 +63,27 @@ module ToCry
       ToCry::Log.error(exception: ex) { "Error deleting lane with name '#{name}'" }
       raise ex # Re-raise the exception after logging
     end
+
+    # OpenAPI schema definition for Board
+    def self.schema
+      {
+        type: "object",
+        properties: {
+          name: {type: "string", description: "Board name"},
+          color_scheme: {
+            type: "string",
+            description: "Color scheme name",
+            enum: ["Amber", "Blue", "Cyan", "Default", "Fuchsia", "Grey", "Green", "Indigo", "Jade", "Lime", "Orange", "Pink", "Pumpkin", "Purple", "Red", "Sand", "Slate", "Violet", "Yellow", "Zinc"]
+          },
+          first_visible_lane: {type: "integer", description: "Index of the first visible lane"},
+          show_hidden_lanes: {type: "boolean", description: "Whether to show hidden lanes"},
+          lanes: {
+            type: "array",
+            description: "Array of lanes in this board",
+            items: {"$ref": "#/components/schemas/Lane"}
+          }
+        }
+      }
+    end
   end
 end

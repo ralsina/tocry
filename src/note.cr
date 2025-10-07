@@ -190,5 +190,53 @@ module ToCry
       end
       nil
     end
+
+    # OpenAPI schema definition for Note
+    def self.schema
+      {
+        type: "object",
+        properties: {
+          sepia_id: {type: "string", description: "Unique identifier for the note"},
+          title: {type: "string", description: "Note title"},
+          content: {type: "string", description: "Note content in markdown format"},
+          tags: {type: "array", items: {type: "string"}, description: "Array of tags for the note"},
+          expanded: {type: "boolean", description: "Whether the note is expanded to show full content"},
+          public: {type: "boolean", description: "Whether the note is publicly accessible"},
+          attachments: {type: "array", items: {type: "string"}, description: "Array of attachment filenames"},
+          start_date: {type: "string", description: "Start date in ISO format", example: "2025-01-01"},
+          end_date: {type: "string", description: "End date in ISO format", example: "2025-01-15"},
+          priority: {
+            type: "string",
+            description: "Priority level",
+            example: "medium",
+            enum: ["high", "medium", "low"]
+          }
+        }
+      }
+    end
+
+    # OpenAPI schema definition for Note data (used in POST/PUT requests)
+    def self.data_schema
+      {
+        type: "object",
+        required: ["title"],
+        properties: {
+          title: {type: "string", description: "Note title"},
+          content: {type: "string", description: "Note content in markdown format"},
+          tags: {type: "array", items: {type: "string"}, description: "Array of tags for the note"},
+          expanded: {type: "boolean", description: "Whether the note is expanded to show full content"},
+          public: {type: "boolean", description: "Whether the note is publicly accessible"},
+          attachments: {type: "array", items: {type: "string"}, description: "Array of attachment filenames"},
+          start_date: {type: "string", description: "Start date in ISO format", example: "2025-01-01"},
+          end_date: {type: "string", description: "End date in ISO format", example: "2025-01-15"},
+          priority: {
+            type: "string",
+            description: "Priority level",
+            example: "medium",
+            enum: ["high", "medium", "low"]
+          }
+        }
+      }
+    end
   end
 end

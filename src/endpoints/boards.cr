@@ -7,14 +7,20 @@ require "./helpers"
 module ToCry::Endpoints::Boards
   # Path-scoped before filter to validate the board name and store it in the context.
   # This filter is specific to board-related paths.
-  before_all "/boards/:board_name/*" do |env|
+  # Skips existence check for DELETE requests to support idempotent deletion.
+  before_all "/api/v1/boards/:board_name/*" do |env|
     user = ToCry.get_current_user_id(env)
     board_name = env.params.url["board_name"].as(String)
-    board = ToCry.board_manager.get(board_name, user)
 
-    unless board
-      env.response.status_code = 404
+    # Skip existence check for DELETE requests (idempotent behavior)
+    unless env.request.method == "DELETE"
+      board = ToCry.board_manager.get(board_name, user)
+
+      unless board
+        env.response.status_code = 404
+      end
     end
+
     env.set("board_name", board_name)
   end
 
@@ -26,7 +32,7 @@ module ToCry::Endpoints::Boards
   end
 
   # API Endpoint to get all boards
-  get "/boards" do |env|
+  get "/api/v1/boards" do |env|
     user = ToCry.get_current_user_id(env)
     # Get board names using the new BoardReference system
     board_names = ToCry::BoardReference.accessible_to_user(user).map(&.board_name)
@@ -64,7 +70,7 @@ module ToCry::Endpoints::Boards
   #     }
   #   ]
   # }
-  get "/boards/:board_name" do |env|
+  get "/api/v1/boards/:board_name" do |env|
     user = ToCry.get_current_user_id(env)
     board_name = env.params.url["board_name"].as(String)
     board = ToCry.board_manager.get(board_name, user)
@@ -89,7 +95,7 @@ module ToCry::Endpoints::Boards
             attachments: note.attachments,
             start_date:  note.start_date,
             end_date:    note.end_date,
-            priority:    note.priority.to_s,
+            priority:    note.priority.try(&.to_s),
           }
         end,
       }
@@ -109,7 +115,7 @@ module ToCry::Endpoints::Boards
   # API Endpoint to create a new board
   # Expects a JSON body with a board name and optional color scheme, e.g.:
   # { "name": "My New Board", "color_scheme": "Blue" }
-  post "/boards" do |env|
+  post "/api/v1/boards" do |env|
     json_body = ToCry::Endpoints::Helpers.get_json_body(env)
     payload = ToCry::Endpoints::Helpers::NewBoardPayload.from_json(json_body)
 
@@ -134,11 +140,18 @@ module ToCry::Endpoints::Boards
   # PUT /boards/Old%20Board%20Name
   # Expects a JSON body like:
   # { "new_name": "New Board Name" } or { "first_visible_lane": 2 } or both
-  put "/boards/:board_name" do |env|
+  put "/api/v1/boards/:board_name" do |env|
     begin
       old_board_name = env.params.url["board_name"].as(String)
       json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+
+      # Log the raw JSON payload for debugging
+      ToCry::Log.info { "PUT /api/v1/boards/#{old_board_name} - Raw JSON payload: #{json_body}" }
+
       payload = ToCry::Endpoints::Helpers::UpdateBoardPayload.from_json(json_body)
+
+      # Log parsed payload fields
+      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, show_hidden_lanes: #{payload.show_hidden_lanes.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
 
       user = ToCry.get_current_user_id(env)
       board = ToCry.board_manager.get(old_board_name, user)
@@ -163,12 +176,20 @@ module ToCry::Endpoints::Boards
         if first_visible_lane < 0
           next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot be negative", 400)
         end
-        if first_visible_lane >= board.lanes.size
+        if first_visible_lane > board.lanes.size
           next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot exceed number of lanes", 400)
         end
 
+        ToCry::Log.info { "Updating first_visible_lane from #{board.first_visible_lane} to #{first_visible_lane}" }
         board.first_visible_lane = first_visible_lane
         board.save
+        ToCry::Log.info { "After save, board.first_visible_lane is #{board.first_visible_lane}" }
+
+        # Verify by reloading
+        reloaded = ToCry.board_manager.get(board.name, user: ToCry.get_current_user_id(env))
+        if reloaded
+          ToCry::Log.info { "Reloaded board first_visible_lane is #{reloaded.first_visible_lane}" }
+        end
       end
 
       # Handle show_hidden_lanes update
@@ -238,10 +259,11 @@ module ToCry::Endpoints::Boards
     end
   end
 
-  # API Endpoint to delete a board by name
+  # API Endpoint to delete a board by name (idempotent)
   # Expects the board name in the URL path, e.g.:
   # DELETE /boards/My%20Board
-  delete "/boards/:board_name" do |env|
+  # Note: This endpoint is idempotent - deleting an already deleted board will succeed
+  delete "/api/v1/boards/:board_name" do |env|
     board_name = env.params.url["board_name"].as(String)
     user = ToCry.get_current_user_id(env)
     ToCry.board_manager.delete(board_name, user)
@@ -253,7 +275,7 @@ module ToCry::Endpoints::Boards
   # POST /boards/My%20Board/share
   # Expects a JSON body like:
   # { "to_user_email": "another_user@example.com" }
-  post "/boards/:board_name/share" do |env|
+  post "/api/v1/boards/:board_name/share" do |env|
     board_name = env.params.url["board_name"].as(String)
     json_body = ToCry::Endpoints::Helpers.get_json_body(env)
     payload = ToCry::Endpoints::Helpers::ShareBoardPayload.from_json(json_body)

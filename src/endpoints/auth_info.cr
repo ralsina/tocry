@@ -1,7 +1,7 @@
 require "kemal"
 
 module ToCry::Endpoints::AuthInfo
-  get "/auth_mode" do |env|
+  get "/api/v1/auth_mode" do |env|
     env.response.content_type = "application/json"
 
     use_google_auth = ENV["GOOGLE_CLIENT_ID"]? && ENV["GOOGLE_CLIENT_SECRET"]?
@@ -17,4 +17,6 @@ module ToCry::Endpoints::AuthInfo
 
     {auth_mode: auth_mode}.to_json
   end
+
+  # OpenAPI documentation for auth endpoints
 end

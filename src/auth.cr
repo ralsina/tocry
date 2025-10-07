@@ -33,7 +33,7 @@ end
 # --- Routes ---
 
 # API Endpoint to get current user's session info.
-get "/me" do |env|
+get "/api/v1/me" do |env|
   env.response.content_type = "application/json"
   if user = current_user(env)
     ToCry::Log.info { "User '#{user.name}' ('#{user.email}') requested their session info." }
