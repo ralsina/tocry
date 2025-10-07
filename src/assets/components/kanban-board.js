@@ -72,7 +72,7 @@ document.addEventListener('alpine:init', () => {
       if (!newName.trim() || newName === lane.name) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/lane/${encodeURIComponent(lane.name)}`, {
+        const response = await fetch(`/api/v1/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/lane/${encodeURIComponent(lane.name)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -97,7 +97,7 @@ document.addEventListener('alpine:init', () => {
       if (!confirm(`Are you sure you want to delete "${note.title}"?`)) return
 
       try {
-        const response = await fetch(`/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/note/${note.id}`, {
+        const response = await fetch(`/api/v1/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/note/${note.id}`, {
           method: 'DELETE'
         })
 
@@ -123,7 +123,7 @@ document.addEventListener('alpine:init', () => {
     // Save note state (expanded/collapsed)
     async saveNoteState (note) {
       try {
-        await fetch(`/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/note/${note.id}`, {
+        await fetch(`/api/v1/boards/${encodeURIComponent(this.$store.app.currentBoardName)}/note/${note.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

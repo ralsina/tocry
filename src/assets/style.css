@@ -1033,7 +1033,7 @@
       align-items: center;
       justify-content: center;
       background: rgba(var(--pico-primary-rgb), 0.15);
-      transition: background-color 0.2s ease;
+      transition: left 0.3s ease, background-color 0.2s ease;
     }
 
     .lane-separator:hover {
@@ -1048,8 +1048,8 @@
     .separator-line {
       position: absolute;
       left: 50%;
-      top: 10%;
-      bottom: 10%;
+      top: 0;
+      bottom: 0;
       width: 2px;
       background: var(--pico-primary);
       transform: translateX(-50%);
@@ -1070,6 +1070,64 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .separator-control {
+      position: absolute;
+      bottom: 8px;
+      background: var(--pico-primary);
+      color: var(--pico-primary-inverse);
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 101;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      opacity: 0.8;
+    }
+
+    .separator-control:hover {
+      opacity: 1;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transform: scale(1.1);
+    }
+
+    .separator-control:active {
+      transform: scale(0.95);
+    }
+
+    .separator-control:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .separator-control:disabled:hover {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .separator-control-left {
+      left: -28px;
+    }
+
+    .separator-control-right {
+      right: -28px;
+    }
+
+    .separator-control svg {
+      width: 16px !important;
+      height: 16px !important;
+      min-width: 16px;
+      min-height: 16px;
+      stroke-width: 3;
+      stroke: white;
+      fill: none;
+      display: block;
+      visibility: visible;
     }
 
     .lane-hidden {

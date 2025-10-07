@@ -11,12 +11,13 @@ module ToCry::Endpoints::Helpers
   def self.json_response(env : HTTP::Server::Context, status_code : Int32, data)
     env.response.status_code = status_code
     env.response.content_type = "application/json"
-    case data
-    when String
-      data
-    else
-      data.to_json
-    end
+    response_data = case data
+                    when String
+                      data
+                    else
+                      data.to_json
+                    end
+    env.response.print(response_data)
   end
 
   def self.success_response(env : HTTP::Server::Context, data, status_code : Int32 = 200)
@@ -89,28 +90,33 @@ module ToCry::Endpoints::Helpers
   end
 
   # Payload Structs (moved here for shared access)
+  @[JSON::Serializable::Options(strict: true)]
   struct NewLanePayload
     include JSON::Serializable
     property name : String
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct UpdateLanePayload
     include JSON::Serializable
     property lane : ToCry::Lane # The updated lane data (including potentially new name)
     property position : UInt64  # The desired 0-based index in the board's lanes array
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct RenameBoardPayload
     include JSON::Serializable
     property new_name : String
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct NewBoardPayload
     include JSON::Serializable
     property name : String
     property color_scheme : String?
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct UpdateNotePayload
     include JSON::Serializable
     property note : NoteData
@@ -118,12 +124,14 @@ module ToCry::Endpoints::Helpers
     property position : UInt64?
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct NewNotePayload
     include JSON::Serializable
     property note : NoteData # The note data (id will be ignored/overwritten as a new one is generated)
     property lane_name : String
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct NoteData
     include JSON::Serializable
     property title : String
@@ -136,9 +144,10 @@ module ToCry::Endpoints::Helpers
     property attachments : Array(String) = [] of String
     property start_date : String? = nil
     property end_date : String? = nil
-    property priority : String? = nil
+    property priority : ToCry::Priority? = nil
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct ShareBoardPayload
     include JSON::Serializable
     property to_user_email : String
@@ -146,6 +155,7 @@ module ToCry::Endpoints::Helpers
 
   # Payload structure for lane definitions in board management operations
   # Each lane represents a column/state in the Kanban board
+  @[JSON::Serializable::Options(strict: true)]
   struct LanePayload
     include JSON::Serializable
 
@@ -159,6 +169,7 @@ module ToCry::Endpoints::Helpers
 
   # Payload structure for comprehensive board updates
   # Supports all board properties including complete lane state management
+  @[JSON::Serializable::Options(strict: true)]
   struct UpdateBoardPayload
     include JSON::Serializable
 
@@ -185,6 +196,7 @@ module ToCry::Endpoints::Helpers
     property lanes : Array(LanePayload)?
   end
 
+  @[JSON::Serializable::Options(strict: true)]
   struct ReorderLanesPayload
     include JSON::Serializable
     property lanes : Array(String)

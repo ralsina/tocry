@@ -16,7 +16,7 @@ export async function initializeAuthStatus () {
   ) { return }
 
   try {
-    const response = await fetch('/me') // Changed endpoint to /me
+    const response = await fetch('/api/v1/me') // Changed endpoint to /me
     const userData = await response.json()
 
     if (userData.logged_in) {

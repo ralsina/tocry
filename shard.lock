@@ -24,9 +24,13 @@ shards:
     git: https://github.com/crystal-lang/html_builder.git
     version: 0.2.2
 
+  jsonschema:
+    git: https://github.com/aarongodin/jsonschema.git
+    version: 0.1.0+git.commit.018dc50f4a3ba6e6c2783f19a46284043d1815ed
+
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.7.2
+    version: 1.7.3
 
   kemal-basic-auth:
     git: https://github.com/kemalcr/kemal-basic-auth.git
@@ -40,6 +44,10 @@ shards:
     git: https://github.com/msa7/multi_auth.git
     version: 1.1.1
 
+  prop:
+    git: https://github.com/nicolab/crystal-prop.git
+    version: 0.7.1
+
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
@@ -47,3 +55,7 @@ shards:
   sepia:
     git: https://github.com/ralsina/sepia.git
     version: 0.1.0+git.commit.c958631f569a52a902f1c0c2e7779339d3a06e65
+
+  validator:
+    git: https://github.com/nicolab/crystal-validator.git
+    version: 1.11.0
