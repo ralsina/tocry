@@ -280,12 +280,12 @@
                        style="flex: 1; margin: 0; padding: 0.25rem; font-size: inherit; font-family: inherit;"
                        x-ref="laneRenameInput">
                 <div style="display: flex; align-items: center; gap: 0.25rem;">
-                  <span class="note-count" x-text="(lane.notes || []).length"></span>
+                  <span class="note-count" x-text="(lane.notes || []).filter(n => !n._hidden).length"></span>
                   <div class="lane-action-group">
                     <button @click="addNote(lane.name)"
                             title="Add note"
                             class="lane-action-btn"
-                            :style="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 0 && lane.notes && lane.notes.length === 0 ? 'animation: throb 2s ease-in-out infinite;' : ''">
+                            :style="currentBoard && currentBoard.lanes && currentBoard.lanes.length > 0 && !currentBoard.lanes.some(l => l.notes && l.notes.length > 0) ? 'animation: throb 2s ease-in-out infinite;' : ''">
                       +
                     </button>
                     <button @click="deleteLane(lane.name)"
@@ -695,7 +695,9 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="modal-overlay"
-         @click.self="showNewBoardModal = false">
+         @click.self="showNewBoardModal = false"
+         @keyup.escape.window="showNewBoardModal = false"
+         x-init="$watch('showNewBoardModal', value => { if (value) $nextTick(() => $refs.newBoardInput.focus()) })">
       <div class="modal"
            @click.away="showNewBoardModal = false"
            x-transition:enter="transition ease-out duration-300"
@@ -709,7 +711,11 @@
           <button @click="showNewBoardModal = false">&times;</button>
         </div>
         <div class="modal-body">
-          <input type="text" x-model="newBoardName" placeholder="Board name" @keyup.enter="confirmNewBoard()">
+          <input type="text"
+                 x-ref="newBoardInput"
+                 x-model="newBoardName"
+                 placeholder="Board name"
+                 @keyup.enter="confirmNewBoard()">
         </div>
         <div class="modal-footer">
           <button @click="showNewBoardModal = false">Cancel</button>
@@ -728,7 +734,9 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="modal-overlay"
-         @click.self="showAddLane = false">
+         @click.self="showAddLane = false"
+         @keyup.escape.window="showAddLane = false"
+         x-init="$watch('showAddLane', value => { if (value) $nextTick(() => $refs.newLaneInput.focus()) })">
       <div class="modal"
            @click.away="showAddLane = false"
            x-transition:enter="transition ease-out duration-300"
@@ -742,7 +750,11 @@
           <button @click="showAddLane = false">&times;</button>
         </div>
         <div class="modal-body">
-          <input type="text" x-model="newLaneName" placeholder="Lane name" @keyup.enter="confirmAddLane()">
+          <input type="text"
+                 x-ref="newLaneInput"
+                 x-model="newLaneName"
+                 placeholder="Lane name"
+                 @keyup.enter="confirmAddLane()">
         </div>
         <div class="modal-footer">
           <button @click="showAddLane = false">Cancel</button>
@@ -879,7 +891,8 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="modal-overlay modal-overlay-top"
-         @click.self="closeModal()">
+         @click.self="closeModal()"
+         @keyup.escape.window="closeModal()">
       <div class="modal"
            @click.away="closeModal()"
            x-transition:enter="transition ease-out duration-300"
