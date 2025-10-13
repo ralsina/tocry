@@ -932,6 +932,74 @@
       transform: scale(1.05);
     }
 
+    /* Board sharing controls - matching theme/color switcher style */
+    .board-sharing-controls {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .sharing-button-group {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--pico-form-element-border-color);
+      border-radius: var(--pico-border-radius);
+      overflow: hidden;
+      background-color: var(--pico-form-element-background-color);
+    }
+
+    .sharing-button {
+      border: none;
+      border-radius: 0;
+      background-color: transparent;
+      flex-shrink: 0;
+      padding: 0 var(--pico-spacing);
+      color: var(--pico-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .sharing-button:hover {
+      background-color: rgba(var(--primary-rgb), 0.1);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .sharing-button:focus,
+    .sharing-button:focus-visible,
+    .sharing-button:focus-within {
+      outline: none;
+      border: none;
+      box-shadow: none;
+      background-color: rgba(var(--primary-rgb), 0.1);
+    }
+
+    .sharing-button:active {
+      outline: none;
+      border: none;
+      box-shadow: none;
+      background-color: rgba(var(--primary-rgb), 0.15);
+      transform: scale(0.95);
+    }
+
+    .sharing-button-left {
+      border-radius: var(--pico-border-radius) 0 0 var(--pico-border-radius);
+      border-right: 1px solid var(--pico-form-element-border-color);
+    }
+
+    .sharing-button-right {
+      border-radius: 0 var(--pico-border-radius) var(--pico-border-radius) 0;
+    }
+
+    .sharing-button-primary {
+      border-radius: var(--pico-border-radius);
+    }
+
     /* Search input styles */
     .search-input {
       transition: all 0.3s ease;
@@ -1144,4 +1212,23 @@
     /* Ensure kanban board has relative positioning for separator */
     .kanban-board {
       position: relative;
+    }
+
+    header nav ul {
+      align-items: center;
+    }
+
+    header nav input,
+    header nav select,
+    header nav button,
+    header nav .theme-and-color-switcher,
+    header nav .sharing-button-group {
+      height: 2.5rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .sharing-button svg {
+      width: 16px;
+      height: 16px;
     }

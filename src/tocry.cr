@@ -8,6 +8,7 @@ require "./upload"          # Include the Upload class for file management
 require "./board_index"     # Include the BoardIndex class for board indexing
 require "./board_reference" # Include the BoardReference class for user-specific board references
 require "./board_manager"
+require "./color_scheme"
 
 module ToCry
   VERSION = {{ `shards version #{__DIR__}/../`.chomp.stringify }}
