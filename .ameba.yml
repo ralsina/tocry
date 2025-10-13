@@ -11,6 +11,7 @@ Naming/QueryBoolMethods:
   - src/board_manager.cr
   - src/user.cr
   - src/note.cr
+  - src/board.cr
   Enabled: true
   Severity: Convention
 
@@ -32,6 +33,7 @@ Lint/UselessAssign:
   ExcludeTypeDeclarations: false
   Excluded:
   - src/endpoints/boards.cr
+  - src/endpoints/notes.cr
   Enabled: true
   Severity: Warning
 
@@ -44,12 +46,22 @@ Naming/AccessorMethodName:
   Enabled: true
   Severity: Convention
 
-# Problems found: 5
+# Problems found: 6
 # Run `ameba --only Lint/NotNil` for details
 Lint/NotNil:
   Description: Identifies usage of `not_nil!` calls
   Excluded:
   - src/tocry.cr
   - spec/board_manager_spec.cr
+  - src/main.cr
+  Enabled: true
+  Severity: Warning
+
+# Problems found: 1
+# Run `ameba --only Lint/Formatting` for details
+Lint/Formatting:
+  Description: Use built-in formatter to format this source
+  Excluded:
+  - spec/spec_helper.cr
   Enabled: true
   Severity: Warning

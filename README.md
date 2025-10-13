@@ -9,7 +9,8 @@ when looking at their task list: "Are you going ToDo or ToCry?"
 
 ## Demo
 
-Try the live demo at https://tocry-demo.ralsina.me
+Try the live demo at <https://tocry-demo.ralsina.me>
+
 **Username:** `demo`
 **Password:** `tocry`
 
@@ -41,10 +42,11 @@ curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
 ```
 
 This will:
-- Automatically detect your system architecture (AMD64/ARM64)
-- Download the latest binary
-- Install system-wide or in your user directory
-- Set up data directories and systemd service (if run as root)
+
+* Automatically detect your system architecture (AMD64/ARM64)
+* Download the latest binary
+* Install system-wide or in your user directory
+* Set up data directories and systemd service (if run as root)
 
 For more options, see the [Installation Script Documentation](#installation-script-options).
 
@@ -62,14 +64,17 @@ This project is built with the Crystal programming language.
 2. Install Crystal dependencies:
 
     ```sh
-    shards install
+    make install
     ```
 
 3. Build the application for production:
 
     ```sh
-    shards build --release
+    make build
     ```
+
+    **Note:** ToCry uses a Makefile to ensure generated API clients are up-to-date before building.
+    See [BUILD.md](BUILD.md) for detailed build documentation.
 
 4. Run the server:
 
@@ -188,6 +193,7 @@ For an even simpler setup, you can use Docker Compose. Remember to set environme
 Once the application is running, you can manage your tasks through the web interface:
 
 ### Desktop Interface
+
 * **Add a Lane:** Click the `+` button in the header to create a new column
 * **Rename a Lane:** Click directly on a lane's title, type the new name,
   and press `Enter` or click away to save
@@ -199,6 +205,7 @@ Once the application is running, you can manage your tasks through the web inter
 * **Change Color Scheme:** Use the color scheme selector to customize the board's appearance
 
 ### Mobile Interface
+
 * **Mobile Menu:** Tap the menu button to access all controls in a mobile-optimized overlay
 * **Touch Drag & Drop:** Long-press and drag notes between lanes with touch gestures
 * **Auto-Scroll:** When dragging notes to screen edges, the board automatically scrolls to reveal adjacent lanes
@@ -213,7 +220,7 @@ To run the application in development mode:
 2. Run the development server:
 
     ```sh
-    crystal run src/tocry.cr
+    crystal run src/main.cr
     ```
 
 The server will start on `http://localhost:3000`.
@@ -231,6 +238,7 @@ The server will start on `http://localhost:3000`.
 The installation script provides several options for customizing your installation:
 
 ### Basic Usage
+
 ```bash
 # Install with default settings (system-wide)
 curl -sSL https://tocry.ralsina.me/install.sh | sudo bash
@@ -243,6 +251,7 @@ curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --help
 ```
 
 ### Custom Installation Directories
+
 ```bash
 # Install to custom location
 INSTALL_DIR=$HOME/.local/bin curl -sSL https://tocry.ralsina.me/install.sh | bash
@@ -255,15 +264,17 @@ INSTALL_DIR=$HOME/.local/bin DATA_DIR=$HOME/.local/share/tocry curl -sSL https:/
 ```
 
 ### Uninstall
+
 ```bash
 # Uninstall ToCry
 curl -sSL https://tocry.ralsina.me/install.sh | bash -s -- --uninstall
 ```
 
 ### Environment Variables
-- `INSTALL_DIR`: Installation directory (default: `/usr/local/bin`)
-- `DATA_DIR`: Data directory (default: `/opt/tocry`)
-- `SERVICE_USER`: System service user (default: `tocry`)
+
+* `INSTALL_DIR`: Installation directory (default: `/usr/local/bin`)
+* `DATA_DIR`: Data directory (default: `/opt/tocry`)
+* `SERVICE_USER`: System service user (default: `tocry`)
 
 ## Contributors
 

@@ -40,13 +40,13 @@ describe ToCry::Board do
       # Notes are inserted at the head of the lane
 
       # Compare Note A
-      deserialized_lane.notes[1].id.should eq(note1.id)
+      deserialized_lane.notes[1].sepia_id.should eq(note1.sepia_id)
       deserialized_lane.notes[1].title.should eq(note1.title)
       deserialized_lane.notes[1].tags.should eq(note1.tags)
       deserialized_lane.notes[1].content.should eq(note1.content)
 
       # Compare Note B
-      deserialized_lane.notes[0].id.should eq(note2.id)
+      deserialized_lane.notes[0].sepia_id.should eq(note2.sepia_id)
       deserialized_lane.notes[0].title.should eq(note2.title)
       deserialized_lane.notes[0].tags.should eq(note2.tags) # Should be empty
       deserialized_lane.notes[0].content.should eq(note2.content)

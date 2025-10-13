@@ -12,7 +12,7 @@ module ToCry::Endpoints::Uploads
 
   # API Endpoint to handle image uploads
   # Expects a multipart/form-data request with a file part.
-  post "/upload/image" do |env|
+  post "/api/v1/upload/image" do |env|
     user_id = ToCry.get_current_user_id(env)
 
     # Get the first uploaded file from the request.
@@ -94,4 +94,5 @@ module ToCry::Endpoints::Uploads
       file_size:         upload.file_size,
     })
   end
+
 end

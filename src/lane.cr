@@ -36,11 +36,26 @@ module ToCry
       actual_position = position.clamp(0, self.notes.size)
 
       self.notes.insert(actual_position, new_note)
-      Log.info { "Note '#{new_note.title}' (ID: #{new_note.id}) added to lane '#{self.name}' at position #{actual_position}." }
+      Log.info { "Note '#{new_note.title}' (ID: #{new_note.sepia_id}) added to lane '#{self.name}' at position #{actual_position}." }
       new_note
     rescue ex
       Log.error(exception: ex) { "Failed to add note '#{title}' to lane '#{self.name}'" }
       raise ex
+    end
+
+    # OpenAPI schema definition for Lane
+    def self.schema
+      {
+        type: "object",
+        properties: {
+          name: {type: "string", description: "Lane name"},
+          notes: {
+            type: "array",
+            description: "Array of notes in this lane",
+            items: {"$ref": "#/components/schemas/Note"}
+          }
+        }
+      }
     end
   end
 end

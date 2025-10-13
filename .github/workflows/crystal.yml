@@ -16,7 +16,34 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Install system dependencies
+      run: |
+        apt-get update
+        apt-get install -y npm curl
+        npm install -g @openapitools/openapi-generator-cli
+        npm install -g esbuild
+        curl -L https://github.com/tdewolff/minify/releases/download/v2.24.3/minify_linux_amd64.tar.gz -o minify.tar.gz
+        tar -xzf minify.tar.gz
+        mv minify /usr/local/bin/
+        chmod +x /usr/local/bin/minify
+
     - name: Install dependencies
       run: shards install
+
+    - name: Generate API clients
+      run: make generate-clients
+
     - name: Run tests
-      run: crystal spec
+      run: make test
