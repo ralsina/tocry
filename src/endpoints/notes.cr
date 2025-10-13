@@ -12,19 +12,7 @@ module ToCry::Endpoints::Notes
   # This filter is specific to note-related paths.
   # Skips existence check for DELETE requests to support idempotent deletion.
   before_all "/api/v1/boards/:board_name/note/*" do |env|
-    user = ToCry.get_current_user_id(env)
-    board_name = env.params.url["board_name"].as(String)
-
-    # Skip existence check for DELETE requests (idempotent behavior)
-    unless env.request.method == "DELETE"
-      board = ToCry.board_manager.get(board_name, user)
-
-      unless board
-        env.response.status_code = 404
-      end
-    end
-
-    env.set("board_name", board_name)
+    ToCry::Endpoints::Helpers.validate_board_access(env)
   end
 
   # API Endpoint to create a new note in a specific lane
@@ -42,7 +30,6 @@ module ToCry::Endpoints::Notes
       board = ToCry.board_manager.get(board_name, user)
 
       unless board
-        env.response.status_code = 404
         next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
       end
 
@@ -123,7 +110,6 @@ module ToCry::Endpoints::Notes
       board = ToCry.board_manager.get(board_name, user)
 
       unless board
-        env.response.status_code = 404
         next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
       end
 
@@ -283,7 +269,7 @@ module ToCry::Endpoints::Notes
       note_id = env.params.url["note_id"].as(String)
 
       # Validate UUID format to prevent injection attacks
-      unless note_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      unless ToCry::Endpoints::Helpers.valid_uuid?(note_id)
         next ToCry::Endpoints::Helpers.error_response(env, "Invalid note ID format", 400)
       end
 
@@ -379,7 +365,7 @@ module ToCry::Endpoints::Notes
       attachment_filename = env.params.url["attachment"].as(String)
 
       # Validate UUID format to prevent injection attacks
-      unless note_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      unless ToCry::Endpoints::Helpers.valid_uuid?(note_id)
         next ToCry::Endpoints::Helpers.error_response(env, "Invalid note ID format", 400)
       end
 
@@ -454,7 +440,7 @@ module ToCry::Endpoints::Notes
       filename = env.params.url["attachment"].as(String)
 
       # Validate UUID format to prevent injection attacks
-      unless note_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      unless ToCry::Endpoints::Helpers.valid_uuid?(note_id)
         env.response.status_code = 404
         next
       end
@@ -497,7 +483,7 @@ module ToCry::Endpoints::Notes
       original_filename = filename
       if filename.includes?("_")
         parts = filename.split("_", 2)
-        if parts.size == 2 && parts[0].match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+        if parts.size == 2 && ToCry::Endpoints::Helpers.valid_uuid?(parts[0])
           original_filename = parts[1]
         end
       end
@@ -530,7 +516,7 @@ module ToCry::Endpoints::Notes
       filename = env.params.url["filename"].as(String)
 
       # Validate UUID format to prevent injection attacks
-      unless note_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      unless ToCry::Endpoints::Helpers.valid_uuid?(note_id)
         env.response.status_code = 404
         next
       end
@@ -574,7 +560,7 @@ module ToCry::Endpoints::Notes
       original_filename = filename
       if filename.includes?("_")
         parts = filename.split("_", 2)
-        if parts.size == 2 && parts[0].match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+        if parts.size == 2 && ToCry::Endpoints::Helpers.valid_uuid?(parts[0])
           original_filename = parts[1]
         end
       end
@@ -605,7 +591,7 @@ module ToCry::Endpoints::Notes
 
     begin
       # Validate UUID format to prevent injection attacks
-      unless note_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      unless ToCry::Endpoints::Helpers.valid_uuid?(note_id)
         env.response.status_code = 404
         next render "templates/404.ecr"
       end
