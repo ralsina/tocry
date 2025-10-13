@@ -131,7 +131,7 @@ module ToCry::Endpoints::Boards
     board_details = {
       id:                 board.sepia_id,
       name:               board.name,
-      color_scheme:       board.color_scheme,
+      color_scheme:       ToCry::ColorScheme.validate(board.color_scheme),
       first_visible_lane: board.first_visible_lane,
       show_hidden_lanes:  board.show_hidden_lanes,
       public:             board.public,
@@ -157,7 +157,7 @@ module ToCry::Endpoints::Boards
 
     # Set color scheme if provided
     if payload.color_scheme
-      board.color_scheme = payload.color_scheme
+      board.color_scheme = ToCry::ColorScheme.validate(payload.color_scheme)
       board.save
     end
 
@@ -232,7 +232,7 @@ module ToCry::Endpoints::Boards
 
       # Handle color_scheme update
       if color_scheme = payload.color_scheme
-        board.color_scheme = color_scheme
+        board.color_scheme = ToCry::ColorScheme.validate(color_scheme)
         board.save
       end
 
