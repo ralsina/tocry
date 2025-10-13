@@ -21,13 +21,8 @@ generate-spec:
 	@echo "Generating OpenAPI specification..."
 	crystal run src/openapi_manual.cr -- openapi.json
 
-# Generate JSON Schema files for validation from OpenAPI spec
-generate-schemas: generate-spec
-	@echo "Generating JSON Schema files..."
-	crystal run scripts/generate_validation_schemas.cr
-
 # Generate TypeScript and Crystal clients from OpenAPI spec
-generate-clients: generate-schemas
+generate-clients:
 	@echo "Generating API clients..."
 	./scripts/generate_clients.sh
 
@@ -36,18 +31,23 @@ src/assets/api_client_ts_dist/index.js: openapi.json
 	@echo "TypeScript client not found or outdated, generating..."
 	./scripts/generate_clients.sh
 
-# Main build target - ensures clients exist
-build: src/assets/api_client_ts_dist/index.js
+# Minify assets before building
+minify-assets:
+	@echo "Minifying assets..."
+	./scripts/minify_assets.sh
+
+# Main build target - ensures clients exist and assets are minified
+build: src/assets/api_client_ts_dist/index.js minify-assets
 	@echo "Building ToCry..."
 	shards build --release
 
-# Development build (faster, no optimizations)
-dev: src/assets/api_client_ts_dist/index.js
+# Development build (faster, no optimizations, with minified assets)
+dev: src/assets/api_client_ts_dist/index.js minify-assets
 	@echo "Building ToCry (development mode)..."
 	shards build
 
-# Run tests (also ensures clients are generated)
-test: src/assets/api_client_ts_dist/index.js
+# Run tests (also ensures clients are generated and assets are minified)
+test: src/assets/api_client_ts_dist/index.js minify-assets
 	@echo "Running tests..."
 	./scripts/run_tests.sh
 
@@ -55,9 +55,11 @@ test: src/assets/api_client_ts_dist/index.js
 clean:
 	@echo "Cleaning build artifacts..."
 	@./scripts/clean_build.sh
+	@echo "Removing minified assets..."
+	@rm -rf src/assets-min
 
 # Static builds for distribution
-build-static: src/assets/api_client_ts_dist/index.js
+build-static: src/assets/api_client_ts_dist/index.js minify-assets
 	@echo "Building static binaries..."
 	./scripts/build_static.sh
 
