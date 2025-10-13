@@ -7,6 +7,14 @@ module ToCry::Endpoints::Helpers
   # Custom error for when a request body is expected but not provided.
   class MissingBodyError < Exception; end
 
+  # UUID validation regex for note IDs and other UUID fields
+  UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  # Helper function to validate UUID format
+  def self.valid_uuid?(uuid : String) : Bool
+    !uuid.match(UUID_REGEX).nil?
+  end
+
   # Helper functions for standardized API responses
   def self.json_response(env : HTTP::Server::Context, status_code : Int32, data)
     env.response.status_code = status_code
@@ -34,6 +42,26 @@ module ToCry::Endpoints::Helpers
 
   def self.created_response(env : HTTP::Server::Context, data)
     success_response(env, data, 201)
+  end
+
+  # Helper function to validate board access in before_all filters
+  # Returns true if validation passed, false otherwise (and sets 404 status)
+  # Used by boards and notes endpoints to validate board existence
+  def self.validate_board_access(env : HTTP::Server::Context) : Bool
+    user = ToCry.get_current_user_id(env)
+    board_name = env.params.url["board_name"].as(String)
+
+    # Skip existence check for DELETE requests (idempotent behavior)
+    unless env.request.method == "DELETE"
+      board = ToCry.board_manager.get(board_name, user)
+      unless board
+        env.response.status_code = 404
+        return false
+      end
+    end
+
+    env.set("board_name", board_name)
+    true
   end
 
   # Helper function to retrieve the Board instance from the request context.
