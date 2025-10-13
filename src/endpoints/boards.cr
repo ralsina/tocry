@@ -9,19 +9,7 @@ module ToCry::Endpoints::Boards
   # This filter is specific to board-related paths.
   # Skips existence check for DELETE requests to support idempotent deletion.
   before_all "/api/v1/boards/:board_name/*" do |env|
-    user = ToCry.get_current_user_id(env)
-    board_name = env.params.url["board_name"].as(String)
-
-    # Skip existence check for DELETE requests (idempotent behavior)
-    unless env.request.method == "DELETE"
-      board = ToCry.board_manager.get(board_name, user)
-
-      unless board
-        env.response.status_code = 404
-      end
-    end
-
-    env.set("board_name", board_name)
+    ToCry::Endpoints::Helpers.validate_board_access(env)
   end
 
   # Serve the main application HTML for board-specific URLs
@@ -103,7 +91,6 @@ module ToCry::Endpoints::Boards
     board = ToCry.board_manager.get(board_name, user)
 
     unless board
-      env.response.status_code = 404
       next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
     end
 
@@ -188,7 +175,6 @@ module ToCry::Endpoints::Boards
       board = ToCry.board_manager.get(old_board_name, user)
 
       unless board
-        env.response.status_code = 404
         next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
       end
 
@@ -217,7 +203,7 @@ module ToCry::Endpoints::Boards
         ToCry::Log.info { "After save, board.first_visible_lane is #{board.first_visible_lane}" }
 
         # Verify by reloading
-        reloaded = ToCry.board_manager.get(board.name, user: ToCry.get_current_user_id(env))
+        reloaded = ToCry.board_manager.get(board.name, user: user)
         if reloaded
           ToCry::Log.info { "Reloaded board first_visible_lane is #{reloaded.first_visible_lane}" }
         end
@@ -245,7 +231,7 @@ module ToCry::Endpoints::Boards
         ToCry::Log.info { "After save, board.public is #{board.public}" }
 
         # Verify by reloading
-        reloaded = ToCry.board_manager.get(board.name, user: ToCry.get_current_user_id(env))
+        reloaded = ToCry.board_manager.get(board.name, user: user)
         if reloaded
           ToCry::Log.info { "Reloaded board.public is #{reloaded.public}" }
         end
