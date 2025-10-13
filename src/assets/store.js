@@ -1,5 +1,5 @@
 // Alpine.js store for ToCry reactive app
-/* global toastui, history, marked, hljs, localStorage, ResizeObserver, ToCryApiClient */
+/* global toastui, history, marked, hljs, localStorage, ResizeObserver */
 
 // Modern API Service using generated ToCryApiClient
 class BoardApiService {
@@ -573,7 +573,7 @@ function createToCryStore () {
       if (picoThemeLink) {
         const cssFileName = this.currentColorScheme === 'default'
           ? 'pico.min.css'
-          : `pico.${this.currentColorScheme}.min.css`
+          : `pico.${this.currentColorScheme.toLowerCase()}.min.css`
         picoThemeLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${cssFileName}`
       }
 
