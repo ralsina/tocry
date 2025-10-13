@@ -19,10 +19,10 @@ describe "Notes API using Generated Client" do
     lanes = [
       OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
       OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
-      OpenAPIClient::BoardUpdateRequestLanesInner.new("Done")
+      OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
     ]
     update_request = OpenAPIClient::BoardUpdateRequest.new(
-      nil, nil, nil, nil, lanes
+      nil, nil, nil, nil, nil, lanes
     )
     APITestHelpers.boards_api.update_board(NOTES_TEST_BOARD, update_request)
   end
@@ -126,7 +126,7 @@ describe "Notes API using Generated Client" do
       updated_note.title.not_nil!.should contain("Updated Note")
       updated_note.content.not_nil!.should contain("Updated content")
       updated_note.priority.should eq("high")
-      updated_board.lanes.not_nil!.find(&.name.==("Todo")).not_nil!.notes.not_nil!.should be_empty
+      updated_board.lanes.not_nil!.find!(&.name.==("Todo")).notes.not_nil!.should be_empty
     end
   end
 
@@ -175,7 +175,7 @@ describe "Notes API using Generated Client" do
 
       # Get the note ID
       board = APITestHelpers.boards_api.get_board_details(NOTES_TEST_BOARD)
-      note_id = board.lanes.not_nil!.find(&.name.==("Todo")).not_nil!.notes.not_nil!.first.sepia_id.not_nil!
+      note_id = board.lanes.not_nil!.find!(&.name.==("Todo")).notes.not_nil!.first.sepia_id.not_nil!
 
       # Delete it first time
       first_response = APITestHelpers.notes_api.delete_note(NOTES_TEST_BOARD, note_id)

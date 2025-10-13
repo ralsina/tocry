@@ -41,7 +41,10 @@
       "Bash(openapi-generator help:*)",
       "Bash(openapi-generator:*)",
       "Bash(shards install:*)",
-      "Bash(./generate_clients.sh:*)"
+      "Bash(./generate_clients.sh:*)",
+      "Bash(scripts/generate_clients.sh:*)",
+      "Bash(make:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

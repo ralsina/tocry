@@ -71,11 +71,13 @@
       if (options.showHiddenLanes !== undefined) payload.showHiddenLanes = options.showHiddenLanes
       if (options.colorScheme) payload.colorScheme = options.colorScheme
       if (options.lanes) payload.lanes = options.lanes
+      if (options.public !== undefined) payload._public = options.public
 
       const response = await this.boardsApi.updateBoard({
         boardName,
         boardUpdateRequest: payload
       })
+
       return response
     }
 
