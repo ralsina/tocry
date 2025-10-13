@@ -46,15 +46,15 @@ module ToCry
     # OpenAPI schema definition for Lane
     def self.schema
       {
-        type: "object",
+        type:       "object",
         properties: {
-          name: {type: "string", description: "Lane name"},
+          name:  {type: "string", description: "Lane name"},
           notes: {
-            type: "array",
+            type:        "array",
             description: "Array of notes in this lane",
-            items: {"$ref": "#/components/schemas/Note"}
-          }
-        }
+            items:       {"$ref": "#/components/schemas/Note"},
+          },
+        },
       }
     end
   end

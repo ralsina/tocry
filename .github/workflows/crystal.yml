@@ -31,13 +31,9 @@ jobs:
     - name: Install system dependencies
       run: |
         apt-get update
-        apt-get install -y npm curl
+        apt-get install -y npm
         npm install -g @openapitools/openapi-generator-cli
         npm install -g esbuild
-        curl -L https://github.com/tdewolff/minify/releases/download/v2.24.3/minify_linux_amd64.tar.gz -o minify.tar.gz
-        tar -xzf minify.tar.gz
-        mv minify /usr/local/bin/
-        chmod +x /usr/local/bin/minify
 
     - name: Install dependencies
       run: shards install

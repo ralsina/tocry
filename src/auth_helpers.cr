@@ -12,7 +12,9 @@ def check_access(env)
     # Exact matches
   when %r{^/auth/[^/]+$}, %r{^/auth/[^/]+/callback$} # Matches /auth/:provider and /auth/:provider/callback
     # Allow these paths to proceed without authentication check here.
-  when %r{/user-images/.*} # Allow access to user-uploaded images
+  when %r{/user-images/.*}            # Allow access to user-uploaded images
+  when %r{^/public/[^/]+$}            # Allow access to public board views (matches /public/:board_id)
+  when %r{^/attachments/[^/]+/[^/]+$} # Allow access to attachments on public boards
   else
     # For all other routes, check authentication.
     unless current_user(env)
