@@ -25,14 +25,14 @@ describe "Boards API using Generated Client" do
     it "should create a board with color scheme" do
       board_name = "#{TEST_BOARD_PREFIX}_color_#{Time.utc.to_unix}"
 
-      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, "dark")
+      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, "purple")
       response = APITestHelpers.boards_api.create_board(create_request)
 
       response.success.should_not be_nil
 
       # Verify the board was created with the color scheme
       board_details = APITestHelpers.boards_api.get_board_details(board_name)
-      board_details.color_scheme.should eq("dark")
+      board_details.color_scheme.should eq("purple")
     end
   end
 
@@ -105,7 +105,7 @@ describe "Boards API using Generated Client" do
 
     it "should update board color scheme" do
       update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, nil, nil, "professional", nil, nil
+        nil, nil, nil, "orange", nil, nil
       )
       # Create a test board first
       original_name = "#{TEST_BOARD_PREFIX}_color_scheme_#{Time.utc.to_unix}"
@@ -118,7 +118,7 @@ describe "Boards API using Generated Client" do
 
       # Verify color scheme was updated
       updated_board = APITestHelpers.boards_api.get_board_details(original_name)
-      updated_board.color_scheme.should eq("professional")
+      updated_board.color_scheme.should eq("orange")
     end
   end
 
@@ -173,14 +173,14 @@ describe "Boards API using Generated Client" do
       board_name = "#{TEST_BOARD_PREFIX}_lifecycle_#{Time.utc.to_unix}"
 
       # 1. Create board with color scheme
-      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, "light")
+      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, "green")
       create_response = APITestHelpers.boards_api.create_board(create_request)
       create_response.success.should_not be_nil
 
       # 2. Verify board creation
       board = APITestHelpers.boards_api.get_board_details(board_name)
       board.name.should eq(board_name)
-      board.color_scheme.should eq("light")
+      board.color_scheme.should eq("green")
       (board.lanes.nil? || board.lanes.not_nil!.empty?).should be_true
 
       # 3. Add kanban lanes
@@ -204,14 +204,14 @@ describe "Boards API using Generated Client" do
 
       # 5. Update color scheme
       color_update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, nil, true, "dark", nil, nil
+        nil, nil, true, "red", nil, nil
       )
       color_response = APITestHelpers.boards_api.update_board(board_name, color_update_request)
       color_response.success.should_not be_nil
 
       # 6. Verify color scheme and show hidden lanes
       final_board = APITestHelpers.boards_api.get_board_details(board_name)
-      final_board.color_scheme.should eq("dark")
+      final_board.color_scheme.should eq("red")
       final_board.show_hidden_lanes.should be_true
 
       # 7. Delete the board
