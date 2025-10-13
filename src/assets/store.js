@@ -305,14 +305,10 @@ function createToCryStore () {
 
     // Theme and color scheme
     isDarkMode: false,
-    currentColorScheme: 'default',
+    currentColorScheme: 'blue',
     currentColor: '#1d88fe',
     showColorSelector: false,
     colorSchemes: {
-      default: {
-        light: { 'primary-rgb': '29, 136, 254' },
-        dark: { 'primary-rgb': '82, 157, 255' }
-      },
       amber: {
         light: { 'primary-rgb': '255, 193, 7' },
         dark: { 'primary-rgb': '255, 202, 44' }
@@ -568,6 +564,25 @@ function createToCryStore () {
       // Show toast notification
       this.showSuccess(`Switched to ${this.isDarkMode ? 'dark' : 'light'} theme`)
     },
+    // Validate and normalize color scheme
+    validateColorScheme (colorScheme) {
+      if (!colorScheme) {
+        return 'blue'
+      }
+
+      // Normalize to lowercase for comparison
+      const normalized = colorScheme.toLowerCase()
+
+      // Check if it's a valid scheme
+      if (this.colorSchemes[normalized]) {
+        return normalized
+      }
+
+      // Invalid scheme - log warning and return blue
+      console.warn(`Invalid color scheme "${colorScheme}" - falling back to blue`)
+      return 'blue'
+    },
+
     async updateColorScheme () {
       // Update the Pico.css stylesheet link
       const picoThemeLink = document.querySelector(
@@ -575,9 +590,7 @@ function createToCryStore () {
       )
 
       if (picoThemeLink) {
-        const cssFileName = this.currentColorScheme === 'default'
-          ? 'pico.min.css'
-          : `pico.${this.currentColorScheme.toLowerCase()}.min.css`
+        const cssFileName = `pico.${this.currentColorScheme.toLowerCase()}.min.css`
         picoThemeLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${cssFileName}`
       }
 
@@ -716,11 +729,14 @@ function createToCryStore () {
         const boardData = await this.api.getBoard(boardName)
         console.log('Loaded board data:', boardData)
 
+        // Validate color scheme early
+        const validatedColorScheme = this.validateColorScheme(boardData.colorScheme)
+
         this.currentBoard = {
           id: boardData.id,
           name: boardData.name,
           lanes: boardData.lanes || [],
-          colorScheme: boardData.colorScheme,
+          colorScheme: validatedColorScheme,
           firstVisibleLane: boardData.firstVisibleLane || 0,
           showHiddenLanes: boardData.showHiddenLanes || false,
           public: boardData._public || false
@@ -739,17 +755,20 @@ function createToCryStore () {
         }
 
         // Apply board color scheme with delay for smooth transition
-        if (boardData.colorScheme && boardData.colorScheme !== this.currentColorScheme) {
+        // validatedColorScheme was already computed above
+        const schemeChanged = validatedColorScheme !== this.currentColorScheme
+        this.currentColorScheme = validatedColorScheme
+
+        if (schemeChanged) {
           // Delay color scheme application to make it look intentional
           setTimeout(() => {
-            this.currentColorScheme = boardData.colorScheme
             this.updateColorScheme()
-            console.log('Applied board color scheme:', boardData.colorScheme)
+            console.log('Applied board color scheme:', validatedColorScheme)
             // Clear loadingBoardFromUrl after everything is loaded and color is applied
             this.loadingBoardFromUrl = false
           }, 500) // 0.5 second delay
         } else {
-          // Clear loadingBoardFromUrl immediately if no color scheme delay
+          // Clear loadingBoardFromUrl immediately if no color scheme change
           this.loadingBoardFromUrl = false
         }
 
