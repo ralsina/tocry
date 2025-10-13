@@ -1,0 +1,23 @@
+# Auto-generated TypeScript API client (source and compiled)
+src/assets/api_client_ts/
+src/assets/api_client_ts_dist/
+
+# Auto-generated Crystal API client and all dependencies
+lib/
+
+# Node.js dependencies
+node_modules/
+dist/
+
+# Build artifacts
+bin/
+*.dwarf
+
+# Generated OpenAPI spec
+openapi.json
+
+# Test data and uploads
+data/
+test_data/
+testdata-*/
+uploads/

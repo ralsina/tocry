@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: shellcheck
       - id: markdownlint
-        exclude: "^content"
+        exclude: "^content|.tokeignore$"
   - repo: https://github.com/mrtazz/checkmake
     rev: 0.2.2
     hooks:
