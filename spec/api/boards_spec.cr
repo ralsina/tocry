@@ -66,7 +66,7 @@ describe "Boards API using Generated Client" do
       new_name = "updated_#{original_name}"
 
       update_request = OpenAPIClient::BoardUpdateRequest.new(
-        new_name, nil, nil, nil, nil
+        new_name, nil, nil, nil, nil, nil
       )
       response = APITestHelpers.boards_api.update_board(original_name, update_request)
 
@@ -86,11 +86,11 @@ describe "Boards API using Generated Client" do
       lanes = [
         OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
         OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done")
+        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
       ]
 
       update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, nil, nil, nil, lanes
+        nil, nil, nil, nil, nil, lanes
       )
       response = APITestHelpers.boards_api.update_board(original_name, update_request)
 
@@ -105,7 +105,7 @@ describe "Boards API using Generated Client" do
 
     it "should update board color scheme" do
       update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, nil, nil, "professional", nil
+        nil, nil, nil, "professional", nil, nil
       )
       # Create a test board first
       original_name = "#{TEST_BOARD_PREFIX}_color_scheme_#{Time.utc.to_unix}"
@@ -189,10 +189,10 @@ describe "Boards API using Generated Client" do
         OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
         OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
         OpenAPIClient::BoardUpdateRequestLanesInner.new("Review"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done")
+        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
       ]
       update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, 0, false, nil, lanes
+        nil, 0, false, nil, nil, lanes
       )
       update_response = APITestHelpers.boards_api.update_board(board_name, update_request)
       update_response.success.should_not be_nil
@@ -204,7 +204,7 @@ describe "Boards API using Generated Client" do
 
       # 5. Update color scheme
       color_update_request = OpenAPIClient::BoardUpdateRequest.new(
-        nil, nil, true, "dark", nil
+        nil, nil, true, "dark", nil, nil
       )
       color_response = APITestHelpers.boards_api.update_board(board_name, color_update_request)
       color_response.success.should_not be_nil
@@ -238,7 +238,7 @@ describe "Boards API using Generated Client" do
     it "should handle update requests for non-existent boards" do
       expect_raises(OpenAPIClient::ApiError) do
         update_request = OpenAPIClient::BoardUpdateRequest.new(
-          "new_name", nil, nil, nil, nil
+          "new_name", nil, nil, nil, nil, nil
         )
         APITestHelpers.boards_api.update_board("nonexistent", update_request)
       end

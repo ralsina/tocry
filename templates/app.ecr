@@ -187,6 +187,12 @@
                 <a href="#" @click.prevent="showNewBoardModal = true; showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">New Board</a>
                 <a href="#" @click.prevent="handleRenameBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">Rename Board</a>
                 <a href="#" @click.prevent="handleShareBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">Share Board</a>
+                <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--pico-muted-border-color);">
+                <!-- Public board controls -->
+                <a href="#" @click.prevent="makeBoardPublic(); showBoardMenu = false" x-show="!currentBoard?.public" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">🌐 Make Board Public</a>
+                <a href="#" @click.prevent="makeBoardPrivate(); showBoardMenu = false" x-show="currentBoard?.public" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">🔒 Make Board Private</a>
+                <a href="#" @click.prevent="copyPublicLink(); showBoardMenu = false" x-show="currentBoard?.public" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">📋 Copy Public Link</a>
+                <hr x-show="currentBoard?.public" style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--pico-muted-border-color);">
                 <a href="#" @click.prevent="showAddLane = true; showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: inherit;">New Lane</a>
                 <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--pico-muted-border-color);">
                 <a href="#" @click.prevent="handleDeleteBoard(); showBoardMenu = false" style="display: block; padding: 0.5rem; text-decoration: none; color: var(--pico-del-color);">Delete Board</a>
@@ -900,20 +906,24 @@
            x-transition:enter-end="opacity-100 transform scale-100"
            x-transition:leave="transition ease-in duration-200"
            x-transition:leave-start="opacity-100 transform scale-100"
-           x-transition:leave-end="opacity-0 transform scale-90">
+           x-transition:leave-end="opacity-0 transform scale-90"
+           :class="{ 'public-warning-modal': modalType === 'public-warning' }">
         <div class="modal-header">
           <h3 x-text="modalTitle"></h3>
           <button @click="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
-          <p x-text="modalMessage"></p>
+          <div x-show="modalType === 'public-warning'" style="white-space: pre-line; font-family: monospace; background: var(--pico-code-background-color); padding: 1rem; border-radius: var(--pico-border-radius); margin: 1rem 0;">
+            <span x-text="modalMessage"></span>
+          </div>
+          <p x-show="modalType !== 'public-warning'" x-text="modalMessage"></p>
           <div x-show="modalType === 'prompt'" style="margin-top: 1rem;">
             <input type="text" x-model="modalInput" x-ref="modalInputRef" @keyup.enter="confirmModal()">
           </div>
         </div>
         <div class="modal-footer">
           <button @click="closeModal()" x-text="modalCancelText" x-show="modalCancelText"></button>
-          <button @click="confirmModal()" x-text="modalConfirmText" class="primary"></button>
+          <button @click="confirmModal()" x-text="modalConfirmText" :class="modalType === 'public-warning' ? 'contrast' : 'primary'"></button>
         </div>
       </div>
     </div>
@@ -1097,6 +1107,55 @@
       color: white !important;
       font-size: 0.875rem !important;
       font-weight: 500 !important;
+    }
+
+    /* Public Warning Modal Styles */
+    .public-warning-modal {
+      border: 2px solid var(--pico-del-color) !important;
+      box-shadow: 0 0 20px rgba(220, 53, 69, 0.3) !important;
+    }
+
+    .public-warning-modal .modal-header {
+      background: linear-gradient(135deg, #dc3545, #c82333) !important;
+      color: white !important;
+      margin: -1rem -1rem 1rem -1rem !important;
+      padding: 1rem !important;
+      border-radius: calc(var(--pico-border-radius) - 1px) calc(var(--pico-border-radius) - 1px) 0 0 !important;
+    }
+
+    .public-warning-modal .modal-header h3 {
+      color: white !important;
+      margin: 0 !important;
+      font-weight: 700 !important;
+    }
+
+    .public-warning-modal .modal-header button {
+      color: white !important;
+      background: none !important;
+      border: none !important;
+      font-size: 1.5rem !important;
+      opacity: 0.8 !important;
+    }
+
+    .public-warning-modal .modal-header button:hover {
+      opacity: 1 !important;
+    }
+
+    .public-warning-modal .modal-body {
+      color: var(--pico-del-color) !important;
+      font-weight: 600 !important;
+    }
+
+    .public-warning-modal .modal-footer button.contrast {
+      background: var(--pico-del-color) !important;
+      border-color: var(--pico-del-color) !important;
+      color: white !important;
+      font-weight: 700 !important;
+    }
+
+    .public-warning-modal .modal-footer button.contrast:hover {
+      background: #c82333 !important;
+      border-color: #c82333 !important;
     }
   </style>
 </body>

@@ -26,28 +26,23 @@ generate-clients:
 	@echo "Generating API clients..."
 	./scripts/generate_clients.sh
 
-# Ensure clients are generated before building
-src/assets/api_client_ts_dist/index.js: openapi.json
-	@echo "TypeScript client not found or outdated, generating..."
+# Always regenerate clients before building to ensure latest changes are included
+generate-clients-force:
+	@echo "Generating API clients (forced)..."
 	./scripts/generate_clients.sh
 
-# Minify assets before building
-minify-assets:
-	@echo "Minifying assets..."
-	./scripts/minify_assets.sh
-
-# Main build target - ensures clients exist and assets are minified
-build: src/assets/api_client_ts_dist/index.js minify-assets
+# Main build target - regenerates clients
+build: generate-clients-force
 	@echo "Building ToCry..."
 	shards build --release
 
-# Development build (faster, no optimizations, with minified assets)
-dev: src/assets/api_client_ts_dist/index.js minify-assets
+# Development build (faster, no optimizations)
+dev: generate-clients-force
 	@echo "Building ToCry (development mode)..."
 	shards build
 
-# Run tests (also ensures clients are generated and assets are minified)
-test: src/assets/api_client_ts_dist/index.js minify-assets
+# Run tests (also ensures clients are generated)
+test: generate-clients-force
 	@echo "Running tests..."
 	./scripts/run_tests.sh
 
@@ -55,16 +50,14 @@ test: src/assets/api_client_ts_dist/index.js minify-assets
 clean:
 	@echo "Cleaning build artifacts..."
 	@./scripts/clean_build.sh
-	@echo "Removing minified assets..."
-	@rm -rf src/assets-min
 
 # Static builds for distribution
-build-static: src/assets/api_client_ts_dist/index.js minify-assets
+build-static: generate-clients-force
 	@echo "Building static binaries..."
 	./scripts/build_static.sh
 
 # Docker targets
-docker: src/assets/api_client_ts_dist/index.js
+docker: generate-clients-force
 	@echo "Building Docker images..."
 	./scripts/upload_docker.sh
 

@@ -94,5 +94,4 @@ module ToCry::Endpoints::Uploads
       file_size:         upload.file_size,
     })
   end
-
 end

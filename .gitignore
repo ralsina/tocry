@@ -27,6 +27,3 @@ main
 openapi.json
 src/assets/api_client_ts/
 src/assets/api_client_ts_dist/
-
-# Minified assets (build artifact)
-src/assets-min/

@@ -31,6 +31,33 @@ module ToCry::Endpoints::Boards
     render "templates/app.ecr"
   end
 
+  # Serve the public board view (read-only, no authentication required)
+  get "/public/:board_id" do |env|
+    board_id = env.params.url["board_id"].as(String)
+
+    begin
+      # Load the board directly using Sepia
+      board = ToCry::Board.load(board_id)
+
+      # Check if board exists and is public
+      if board.nil? || !board.public
+        ToCry::Log.info { "Public board access denied for ID '#{board_id}': #{board.nil? ? "not found" : "not public"}" }
+        env.response.status_code = 404
+        next render "templates/404.ecr"
+      end
+
+      # Make board available to ECR template
+      public_board = board
+
+      # Render the template - ECR will have access to local variables
+      render "templates/public_board.ecr"
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error loading public board with ID '#{board_id}': #{ex.message}" }
+      env.response.status_code = 500
+      render "templates/404.ecr"
+    end
+  end
+
   # API Endpoint to get all boards
   get "/api/v1/boards" do |env|
     user = ToCry.get_current_user_id(env)
@@ -102,10 +129,12 @@ module ToCry::Endpoints::Boards
     end
 
     board_details = {
+      id:                 board.sepia_id,
       name:               board.name,
       color_scheme:       board.color_scheme,
       first_visible_lane: board.first_visible_lane,
       show_hidden_lanes:  board.show_hidden_lanes,
+      public:             board.public,
       lanes:              lanes_data,
     }
 
@@ -149,9 +178,11 @@ module ToCry::Endpoints::Boards
       ToCry::Log.info { "PUT /api/v1/boards/#{old_board_name} - Raw JSON payload: #{json_body}" }
 
       payload = ToCry::Endpoints::Helpers::UpdateBoardPayload.from_json(json_body)
+      ToCry::Log.info { payload.to_s }
+
 
       # Log parsed payload fields
-      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, show_hidden_lanes: #{payload.show_hidden_lanes.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
+      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, show_hidden_lanes: #{payload.show_hidden_lanes.inspect}, public: #{payload.public.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
 
       user = ToCry.get_current_user_id(env)
       board = ToCry.board_manager.get(old_board_name, user)
@@ -193,7 +224,8 @@ module ToCry::Endpoints::Boards
       end
 
       # Handle show_hidden_lanes update
-      if show_hidden_lanes = payload.show_hidden_lanes
+      unless payload.show_hidden_lanes.nil?
+        show_hidden_lanes = payload.show_hidden_lanes.not_nil!
         board.show_hidden_lanes = show_hidden_lanes
         board.save
       end
@@ -202,6 +234,21 @@ module ToCry::Endpoints::Boards
       if color_scheme = payload.color_scheme
         board.color_scheme = color_scheme
         board.save
+      end
+
+      # Handle public update
+      unless payload.public.nil?
+        public_status = payload.public.not_nil!
+        ToCry::Log.info { "Updating board public status from #{board.public} to #{public_status}" }
+        board.public = public_status
+        board.save
+        ToCry::Log.info { "After save, board.public is #{board.public}" }
+
+        # Verify by reloading
+        reloaded = ToCry.board_manager.get(board.name, user: ToCry.get_current_user_id(env))
+        if reloaded
+          ToCry::Log.info { "Reloaded board.public is #{reloaded.public}" }
+        end
       end
 
       # Handle complete lane state management

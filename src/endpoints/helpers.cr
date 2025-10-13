@@ -188,6 +188,10 @@ module ToCry::Endpoints::Helpers
     # Examples: "Blue", "Green", "Red", etc.
     property color_scheme : String?
 
+    # Optional flag to make board publicly accessible
+    # When true, anyone with the link can view the board
+    property public : Bool?
+
     # Optional complete lane state definition
     # When provided, represents the FULL target state of board lanes:
     # - Lanes in the array are kept (created if new, reordered if existing)
