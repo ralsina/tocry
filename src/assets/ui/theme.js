@@ -17,11 +17,6 @@ export const colorSchemes = {
     light: { 'primary-rgb': '23, 162, 184' },
     dark: { 'primary-rgb': '79, 195, 214' }
   },
-  Default: {
-    // This will load pico.min.css
-    light: { 'primary-rgb': '29, 136, 254' },
-    dark: { 'primary-rgb': '82, 157, 255' }
-  },
   Fuchsia: {
     // This will load pico.fuchsia.min.css
     light: { 'primary-rgb': '255, 0, 255' },
