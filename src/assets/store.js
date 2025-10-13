@@ -522,12 +522,22 @@ function createToCryStore () {
           }
         }
 
-        // Ctrl/Cmd + K: quick search (alternative to /)
+        // Ctrl/Cmd + K: quick search or board selector (alternative to /)
         if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isEditable) {
           e.preventDefault()
-          this.$nextTick(() => {
-            this.$refs.searchInput?.focus()
-          })
+          // First try to focus search input if it exists and is visible
+          const searchInput = this.$refs.searchInput
+          if (searchInput) {
+            this.$nextTick(() => {
+              searchInput.focus()
+            })
+          } else {
+            // Otherwise focus board selector
+            const selector = document.querySelector('select[x-model="currentBoardName"]')
+            if (selector) {
+              selector.focus()
+            }
+          }
         }
 
         // Ctrl/Cmd + N: new note in first lane
@@ -815,7 +825,6 @@ function createToCryStore () {
 
         // Use state-based API to update the complete board
         await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
-        await this.saveBoard()
         this.showSuccess(`Lane "${laneName}" added successfully.`)
       } catch (error) {
         // Revert optimistic update on error
@@ -950,7 +959,6 @@ function createToCryStore () {
 
         // Use state-based API to update the complete board
         await this.api.updateBoardLanes(boardName, this.currentBoard.lanes)
-        await this.saveBoard()
         this.showSuccess('Lane added successfully')
       } catch (error) {
         // Revert optimistic update on error
@@ -991,7 +999,6 @@ function createToCryStore () {
 
         // Use state-based API to update the complete board
         await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
-        await this.saveBoard()
         this.showSuccess('Lane deleted successfully')
       } catch (error) {
         // Revert optimistic update on error
@@ -1051,7 +1058,6 @@ function createToCryStore () {
 
         // Use state-based API to update the complete board
         await this.api.updateBoardLanes(this.currentBoardName, this.currentBoard.lanes)
-        await this.saveBoard()
         this.showSuccess(`Lane renamed to "${newName}"`)
       } catch (error) {
         // Revert optimistic update on error
@@ -1126,7 +1132,6 @@ function createToCryStore () {
           laneName: this.editingNoteTitleLane
         })
 
-        await this.saveBoard()
         this.showSuccess('Note title updated')
       } catch (error) {
         // Revert optimistic update on error
@@ -1203,7 +1208,6 @@ function createToCryStore () {
           laneName: this.editingNoteContentLane
         })
 
-        await this.saveBoard()
         this.showSuccess('Note content updated')
       } catch (error) {
         // Revert optimistic update on error
@@ -2263,9 +2267,12 @@ function createToCryStore () {
 
     // Extract original filename from UUID-prefixed filename
     getAttachmentFilename (attachment) {
-      // Remove UUID prefix if present
-      const match = attachment.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_(.*)$/)
-      return match ? match[1] : attachment
+      // Remove UUID prefix if present (format: uuid_filename.ext)
+      const parts = attachment.split('_')
+      if (parts.length > 1 && parts[0].match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        return parts.slice(1).join('_')
+      }
+      return attachment
     },
 
     // Delete attachment from expanded note view
@@ -2668,13 +2675,9 @@ function createToCryStore () {
           })
 
           if (isPublic) {
-            window.dispatchEvent(new CustomEvent('show-toast', {
-              detail: { type: 'info', message: 'Note is now public!' }
-            }))
+            this.showInfo('Note is now public!')
           } else {
-            window.dispatchEvent(new CustomEvent('show-toast', {
-              detail: { type: 'info', message: 'Note is now private' }
-            }))
+            this.showInfo('Note is now private')
           }
         } catch (error) {
           console.error('Failed to update note public status:', error)
@@ -2683,15 +2686,11 @@ function createToCryStore () {
           if (this.noteEdit && this.noteEdit.sepiaId === noteId) {
             this.noteEdit.public = !isPublic
           }
-          window.dispatchEvent(new CustomEvent('show-toast', {
-            detail: { type: 'error', message: 'Failed to update note sharing' }
-          }))
+          this.showError('Failed to update note sharing')
         }
       } catch (error) {
         console.error('Error updating note public status:', error)
-        window.dispatchEvent(new CustomEvent('show-toast', {
-          detail: { type: 'error', message: 'Failed to update note sharing' }
-        }))
+        this.showError('Failed to update note sharing')
       }
     },
 
@@ -2700,10 +2699,7 @@ function createToCryStore () {
       try {
         const url = `${window.location.origin}/n/${noteId}`
         await navigator.clipboard.writeText(url)
-        // Dispatch event for toast
-        window.dispatchEvent(new CustomEvent('show-toast', {
-          detail: { type: 'success', message: 'Link copied to clipboard!' }
-        }))
+        this.showSuccess('Link copied to clipboard!')
       } catch (err) {
         console.error('Failed to copy permalink: ', err)
         // Fallback for browsers that don't support clipboard API
@@ -2718,16 +2714,10 @@ function createToCryStore () {
           textArea.select()
           document.execCommand('copy')
           document.body.removeChild(textArea)
-          // Dispatch event for toast
-          window.dispatchEvent(new CustomEvent('show-toast', {
-            detail: { type: 'success', message: 'Link copied to clipboard!' }
-          }))
+          this.showSuccess('Link copied to clipboard!')
         } catch (fallbackErr) {
           console.error('Fallback copy failed: ', fallbackErr)
-          // Dispatch event for toast
-          window.dispatchEvent(new CustomEvent('show-toast', {
-            detail: { type: 'error', message: 'Failed to copy link' }
-          }))
+          this.showError('Failed to copy link')
         }
       }
     },

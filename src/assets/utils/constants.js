@@ -7,6 +7,20 @@ export const BOARD_SELECTOR_OPTIONS = {
 }
 
 /**
+ * UUID validation regex pattern
+ */
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Validates if a string is a valid UUID
+ * @param {string} uuid The string to validate
+ * @returns {boolean} True if valid UUID format
+ */
+export function isValidUuid (uuid) {
+  return UUID_REGEX.test(uuid)
+}
+
+/**
  * Extracts the original filename from a UUID-prefixed filename.
  * Assumes the format is "uuid_originalFilename.ext".
  * @param {string} uuidPrefixedFilename The filename with a UUID prefix.
@@ -14,9 +28,8 @@ export const BOARD_SELECTOR_OPTIONS = {
  */
 export function getOriginalFileName (uuidPrefixedFilename) {
   const parts = uuidPrefixedFilename.split('_')
-  // Check if the first part looks like a UUID (e.g., "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
-  // and if there's more than one part.
-  if (parts.length > 1 && parts[0].match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+  // Check if the first part looks like a UUID and if there's more than one part.
+  if (parts.length > 1 && isValidUuid(parts[0])) {
     return parts.slice(1).join('_')
   }
   return uuidPrefixedFilename // Return as is if not in the expected format
