@@ -70,6 +70,11 @@ module ToCry
       get_board(reference.board_uuid)
     end
 
+    # Get a board by its UUID
+    def get_by_uuid(board_uuid : String) : Board?
+      get_board(board_uuid)
+    end
+
     # Creates a new board with the given name.
     # Uses Sepia-based BoardIndex and BoardReference for user-specific names.
     def create(name : String, user : String) : Board

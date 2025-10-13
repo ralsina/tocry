@@ -71,7 +71,7 @@ module ToCry
       @title = stripped_value.empty? ? "Untitled" : stripped_value
     end
 
-    property id : String = UUID.random.to_s      # Default to a random UUID
+    # Let Sepia manage the ID through sepia_id
     property title : String = ""                 # Provide a default initializer
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
@@ -82,14 +82,7 @@ module ToCry
     property end_date : String? = nil                   # Optional end date in YYYY-MM-DD format
     property priority : Priority? = nil                 # Optional priority enum
 
-    # Reimplement sepia_id to use the id property
-    def sepia_id
-      @id
-    end
-
-    def sepia_id=(value : String)
-      @id = value
-    end
+    # Use Sepia's built-in ID management
 
     # Initialize a new Note with a generated UUID.
     # board_data_dir is not part of the JSON payload, it's set by the backend context.
@@ -104,7 +97,7 @@ module ToCry
       end_date : String? = nil,
       priority : Priority? = nil,
     )
-      @sepia_id = UUID.random.to_s # Assign a random UUID as the ID (UUIDs are strings)
+      # Sepia will automatically assign a UUID via sepia_id
       self.title = title
       @tags = tags
       @content = content
@@ -115,6 +108,8 @@ module ToCry
       @end_date = end_date
       @priority = priority
     end
+
+    # Let Sepia handle save_with_generation automatically
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
     def self.from_sepia(data : String)
@@ -135,6 +130,7 @@ module ToCry
         raise "Invalid YAML frontmatter in provided data: #{ex.message}"
       end
 
+      # Create note using normal constructor
       note = Note.new(frontmatter.title, frontmatter.tags, note_content, frontmatter.expanded, frontmatter.public, frontmatter.attachments, frontmatter.start_date, frontmatter.end_date, frontmatter.priority)
       note
     end
@@ -157,7 +153,7 @@ module ToCry
     # 2. Deleting the note's source markdown file from `data/.notes/`.
     # 3. Saving the board, which will remove any symlinks pointing to the deleted note.
     def delete(board : ToCry::Board)
-      note_id_str = self.id
+      note_id_str = self.sepia_id
 
       # 1. Find and remove the note from its lane in the provided board's state.
       find_result = board.note(note_id_str)
@@ -182,17 +178,65 @@ module ToCry
     # Adds an attachment filename to the note's attachments list.
     def add_attachment(filename : String)
       @attachments << filename
-      Log.info { "Added attachment '#{filename}' to note '#{self.id}'." }
+      Log.info { "Added attachment '#{filename}' to note '#{self.sepia_id}'." }
     end
 
     # Removes an attachment filename from the note's attachments list.
     def remove_attachment(filename : String) : Nil
       if @attachments.delete(filename)
-        Log.info { "Removed attachment '#{filename}' from note '#{self.id}'." }
+        Log.info { "Removed attachment '#{filename}' from note '#{self.sepia_id}'." }
       else
-        Log.warn { "Attempted to remove non-existent attachment '#{filename}' from note '#{self.id}'." }
+        Log.warn { "Attempted to remove non-existent attachment '#{filename}' from note '#{self.sepia_id}'." }
       end
       nil
+    end
+
+    # OpenAPI schema definition for Note
+    def self.schema
+      {
+        type: "object",
+        properties: {
+          sepia_id: {type: "string", description: "Unique identifier for the note"},
+          title: {type: "string", description: "Note title"},
+          content: {type: "string", description: "Note content in markdown format"},
+          tags: {type: "array", items: {type: "string"}, description: "Array of tags for the note"},
+          expanded: {type: "boolean", description: "Whether the note is expanded to show full content"},
+          public: {type: "boolean", description: "Whether the note is publicly accessible"},
+          attachments: {type: "array", items: {type: "string"}, description: "Array of attachment filenames"},
+          start_date: {type: "string", description: "Start date in ISO format", example: "2025-01-01"},
+          end_date: {type: "string", description: "End date in ISO format", example: "2025-01-15"},
+          priority: {
+            type: "string",
+            description: "Priority level",
+            example: "medium",
+            enum: ["high", "medium", "low"]
+          }
+        }
+      }
+    end
+
+    # OpenAPI schema definition for Note data (used in POST/PUT requests)
+    def self.data_schema
+      {
+        type: "object",
+        required: ["title"],
+        properties: {
+          title: {type: "string", description: "Note title"},
+          content: {type: "string", description: "Note content in markdown format"},
+          tags: {type: "array", items: {type: "string"}, description: "Array of tags for the note"},
+          expanded: {type: "boolean", description: "Whether the note is expanded to show full content"},
+          public: {type: "boolean", description: "Whether the note is publicly accessible"},
+          attachments: {type: "array", items: {type: "string"}, description: "Array of attachment filenames"},
+          start_date: {type: "string", description: "Start date in ISO format", example: "2025-01-01"},
+          end_date: {type: "string", description: "End date in ISO format", example: "2025-01-15"},
+          priority: {
+            type: "string",
+            description: "Priority level",
+            example: "medium",
+            enum: ["high", "medium", "low"]
+          }
+        }
+      }
     end
   end
 end

@@ -11,6 +11,22 @@ integration-test/data
 integration-test/node_modules
 integration-test/test-results/
 integration-test/testdata/
+testdata-api-test/
+.test-server.log
+.test-server.pid
 .last-run.json
+# Test data and sockets
+/tmp/tocry-test-data/
+/tmp/tocry-test.sock
+*.sock
 tocry
 *.log
+main
+
+# Generated OpenAPI spec and TypeScript client
+openapi.json
+src/assets/api_client_ts/
+src/assets/api_client_ts_dist/
+
+# Minified assets (build artifact)
+src/assets-min/

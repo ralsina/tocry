@@ -47,16 +47,16 @@ describe ToCry::Board do
       loaded_lane1 = loaded_board.lanes[0]
       loaded_lane1.name.should eq("To Do")
       loaded_lane1.notes.size.should eq(2)
-      loaded_lane1.notes[0].id.should eq(note1_1.id)
+      loaded_lane1.notes[0].sepia_id.should eq(note1_1.sepia_id)
       loaded_lane1.notes[0].title.should eq(note1_1.title)
-      loaded_lane1.notes[1].id.should eq(note1_2.id)
+      loaded_lane1.notes[1].sepia_id.should eq(note1_2.sepia_id)
       loaded_lane1.notes[1].title.should eq(note1_2.title)
 
       # Check Lane 2 ("In Progress")
       loaded_lane2 = loaded_board.lanes[1]
       loaded_lane2.name.should eq("In Progress")
       loaded_lane2.notes.size.should eq(1)
-      loaded_lane2.notes[0].id.should eq(note2_1.id)
+      loaded_lane2.notes[0].sepia_id.should eq(note2_1.sepia_id)
 
       # Check Lane 3 ("Done")
       loaded_lane3 = loaded_board.lanes[2]
