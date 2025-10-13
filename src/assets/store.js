@@ -291,13 +291,17 @@ function createToCryStore () {
 
     // Modal state
     showModal: false,
-    modalType: '', // 'alert' or 'prompt'
+    modalType: '', // 'alert', 'prompt', or 'public-warning'
     modalTitle: '',
     modalMessage: '',
     modalInput: '',
     modalConfirmText: 'OK',
     modalCancelText: 'Cancel',
     modalResolve: null,
+
+    // Public board controls
+    showingPublicWarning: false,
+    publicWarningType: 'make-public', // 'make-public' or 'make-private'
 
     // Theme and color scheme
     isDarkMode: false,
@@ -713,13 +717,17 @@ function createToCryStore () {
         console.log('Loaded board data:', boardData)
 
         this.currentBoard = {
+          id: boardData.id,
           name: boardData.name,
           lanes: boardData.lanes || [],
           colorScheme: boardData.colorScheme,
           firstVisibleLane: boardData.firstVisibleLane || 0,
-          showHiddenLanes: boardData.showHiddenLanes || false
+          showHiddenLanes: boardData.showHiddenLanes || false,
+          public: boardData._public || false
         }
         console.log('Set currentBoard:', this.currentBoard)
+        console.log('Board public field from API:', boardData._public)
+        console.log('Current board public field after assignment:', this.currentBoard.public)
         this.currentBoardName = boardName
         this.boardNotFound = false
 
@@ -2566,6 +2574,9 @@ function createToCryStore () {
       if (this.modalResolve) {
         if (this.modalType === 'prompt') {
           this.modalResolve(this.modalInput)
+        } else if (this.modalType === 'public-warning') {
+          this.modalResolve(true)
+          this.showingPublicWarning = false
         } else {
           this.modalResolve(true)
         }
@@ -2580,6 +2591,7 @@ function createToCryStore () {
       this.modalMessage = ''
       this.modalInput = ''
       this.modalResolve = null
+      this.showingPublicWarning = false
     },
 
     // Helper methods to replace prompt and alert
@@ -2943,6 +2955,138 @@ function createToCryStore () {
         this.showError('Failed to update show hidden lanes setting')
         // Revert the change on error
         this.currentBoard.show_hidden_lanes = !this.currentBoard.show_hidden_lanes
+      }
+    },
+
+    // Show public board warning modal
+    showPublicWarning (type) {
+      this.publicWarningType = type
+      this.showingPublicWarning = true
+      this.modalType = 'public-warning'
+      this.showModal = true
+
+      if (type === 'make-public') {
+        this.modalTitle = '⚠️ Make Board Public?'
+        this.modalMessage = `Making this board public will expose:
+
+• ALL notes on this board (including private notes)
+• All attachments and files
+• All note content and metadata
+
+Anyone with the link will be able to view everything.
+This is a permanent action that cannot be easily undone.`
+        this.modalConfirmText = 'Make Public Anyway'
+        this.modalCancelText = 'Cancel'
+      } else {
+        this.modalTitle = '🔒 Make Board Private?'
+        this.modalMessage = `Making this board private will:
+• Disable public access to the board
+• Break any shared public links
+
+Only you and users you've explicitly shared with will be able to access this board.`
+        this.modalConfirmText = 'Make Private Anyway'
+        this.modalCancelText = 'Cancel'
+      }
+
+      return new Promise((resolve) => {
+        this.modalResolve = resolve
+      })
+    },
+
+    // Make board public
+    async makeBoardPublic () {
+      if (!this.currentBoard) return
+
+      try {
+        // Show warning and wait for user confirmation
+        const confirmed = await this.showPublicWarning('make-public')
+        if (!confirmed) return
+
+        console.log('makeBoardPublic: confirmed, setting public to true')
+        console.log('makeBoardPublic: calling API with:', { public: true })
+        // Update the board public status
+        await this.api.updateBoard(this.currentBoardName, { public: true })
+
+        console.log('makeBoardPublic: API call completed, reloading board...')
+        // Reload board data to get updated state from server
+        await this.loadBoard(this.currentBoardName)
+
+        console.log('makeBoardPublic: board reloaded, new public status:', this.currentBoard.public)
+        // Show success message
+        if (this.currentBoard.public) {
+          this.showSuccess(`Board "${this.currentBoardName}" is now public!`)
+          // Auto copy public link
+          this.copyPublicLink()
+        } else {
+          this.showError('Failed to make board public - please try again')
+        }
+      } catch (error) {
+        console.error('Error making board public:', error)
+        this.showError('Failed to make board public')
+      }
+    },
+
+    // Make board private
+    async makeBoardPrivate () {
+      if (!this.currentBoard) return
+
+      try {
+        // Show warning and wait for user confirmation
+        const confirmed = await this.showPublicWarning('make-private')
+        if (!confirmed) return
+
+        console.log('makeBoardPrivate: confirmed, setting public to false')
+        // Update the board public status
+        await this.api.updateBoard(this.currentBoardName, { public: false })
+
+        console.log('makeBoardPrivate: API call completed, reloading board...')
+        // Reload board data to get updated state from server
+        await this.loadBoard(this.currentBoardName)
+
+        console.log('makeBoardPrivate: board reloaded, new public status:', this.currentBoard.public)
+        // Show success message
+        if (!this.currentBoard.public) {
+          this.showSuccess(`Board "${this.currentBoardName}" is now private.`)
+        } else {
+          this.showError('Failed to make board private - please try again')
+        }
+      } catch (error) {
+        console.error('Error making board private:', error)
+        this.showError('Failed to make board private')
+      }
+    },
+
+    // Copy public link to clipboard
+    async copyPublicLink () {
+      try {
+        if (!this.currentBoardName) {
+          throw new Error('No board selected')
+        }
+
+        const publicUrl = `${window.location.origin}/public/${this.currentBoard.id}`
+        await navigator.clipboard.writeText(publicUrl)
+
+        this.showSuccess('Public link copied to clipboard!')
+      } catch (err) {
+        console.error('Failed to copy public link: ', err)
+        // Fallback for browsers that don't support clipboard API
+        try {
+          const publicUrl = `${window.location.origin}/public/${this.currentBoard.id}`
+          const textArea = document.createElement('textarea')
+          textArea.value = publicUrl
+          textArea.style.position = 'fixed'
+          textArea.style.opacity = '0'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          document.execCommand('copy')
+          document.body.removeChild(textArea)
+
+          this.showSuccess('Public link copied to clipboard!')
+        } catch (fallbackErr) {
+          console.error('Fallback copy failed: ', fallbackErr)
+          this.showError('Failed to copy public link')
+        }
       }
     }
 

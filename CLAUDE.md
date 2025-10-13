@@ -251,3 +251,4 @@ The project uses a manual approach for OpenAPI schema generation where each mode
 
 - remember the openapi spec is at <http://localhost:3000/v3/swagger.json>
 - There is often a self-rebuilding server in port 3000
+- to build the project, use "make" because you need to generate API clients
