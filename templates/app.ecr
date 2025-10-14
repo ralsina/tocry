@@ -276,7 +276,7 @@
       </div>
 
       <!-- Board Content -->
-      <div x-show="!loading && !error && currentBoard" class="board-container">
+      <div x-show="!loading && !error && currentBoard" x-cloak class="board-container">
         <!-- Scroll buttons -->
         <button class="scroll-button scroll-left" @click="scrollBoard('left')" x-show="canScrollLeft" x-cloak>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -639,7 +639,7 @@
 
       <!-- Empty Board - No Lanes -->
       <div x-show="!loading && !error && currentBoard && currentBoard.lanes && currentBoard.lanes.length === 0 && !loadingBoardFromUrl"
-           style="text-align: center; padding: 3rem 2rem; max-width: 800px; margin: 0 auto;">
+           x-cloak style="text-align: center; padding: 3rem 2rem; max-width: 800px; margin: 0 auto;">
         <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--pico-primary);">Create Your First Lanes</h2>
         <p style="font-size: 1.1rem; margin-bottom: 2rem; color: var(--pico-muted-color);">
           Lanes are columns where you organize your tasks. Choose a template below or create custom lanes using the menu.
@@ -693,7 +693,7 @@
       </div>
 
       <!-- Board Selection Screen -->
-      <div x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound" style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box;">
+      <div x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound" x-cloak style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box;">
         <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--pico-primary);">Select a Board</h2>
         <p style="font-size: 1.25rem; margin-bottom: 2rem; color: var(--pico-muted-color);">Choose a board to start organizing your tasks</p>
 
@@ -718,7 +718,7 @@
       </div>
 
       <!-- Welcome Screen -->
-      <div x-show="!loading && !loadingBoardFromUrl && !currentBoard && boards.length === 0 && !boardNotFound" style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto;">
+      <div x-show="!loading && !loadingBoardFromUrl && !currentBoard && boards.length === 0 && !boardNotFound" x-cloak style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto;">
         <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--pico-primary);">Welcome to ToCry</h2>
         <p style="font-size: 1.25rem; margin-bottom: 2rem; color: var(--pico-muted-color);">A simple Kanban-style task organizer</p>
 
@@ -733,7 +733,7 @@
       </div>
 
       <!-- Board Not Found Screen -->
-      <div x-show="!loading && boardNotFound" style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto;">
+      <div x-show="!loading && boardNotFound" x-cloak style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto;">
         <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--pico-del-color);">Board Not Found</h2>
         <p style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--pico-muted-color);">
           The board you're looking for doesn't exist or you don't have access to it.
