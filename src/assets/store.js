@@ -234,7 +234,7 @@ function createToCryStore () {
     boards: [],
     currentBoardName: '',
     currentBoard: null,
-    loading: false,
+    loading: true,
     loadingBoardFromUrl: false,
     error: null,
     boardNotFound: false,
@@ -519,6 +519,9 @@ function createToCryStore () {
         console.log('Auto-loading single board:', this.boards[0])
         this.currentBoardName = this.boards[0]
         await this.loadBoard(this.boards[0], true)
+      } else {
+        // No board in URL and multiple or zero boards - show selection or welcome screen
+        this.loading = false
       }
     },
 
