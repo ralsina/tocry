@@ -201,7 +201,6 @@
     .lane:hover {
       border-color: rgba(var(--primary-rgb), 0.7);
       box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.2);
-      transform: translateY(-2px);
     }
 
     .lane-header {
