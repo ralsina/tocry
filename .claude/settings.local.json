@@ -44,7 +44,8 @@
       "Bash(./generate_clients.sh:*)",
       "Bash(scripts/generate_clients.sh:*)",
       "Bash(make:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
