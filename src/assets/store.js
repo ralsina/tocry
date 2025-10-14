@@ -128,7 +128,7 @@ class BoardApiService {
 
   async getCurrentUser () {
     // This endpoint doesn't exist in the generated client, keep manual fetch
-    const response = await fetch('/api/v1/me')
+    const response = await fetch(this.resolvePath('/api/v1/me'))
 
     if (!response.ok) {
       throw new Error(`Failed to get current user: ${response.statusText}`)
@@ -385,6 +385,70 @@ function createToCryStore () {
         light: { 'primary-rgb': '112, 112, 112' },
         dark: { 'primary-rgb': '144, 144, 144' }
       }
+    },
+
+    // Base Path Detection and Resolution for Reverse Proxy Support
+    getBasePath () {
+      // Use the base path detected by the API client adapter for consistency
+      if (window.tocryBasePath !== undefined) {
+        return window.tocryBasePath || '/'
+      }
+
+      // Fallback detection if API client hasn't run yet
+      if (this._cachedBasePath) {
+        return this._cachedBasePath
+      }
+
+      const pathname = window.location.pathname
+      // Find the first occurrence of '/b/' which indicates board routing
+      const boardIndex = pathname.indexOf('/b/')
+
+      let basePath
+      if (boardIndex > 0) {
+        basePath = pathname.substring(0, boardIndex)
+      } else {
+        // If not on a board page, use the full path minus the last segment
+        basePath = pathname.replace(/\/[^/]*$/, '')
+      }
+
+      // Ensure basePath doesn't end with slash and isn't empty
+      basePath = basePath.replace(/\/$/, '')
+      if (basePath === '') {
+        basePath = '/'
+      }
+
+      // Cache the result and sync with API client
+      this._cachedBasePath = basePath
+      window.tocryBasePath = basePath
+      return basePath
+    },
+
+    resolvePath (path) {
+      // Resolve a path relative to the base path
+      const basePath = this.getBasePath()
+
+      // Ensure path starts with /
+      if (!path.startsWith('/')) {
+        path = '/' + path
+      }
+
+      // If basePath is root, just return path
+      if (basePath === '/') {
+        return path
+      }
+
+      // Combine base path and relative path
+      return basePath + path
+    },
+
+    getFullUrl (path) {
+      // Get full URL including origin
+      return window.location.origin + this.resolvePath(path)
+    },
+
+    // Clear cached base path when needed (e.g., after navigation changes)
+    clearBasePathCache () {
+      this._cachedBasePath = null
     },
 
     // Search functionality
@@ -783,7 +847,7 @@ function createToCryStore () {
         }
 
         // Update URL without reload
-        history.pushState({ board: boardName }, '', `/b/${boardName}`)
+        history.pushState({ board: boardName }, '', this.resolvePath(`/b/${boardName}`))
 
         // Initialize scroll watcher after board is loaded
         this.initScrollWatcher()
@@ -890,7 +954,7 @@ function createToCryStore () {
         this.currentBoardName = newName
         await this.loadBoard(newName)
         // Update URL
-        history.pushState({ board: newName }, '', `/b/${newName}`)
+        history.pushState({ board: newName }, '', this.resolvePath(`/b/${newName}`))
       } catch (error) {
         console.error('Error renaming board:', error)
         throw error
@@ -914,11 +978,11 @@ function createToCryStore () {
         if (this.boards.length > 0) {
           this.currentBoardName = this.boards[0]
           await this.loadBoard(this.boards[0])
-          history.pushState({ board: this.boards[0] }, '', `/b/${this.boards[0]}`)
+          history.pushState({ board: this.boards[0] }, '', this.resolvePath(`/b/${this.boards[0]}`))
         } else {
           this.currentBoard = null
           this.currentBoardName = ''
-          history.pushState({}, '', '/')
+          history.pushState({}, '', this.resolvePath('/'))
         }
       } catch (error) {
         console.error('Error deleting board:', error)
@@ -2697,14 +2761,14 @@ function createToCryStore () {
     // Copy permalink to clipboard
     async copyPermalink (noteId) {
       try {
-        const url = `${window.location.origin}/n/${noteId}`
+        const url = this.getFullUrl(`/n/${noteId}`)
         await navigator.clipboard.writeText(url)
         this.showSuccess('Link copied to clipboard!')
       } catch (err) {
         console.error('Failed to copy permalink: ', err)
         // Fallback for browsers that don't support clipboard API
         try {
-          const url = `${window.location.origin}/n/${noteId}`
+          const url = this.getFullUrl(`/n/${noteId}`)
           const textArea = document.createElement('textarea')
           textArea.value = url
           textArea.style.position = 'fixed'
@@ -3072,7 +3136,7 @@ Only you and users you've explicitly shared with will be able to access this boa
           throw new Error('No board selected')
         }
 
-        const publicUrl = `${window.location.origin}/public/${this.currentBoard.id}`
+        const publicUrl = this.getFullUrl(`/public/${this.currentBoard.id}`)
         await navigator.clipboard.writeText(publicUrl)
 
         this.showSuccess('Public link copied to clipboard!')
@@ -3080,7 +3144,7 @@ Only you and users you've explicitly shared with will be able to access this boa
         console.error('Failed to copy public link: ', err)
         // Fallback for browsers that don't support clipboard API
         try {
-          const publicUrl = `${window.location.origin}/public/${this.currentBoard.id}`
+          const publicUrl = this.getFullUrl(`/public/${this.currentBoard.id}`)
           const textArea = document.createElement('textarea')
           textArea.value = publicUrl
           textArea.style.position = 'fixed'
