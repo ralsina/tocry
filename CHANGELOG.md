@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0] - 2025-10-14
+
+### 🚀 Features
+
+- Add reverse proxy subfolder support
+- Add cache-busting for JavaScript and CSS assets
+
+### 🐛 Bug Fixes
+
+- Remove distracting lane hover animation
+- Prevent UI flashing on page load
+
 ## [0.18.0] - 2025-10-14
 
 ### 🚀 Features
@@ -17,6 +29,10 @@ All notable changes to this project will be documented in this file.
 - UI tweaks and refinements
 - Lowercase color scheme on board loading
 - Correct 'set -e' in do_release.sh to enable error exit mode
+
+### 💼 Other
+
+- Release v0.18.0
 
 ### 🚜 Refactor
 
