@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.0] - 2025-10-14
+
+### 🚀 Features
+
+- Implement new reactive UI with Alpine.js and enhanced UX
+- Implement hidden lanes functionality with visual separator
+- Gzip+minify+source maps for assets
+- Add public board sharing feature and remove minification
+- Implement polished board sharing controls
+
+### 🐛 Bug Fixes
+
+- UI tweaks and refinements
+- Lowercase color scheme on board loading
+- Correct 'set -e' in do_release.sh to enable error exit mode
+
+### 🚜 Refactor
+
+- Implement OpenAPI based API with client generation
+- Consolidate validation and reduce code duplication
+- *(frontend)* Consolidate validation and reduce code duplication
+
 ## [0.17.0] - 2025-09-28
 
 ### 🚀 Features
@@ -11,6 +33,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Implement optimistic UI updates for drag-and-drop to eliminate visual delay
+
+### 💼 Other
+
+- Release v0.17.0
 
 ### 📚 Documentation
 
