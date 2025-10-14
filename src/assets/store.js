@@ -272,6 +272,11 @@ function createToCryStore () {
     // Note Title Editing
     editingNoteTitle: null, // Store note ID being edited
     editingNoteTitleText: '',
+
+    // WebSocket State
+    webSocketConnected: false,
+
+    // Note Title Editing Lane Context
     editingNoteTitleLane: null, // Store lane name for context
 
     // Note Content Editing
@@ -854,6 +859,9 @@ function createToCryStore () {
 
         // Initialize scroll watcher after board is loaded
         this.initScrollWatcher()
+
+        // Initialize WebSocket connection for real-time updates
+        this.initWebSocket(boardName)
       } catch (error) {
         console.error('Error loading board:', error)
         if (error.message.includes('not found') || error.message.includes('404')) {
@@ -2626,6 +2634,32 @@ function createToCryStore () {
           }, 500)
         }
       })
+    },
+
+    // WebSocket methods
+    initWebSocket (boardName) {
+      // Ensure WebSocket client is available
+      if (!window.toCryWebSocket) {
+        console.warn('WebSocket client not available')
+        return
+      }
+
+      // Disconnect from any previous board
+      window.toCryWebSocket.disconnect()
+
+      // Connect to the new board
+      window.toCryWebSocket.connect(boardName)
+      this.webSocketConnected = true
+
+      console.log(`WebSocket initialized for board: ${boardName}`)
+    },
+
+    disconnectWebSocket () {
+      if (window.toCryWebSocket) {
+        window.toCryWebSocket.disconnect()
+        this.webSocketConnected = false
+        console.log('WebSocket disconnected')
+      }
     },
 
     // Modal methods

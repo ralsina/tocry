@@ -2,6 +2,7 @@
 require "kemal"
 require "../tocry"
 require "../demo"
+require "../websocket_handler"
 require "./helpers"
 
 module ToCry::Endpoints::Boards
@@ -148,6 +149,9 @@ module ToCry::Endpoints::Boards
       board.save
     end
 
+    # Broadcast board creation to WebSocket clients
+    ToCry::WebSocketHandler.broadcast_to_board(new_board_name, ToCry::WebSocketHandler::MessageType::BOARD_CREATED)
+
     ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
   end
 
@@ -166,7 +170,6 @@ module ToCry::Endpoints::Boards
 
       payload = ToCry::Endpoints::Helpers::UpdateBoardPayload.from_json(json_body)
       ToCry::Log.info { payload.to_s }
-
 
       # Log parsed payload fields
       ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, show_hidden_lanes: #{payload.show_hidden_lanes.inspect}, public: #{payload.public.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
@@ -283,7 +286,28 @@ module ToCry::Endpoints::Boards
         # Replace the board's lanes entirely with the new ordered lanes
         board.lanes = new_lanes
         board.save
+
+        # Broadcast lane update to WebSocket clients
+        lane_data = JSON::Any.new({
+          "lanes" => JSON::Any.new(new_lanes.map do |lane|
+            JSON::Any.new({
+              "name"  => JSON::Any.new(lane.name),
+              "notes" => JSON::Any.new(lane.notes.map do |note|
+                JSON::Any.new({
+                  "sepia_id" => JSON::Any.new(note.sepia_id),
+                  "title"    => JSON::Any.new(note.title),
+                  "position" => JSON::Any.new(0), # Position not tracked at this level
+                })
+              end),
+            })
+          end),
+        })
+        ToCry::WebSocketHandler.broadcast_to_board(old_board_name, ToCry::WebSocketHandler::MessageType::LANE_UPDATED, lane_data)
       end
+
+      # Broadcast board update to WebSocket clients (use the potentially renamed board)
+      final_board_name = old_board_name
+      ToCry::WebSocketHandler.broadcast_to_board(final_board_name, ToCry::WebSocketHandler::MessageType::BOARD_UPDATED)
 
       ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
     rescue ex
@@ -299,6 +323,10 @@ module ToCry::Endpoints::Boards
   delete "/api/v1/boards/:board_name" do |env|
     board_name = env.params.url["board_name"].as(String)
     user = ToCry.get_current_user_id(env)
+
+    # Broadcast board deletion to WebSocket clients before actually deleting
+    ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::BOARD_DELETED)
+
     ToCry.board_manager.delete(board_name, user)
     ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
   end
