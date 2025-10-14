@@ -272,6 +272,11 @@ function createToCryStore () {
     // Note Title Editing
     editingNoteTitle: null, // Store note ID being edited
     editingNoteTitleText: '',
+
+    // WebSocket State
+    webSocketConnected: false,
+
+    // Note Title Editing Lane Context
     editingNoteTitleLane: null, // Store lane name for context
 
     // Note Content Editing
@@ -523,6 +528,19 @@ function createToCryStore () {
         // No board in URL and multiple or zero boards - show selection or welcome screen
         this.loading = false
       }
+
+      // Store initialization complete - WebSocket client will poll for availability
+      this.$nextTick(() => {
+        // Prevent multiple ready events
+        if (window.tocryStoreReady === true) {
+          return
+        }
+
+        // Set flag for easy checking
+        window.tocryStoreReady = true
+
+        console.log('[Store] Alpine store is ready - WebSocket can now connect')
+      })
     },
 
     // Global keyboard handler for enhanced navigation
@@ -854,6 +872,9 @@ function createToCryStore () {
 
         // Initialize scroll watcher after board is loaded
         this.initScrollWatcher()
+
+        // Initialize WebSocket connection for real-time updates
+        this.initWebSocket(boardName)
       } catch (error) {
         console.error('Error loading board:', error)
         if (error.message.includes('not found') || error.message.includes('404')) {
@@ -2628,6 +2649,32 @@ function createToCryStore () {
       })
     },
 
+    // WebSocket methods
+    initWebSocket (boardName) {
+      // Ensure WebSocket client is available
+      if (!window.toCryWebSocket) {
+        console.warn('WebSocket client not available')
+        return
+      }
+
+      // Disconnect from any previous board
+      window.toCryWebSocket.disconnect()
+
+      // Connect to the new board
+      window.toCryWebSocket.connect(boardName)
+      this.webSocketConnected = true
+
+      console.log(`WebSocket initialized for board: ${boardName}`)
+    },
+
+    disconnectWebSocket () {
+      if (window.toCryWebSocket) {
+        window.toCryWebSocket.disconnect()
+        this.webSocketConnected = false
+        console.log('WebSocket disconnected')
+      }
+    },
+
     // Modal methods
     showAlert (title, message, buttonText = 'OK') {
       return new Promise((resolve) => {
@@ -3168,3 +3215,6 @@ Only you and users you've explicitly shared with will be able to access this boa
 
   }
 }
+
+// Note: Store is registered via Alpine.data('toCryApp') in app.js
+// This prevents race conditions and ensures single source of truth
