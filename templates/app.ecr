@@ -43,7 +43,7 @@
       // Step 1: Load API client adapter
       function loadApiClient() {
         const apiScript = document.createElement('script');
-        apiScript.src = basePath + '/api-client-adapter.js';
+        apiScript.src = basePath + '/api-client-adapter.js?v=' + Date.now();
         apiScript.onload = () => {
           console.log('✓ API Client adapter loaded');
           waitForApiClient();
@@ -65,7 +65,7 @@
       // Step 3: Load store.js
       function loadStore() {
         const storeScript = document.createElement('script');
-        storeScript.src = basePath + '/store.js';
+        storeScript.src = basePath + '/store.js?v=' + Date.now();
         storeScript.onload = () => {
           console.log('✓ Store loaded');
           loadApp();
@@ -77,7 +77,7 @@
       // Step 4: Load app.js
       function loadApp() {
         const appScript = document.createElement('script');
-        appScript.src = basePath + '/app.js';
+        appScript.src = basePath + '/app.js?v=' + Date.now();
         appScript.onload = () => {
           console.log('✓ App loaded');
           loadAlpine();
@@ -110,7 +110,7 @@
     }
   </script>
 
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css?v=<%= Time.local.to_unix_ms %>" />
 </head>
 <body>
   <div x-data="toCryApp" x-init="init()">
