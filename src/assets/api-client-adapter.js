@@ -20,10 +20,37 @@
     Configuration
   } = await import('../../../../../../api_client_ts_dist/index.js')
 
+  // Base path detection for reverse proxy subfolder support
+  function getBasePath () {
+    if (window.tocryBasePath !== undefined) {
+      return window.tocryBasePath
+    }
+
+    const path = window.location.pathname
+    if (path.startsWith('/b/') || path.startsWith('/n/') || path === '/') {
+      // Root deployment - no subfolder
+      window.tocryBasePath = ''
+      return ''
+    }
+
+    // Extract base path for subfolder deployment
+    // Match patterns like /subfolder/, /subfolder/b/, /subfolder/n/
+    const match = path.match(/^(\/[^/]+)/)
+    if (match) {
+      window.tocryBasePath = match[1]
+      return match[1]
+    }
+
+    window.tocryBasePath = ''
+    return ''
+  }
+
   class ToCryApiClient {
     constructor (baseUrl = '') {
+      const basePath = getBasePath()
+      const fullBasePath = basePath ? `${window.location.origin}${basePath}` : (baseUrl || window.location.origin)
       const config = new Configuration({
-        basePath: baseUrl || window.location.origin
+        basePath: fullBasePath
       })
 
       this.boardsApi = new BoardsApi(config)
