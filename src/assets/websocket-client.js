@@ -119,12 +119,14 @@ class ToCryWebSocketClient {
       return
     }
 
-    // Access Alpine store safely
+    // Access Alpine store safely with retry mechanism
     try {
       // Alpine.store('tocry') is the global store instance
       const store = window.Alpine?.store?.('tocry')
       if (!store) {
-        console.warn('Alpine store not available, cannot process WebSocket message')
+        console.warn('Alpine store not available, retrying in 100ms')
+        // Retry after a short delay to allow Alpine to initialize
+        setTimeout(() => this.handleMessage(message), 100)
         return
       }
 
