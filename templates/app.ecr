@@ -68,13 +68,25 @@
         storeScript.src = basePath + '/store.js?v=' + Date.now();
         storeScript.onload = () => {
           console.log('✓ Store loaded');
-          loadApp();
+          loadWebSocket();
         };
         storeScript.onerror = () => console.error('✗ Failed to load store.js');
         document.head.appendChild(storeScript);
       }
 
-      // Step 4: Load app.js
+      // Step 4: Load WebSocket client
+      function loadWebSocket() {
+        const wsScript = document.createElement('script');
+        wsScript.src = basePath + '/websocket-client.js?v=' + Date.now();
+        wsScript.onload = () => {
+          console.log('✓ WebSocket client loaded');
+          loadApp();
+        };
+        wsScript.onerror = () => console.error('✗ Failed to load WebSocket client');
+        document.head.appendChild(wsScript);
+      }
+
+      // Step 5: Load app.js
       function loadApp() {
         const appScript = document.createElement('script');
         appScript.src = basePath + '/app.js?v=' + Date.now();
@@ -86,7 +98,7 @@
         document.head.appendChild(appScript);
       }
 
-      // Step 5: Load Alpine.js last
+      // Step 6: Load Alpine.js last
       function loadAlpine() {
         const alpineScript = document.createElement('script');
         alpineScript.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';

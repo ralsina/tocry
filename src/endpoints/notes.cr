@@ -1,6 +1,7 @@
 # /home/ralsina/code/tocry/src/endpoints/notes.cr
 require "kemal"
 require "../tocry"
+require "../websocket_handler"
 require "./helpers"
 require "uuid"       # For generating unique filenames
 require "file_utils" # For creating directories
@@ -69,6 +70,22 @@ module ToCry::Endpoints::Notes
       board.save
 
       ToCry::Log.info { "Note '#{new_note.title}' created in lane '#{lane_name}' on board '#{board_name}' by user '#{user}'" }
+
+      # Broadcast note creation to WebSocket clients
+      note_data = JSON::Any.new({
+        "sepia_id"    => JSON::Any.new(new_note.sepia_id),
+        "title"       => JSON::Any.new(new_note.title),
+        "content"     => JSON::Any.new(new_note.content),
+        "lane_name"   => JSON::Any.new(lane_name),
+        "tags"        => JSON::Any.new(new_note.tags.map { |tag| JSON::Any.new(tag) }),
+        "expanded"    => JSON::Any.new(new_note.expanded),
+        "public"      => JSON::Any.new(new_note.public),
+        "attachments" => JSON::Any.new(new_note.attachments.map { |att| JSON::Any.new(att) }),
+        "start_date"  => JSON::Any.new(new_note.start_date || ""),
+        "end_date"    => JSON::Any.new(new_note.end_date || ""),
+        "priority"    => JSON::Any.new(new_note.priority.to_s),
+      })
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_CREATED, note_data)
 
       # Return the created note with its generated ID
       note_response = {
@@ -189,6 +206,23 @@ module ToCry::Endpoints::Notes
 
       ToCry::Log.info { "Note '#{current_note.title}' updated in board '#{board_name}' by user '#{user}'" }
 
+      # Broadcast note update to WebSocket clients
+      note_data = JSON::Any.new({
+        "sepia_id"    => JSON::Any.new(current_note.sepia_id),
+        "title"       => JSON::Any.new(current_note.title),
+        "content"     => JSON::Any.new(current_note.content),
+        "lane_name"   => JSON::Any.new(payload.lane_name || current_lane.name),
+        "tags"        => JSON::Any.new(current_note.tags.map { |tag| JSON::Any.new(tag) }),
+        "expanded"    => JSON::Any.new(current_note.expanded),
+        "public"      => JSON::Any.new(current_note.public),
+        "attachments" => JSON::Any.new(current_note.attachments.map { |att| JSON::Any.new(att) }),
+        "start_date"  => JSON::Any.new(current_note.start_date || ""),
+        "end_date"    => JSON::Any.new(current_note.end_date || ""),
+        "priority"    => JSON::Any.new(current_note.priority.to_s),
+        "position"    => JSON::Any.new(payload.position || 0),
+      })
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_UPDATED, note_data)
+
       # Return the updated note
       note_response = {
         sepia_id:    current_note.sepia_id,
@@ -248,6 +282,13 @@ module ToCry::Endpoints::Notes
       board.save
 
       ToCry::Log.info { "Note '#{note_to_delete.title}' deleted from board '#{board_name}' by user '#{user}'" }
+
+      # Broadcast note deletion to WebSocket clients
+      note_data = JSON::Any.new({
+        "sepia_id"  => JSON::Any.new(note_id),
+        "lane_name" => JSON::Any.new(lane.name),
+      })
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_DELETED, note_data)
 
       ToCry::Endpoints::Helpers.success_response(env, {
         success: "Note deleted successfully.",

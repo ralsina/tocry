@@ -4,11 +4,12 @@ require "baked_file_handler"
 require "./migrations"
 require "ecr" # Required for render
 require "baked_file_system"
-require "docopt"         # Keep docopt
-require "./auth"         # Add auth (defines Google OAuth routes and current_user helper)
-require "./endpoints"    # Add this line to include your new endpoints file
-require "./auth_helpers" # New: Contains authentication mode setup functions
-require "./demo"         # Demo mode functionality
+require "docopt"              # Keep docopt
+require "./auth"              # Add auth (defines Google OAuth routes and current_user helper)
+require "./endpoints"         # Add this line to include your new endpoints file
+require "./auth_helpers"      # New: Contains authentication mode setup functions
+require "./demo"              # Demo mode functionality
+require "./websocket_handler" # WebSocket support for real-time synchronization
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
@@ -205,6 +206,12 @@ def main
     env.response.content_type = "image/svg+xml"
     env.response.headers["Cache-Control"] = "public, max-age=3600"
     placeholder_svg
+  end
+
+  # WebSocket endpoint for real-time board synchronization
+  # Usage: /ws?board=board-name
+  ws "/ws" do |socket, env|
+    ToCry::WebSocketHandler.handle_websocket(socket, env)
   end
 
   baked_asset_handler = BakedFileHandler::BakedFileHandler.new(Assets)

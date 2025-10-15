@@ -21,12 +21,15 @@ docker buildx build --platform linux/amd64,linux/arm64 -t tocry .
 
 ### Testing
 ```bash
-# Run unit tests
+# Run all tests (unit + integration)
+make test
+
+# Run unit tests only
 crystal spec
 # or use convenience script
 ./run_unit.sh
 
-# Run integration tests (requires Playwright)
+# Run integration tests only (requires Playwright)
 ./run_integration.sh
 
 # Both tests run automatically on commit (via pre-commit hooks)
@@ -252,4 +255,4 @@ The project uses a manual approach for OpenAPI schema generation where each mode
 - remember the openapi spec is at <http://localhost:3000/v3/swagger.json>
 - There is often a self-rebuilding server in port 3000
 - to build the project, use "make" because you need to generate API clients
-- to run the tests, run make test
+- to run the tests, run "make test"
