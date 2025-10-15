@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.18.0] - 2025-10-15
+## [0.21.0] - 2025-10-15
+
+### 🚀 Features
+
+- Add lane selection field to note editor modal
+- Implement dynamic lane widths with responsive design
+
+## [0.20.0] - 2025-10-15
 
 ### 🚀 Features
 
@@ -28,6 +35,7 @@ All notable changes to this project will be documented in this file.
 
 - Release v0.18.0
 - Release v0.19.0
+- Release v0.20.0
 
 ### 🚜 Refactor
 
