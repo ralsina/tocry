@@ -335,11 +335,10 @@ module ToCry::Demo
 
   # Stop the reset timer
   def self.stop_reset_timer
-    if timer = @@reset_timer
-      timer.cancel
-      @@reset_timer = nil
-      Log.info { "Demo data reset timer stopped" }
-    end
+    return unless timer = @@reset_timer
+    timer.cancel
+    @@reset_timer = nil
+    Log.info { "Demo data reset timer stopped" }
   end
 
   # Track when data was last reset

@@ -51,9 +51,7 @@ Naming/AccessorMethodName:
 Lint/NotNil:
   Description: Identifies usage of `not_nil!` calls
   Excluded:
-  - src/tocry.cr
-  - spec/board_manager_spec.cr
-  - src/main.cr
+  - spec/**/*
   Enabled: true
   Severity: Warning
 

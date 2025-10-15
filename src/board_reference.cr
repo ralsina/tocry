@@ -35,10 +35,9 @@ module ToCry
     # Override sepia_id setter (parse composite key)
     def sepia_id=(value : String)
       parts = value.split(":", 2)
-      if parts.size == 2
-        @user_id = parts[0]
-        @board_uuid = parts[1]
-      end
+      return unless parts.size == 2
+      @user_id = parts[0]
+      @board_uuid = parts[1]
     end
 
     # Check if this is an owner reference
