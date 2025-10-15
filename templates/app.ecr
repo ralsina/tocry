@@ -159,9 +159,9 @@
                    :aria-label="'Select color scheme'"
                    :aria-expanded="showColorSelector">
               </div>
-              <select x-model="currentColorScheme"
+              <select :value="currentColorScheme"
+                      @input="currentBoard.colorScheme = $event.target.value; updateColorScheme(); showColorSelector = false"
                       id="color-scheme-switcher"
-                      @change="updateColorScheme(); showColorSelector = false"
                       aria-label="Color scheme">
                 <option value="amber">Amber</option>
                 <option value="blue">Blue</option>
@@ -1065,14 +1065,29 @@
   <div x-data="{
     toasts: [],
     init() {
+      // Ensure toasts array is always available
+      if (!this.toasts || !Array.isArray(this.toasts)) {
+        this.toasts = []
+      }
+
       window.addEventListener('show-toast', (event) => {
         const { type, message } = event.detail
-        const toastId = Date.now()
+
+        // Ensure toasts array exists before pushing
+        if (!this.toasts || !Array.isArray(this.toasts)) {
+          this.toasts = []
+        }
+
+        // Use both timestamp and a random number to ensure unique IDs
+        const toastId = Date.now() + Math.random()
         this.toasts.push({ type, message, id: toastId })
 
         // Auto remove after 3 seconds
         setTimeout(() => {
-          this.toasts = this.toasts.filter(t => t.id !== toastId)
+          // Ensure toasts array still exists before filtering
+          if (this.toasts && Array.isArray(this.toasts)) {
+            this.toasts = this.toasts.filter(t => t.id !== toastId)
+          }
         }, 3000)
       })
     }

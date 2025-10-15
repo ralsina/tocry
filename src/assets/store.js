@@ -310,8 +310,6 @@ function createToCryStore () {
 
     // Theme and color scheme
     isDarkMode: false,
-    currentColorScheme: 'blue',
-    currentColor: '#1d88fe',
     showColorSelector: false,
     colorSchemes: {
       amber: {
@@ -460,6 +458,26 @@ function createToCryStore () {
     searchQuery: '',
     searchResults: [],
 
+    // Computed Properties
+    get currentColorScheme () {
+      return this.currentBoard?.colorScheme || 'blue'
+    },
+
+    get currentColor () {
+      // Compute hex color from current scheme and theme
+      const scheme = this.colorSchemes[this.currentColorScheme]
+      if (!scheme) return '#1d88fe'
+
+      const currentTheme = this.isDarkMode ? 'dark' : 'light'
+      const colors = scheme[currentTheme] || scheme.light
+      const primaryRgb = colors['primary-rgb']
+
+      if (!primaryRgb) return '#1d88fe'
+
+      const rgbValues = primaryRgb.split(',').map(v => parseInt(v.trim()))
+      return `#${rgbValues.map(v => v.toString(16).padStart(2, '0')).join('')}`
+    },
+
     // Initialize
     async init () {
       // Initialize API service
@@ -492,12 +510,8 @@ function createToCryStore () {
         document.documentElement.setAttribute('data-theme', savedTheme)
       }
 
-      // Initialize color scheme
-      const savedColorScheme = localStorage.getItem('colorScheme')
-      if (savedColorScheme && this.colorSchemes[savedColorScheme]) {
-        this.currentColorScheme = savedColorScheme
-        this.updateColorScheme()
-      }
+      // Color scheme is now handled reactively based on board data
+      // No need for separate initialization
 
       // Check if we're loading a specific board from URL
       const pathParts = window.location.pathname.split('/')
@@ -528,6 +542,18 @@ function createToCryStore () {
         // No board in URL and multiple or zero boards - show selection or welcome screen
         this.loading = false
       }
+
+      // Add reactive watcher for color scheme changes
+      this.$watch('currentBoard', (newBoard, oldBoard) => {
+        const newScheme = newBoard?.colorScheme
+        const oldScheme = oldBoard?.colorScheme
+        if (newScheme && newScheme !== oldScheme) {
+          // Delay color scheme application for smooth transition
+          setTimeout(() => {
+            this.updateColorScheme(true) // Save to backend for manual changes
+          }, 500)
+        }
+      }, { deep: true })
 
       // Store initialization complete - WebSocket client will poll for availability
       this.$nextTick(() => {
@@ -678,7 +704,7 @@ function createToCryStore () {
       return 'blue'
     },
 
-    async updateColorScheme () {
+    async updateColorScheme (saveToBackend = true) {
       // Update the Pico.css stylesheet link
       const picoThemeLink = document.querySelector(
         'link[href*="pico.min.css"], link[href*="pico."][href*=".min.css"]'
@@ -699,16 +725,12 @@ function createToCryStore () {
         const primaryRgb = colors['primary-rgb']
         if (primaryRgb) {
           document.documentElement.style.setProperty('--primary-rgb', primaryRgb)
-
-          // Convert rgb to hex for the swatch
-          const rgbValues = primaryRgb.split(',').map(v => parseInt(v.trim()))
-          this.currentColor = `#${rgbValues.map(v => v.toString(16).padStart(2, '0')).join('')}`
         }
 
         localStorage.setItem('colorScheme', this.currentColorScheme)
 
-        // Save to backend only if we have a current board
-        if (this.currentBoardName && this.currentBoardName !== '') {
+        // Save to backend only if requested and we have a current board
+        if (saveToBackend && this.currentBoardName && this.currentBoardName !== '') {
           try {
             await this.api.updateBoard(this.currentBoardName, { colorScheme: this.currentColorScheme })
           } catch (error) {
@@ -839,6 +861,10 @@ function createToCryStore () {
         console.log('Set currentBoard:', this.currentBoard)
         console.log('Board public field from API:', boardData._public)
         console.log('Current board public field after assignment:', this.currentBoard.public)
+
+        // Apply color scheme immediately to ensure lane borders are visible (don't save to backend)
+        this.updateColorScheme(false)
+
         this.currentBoardName = boardName
         this.boardNotFound = false
 
@@ -849,23 +875,9 @@ function createToCryStore () {
           })
         }
 
-        // Apply board color scheme with delay for smooth transition
-        // validatedColorScheme was already computed above
-        const schemeChanged = validatedColorScheme !== this.currentColorScheme
-        this.currentColorScheme = validatedColorScheme
-
-        if (schemeChanged) {
-          // Delay color scheme application to make it look intentional
-          setTimeout(() => {
-            this.updateColorScheme()
-            console.log('Applied board color scheme:', validatedColorScheme)
-            // Clear loadingBoardFromUrl after everything is loaded and color is applied
-            this.loadingBoardFromUrl = false
-          }, 500) // 0.5 second delay
-        } else {
-          // Clear loadingBoardFromUrl immediately if no color scheme change
-          this.loadingBoardFromUrl = false
-        }
+        // Color scheme changes are now handled automatically by the reactive watcher
+        // Clear loadingBoardFromUrl after board is loaded
+        this.loadingBoardFromUrl = false
 
         // Update URL without reload
         history.pushState({ board: boardName }, '', this.resolvePath(`/b/${boardName}`))
