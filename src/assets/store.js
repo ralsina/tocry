@@ -1547,7 +1547,7 @@ function createToCryStore () {
 
       // Show the inline modal
       this.editingNote = true
-      this.noteEdit = { ...note }
+      this.noteEdit = { ...note, currentLane: laneName }
       // Store the note ID for uploads (persists even if modal is closed)
       this.currentEditingNoteId = note.sepiaId
       this.noteEditTagsString = note.tags ? note.tags.join(', ') : ''
@@ -1681,6 +1681,16 @@ function createToCryStore () {
           content
         }
 
+        // Check if lane has changed and include it in the API call if different
+        const options = {
+          position: null
+        }
+
+        // Only include laneName if it's different from the original lane
+        if (this.noteEdit.currentLane && this.noteEdit.currentLane !== this.draggedFromLane) {
+          options.laneName = this.noteEdit.currentLane
+        }
+
         await this.api.updateNote(this.currentBoardName, noteData.sepiaId, {
           title: noteData.title,
           tags: noteData.tags || [],
@@ -1691,10 +1701,7 @@ function createToCryStore () {
           end_date: noteData.endDate || null,
           priority: noteData.priority || null,
           attachments: noteData.attachments || []
-        }, {
-          laneName: this.draggedFromLane,
-          position: null
-        })
+        }, options)
 
         this.cancelEditNote()
         await this.loadBoard(this.currentBoardName)
