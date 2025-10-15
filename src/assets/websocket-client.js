@@ -67,7 +67,10 @@ class ToCryWebSocketClient {
     }
 
     this.connectedBoard = boardName
-    this.reconnectAttempts = 0
+    // Only reset reconnectAttempts for fresh connections, not reconnections
+    if (!this.socket || this.socket.readyState === (typeof window !== 'undefined' && window.WebSocket ? window.WebSocket.CLOSED : 3)) {
+      this.reconnectAttempts = 0
+    }
     this.connectionInProgress = true
 
     // Construct WebSocket URL with proper protocol and board parameter
