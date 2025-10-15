@@ -152,15 +152,16 @@ class ToCryWebSocketClient {
     this.reconnectAttempts++
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1) // Exponential backoff
 
-    console.log(`Attempting WebSocket reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`)
+    console.log(`[${Date.now()}] Attempting WebSocket reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms for board: ${this.connectedBoard}`)
 
     // Only show reconnection notifications if we've connected successfully before
     // This prevents annoying notifications on initial page load
     if (this.hasConnectedOnce) {
-      // Prevent duplicate toasts within a short time window (500ms)
+      // Use global debounce to prevent duplicate toasts across all instances
       const now = Date.now()
-      if (now - this.lastReconnectToastTime > 500) {
-        this.lastReconnectToastTime = now
+      if (now - window.toCryWebSocketLastToastTime > 1000) { // 1 second global debounce
+        window.toCryWebSocketLastToastTime = now
+        this.lastReconnectToastTime = now // Also update local for backwards compatibility
         const store = this.getAlpineStore()
         if (store) {
           store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
@@ -338,6 +339,11 @@ class ToCryWebSocketClient {
 
     checkStore()
   }
+}
+
+// Global debouncing for reconnection toasts across all instances
+if (typeof window !== 'undefined') {
+  window.toCryWebSocketLastToastTime = 0
 }
 
 // Create global WebSocket client instance when available (singleton pattern)
