@@ -66,9 +66,12 @@ class ToCryWebSocketClient {
       return
     }
 
-    this.connectedBoard = boardName
     // Only reset reconnectAttempts for fresh connections, not reconnections
-    if (!this.socket || this.socket.readyState === (typeof window !== 'undefined' && window.WebSocket ? window.WebSocket.CLOSED : 3)) {
+    // We consider it a reconnection if we already have a connectedBoard set and have connected before
+    const isReconnection = this.connectedBoard === boardName && this.hasConnectedOnce
+
+    this.connectedBoard = boardName
+    if (!isReconnection) {
       this.reconnectAttempts = 0
     }
     this.connectionInProgress = true
@@ -125,8 +128,8 @@ class ToCryWebSocketClient {
       console.error('WebSocket error:', error)
       this.connectionInProgress = false
 
-      // Only show error notification after several failed attempts
-      if (this.reconnectAttempts >= 2) {
+      // Only show error notification after all reconnection attempts have failed
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         const store = this.getAlpineStore()
         if (store) store.showError('WebSocket connection failed after multiple attempts')
       }
@@ -154,8 +157,6 @@ class ToCryWebSocketClient {
   attemptReconnect () {
     this.reconnectAttempts++
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1) // Exponential backoff
-
-    console.log(`[${Date.now()}] Attempting WebSocket reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms for board: ${this.connectedBoard}`)
 
     // Only show reconnection notifications if we've connected successfully before
     // This prevents annoying notifications on initial page load

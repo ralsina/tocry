@@ -54,6 +54,10 @@ Lint/NotNil:
   - src/tocry.cr
   - spec/board_manager_spec.cr
   - src/main.cr
+  - spec/api/notes_spec.cr
+  - spec/api/boards_spec.cr
+  - spec/api/auth_spec.cr
+  - src/endpoints/boards.cr
   Enabled: true
   Severity: Warning
 
