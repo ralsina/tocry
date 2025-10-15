@@ -9,9 +9,8 @@ module ToCry
     normalized_data_dir = File.expand_path(ToCry.data_directory)
     normalized_path = File.expand_path(path)
 
-    unless normalized_path.starts_with?(normalized_data_dir)
-      raise "Operation on path '#{path}' is outside of the allowed data directory."
-    end
+    return if normalized_path.starts_with?(normalized_data_dir)
+    raise "Operation on path '#{path}' is outside of the allowed data directory."
   end
 
   # The BoardManager is responsible for discovering, loading, and managing

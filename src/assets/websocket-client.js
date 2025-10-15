@@ -21,6 +21,8 @@ class ToCryWebSocketClient {
     this.isConnected = false
     this.isInitialized = false
     this.connectionInProgress = false
+    this.hasConnectedOnce = false // Track if we've connected successfully before
+    this.lastReconnectToastTime = 0 // Track last reconnection toast to prevent duplicates
 
     // Mark this instance as the global one
     window.toCryWebSocketInstance = this
@@ -34,7 +36,9 @@ class ToCryWebSocketClient {
     // Validate board name
     if (!boardName || typeof boardName !== 'string' || boardName.trim() === '') {
       console.error('[WebSocket] Invalid board name provided to WebSocket connect:', boardName)
-      this.showConnectionStatus('Invalid board name', 'error')
+      // Use toast notification instead of status indicator
+      const store = this.getAlpineStore()
+      if (store) store.showError('Invalid board name for WebSocket connection')
       return
     }
 
@@ -62,8 +66,14 @@ class ToCryWebSocketClient {
       return
     }
 
+    // Only reset reconnectAttempts for fresh connections, not reconnections
+    // We consider it a reconnection if we already have a connectedBoard set and have connected before
+    const isReconnection = this.connectedBoard === boardName && this.hasConnectedOnce
+
     this.connectedBoard = boardName
-    this.reconnectAttempts = 0
+    if (!isReconnection) {
+      this.reconnectAttempts = 0
+    }
     this.connectionInProgress = true
 
     // Construct WebSocket URL with proper protocol and board parameter
@@ -79,9 +89,10 @@ class ToCryWebSocketClient {
       this.isConnected = true
       this.connectionInProgress = false
       this.reconnectAttempts = 0
+      this.hasConnectedOnce = true // Mark that we've connected successfully at least once
 
-      // Show connection indicator
-      this.showConnectionStatus('Connected', 'success')
+      // Don't show success notification - connections should be silent
+      // Only show errors for connection problems
     }
 
     this.socket.onmessage = (event) => {
@@ -97,7 +108,12 @@ class ToCryWebSocketClient {
       console.log(`WebSocket disconnected for board: ${boardName}, code: ${event.code}, reason: ${event.reason}`)
       this.isConnected = false
       this.connectionInProgress = false
-      this.showConnectionStatus('Disconnected', 'error')
+
+      // Only show error toast for disconnection after several failed attempts (except normal closures)
+      if (event.code !== 1000 && event.code !== 1001 && this.reconnectAttempts >= 2) {
+        const store = this.getAlpineStore()
+        if (store) store.showError('WebSocket connection lost')
+      }
 
       // Attempt to reconnect if not a normal closure and not due to access denied
       if (event.code !== 1000 && event.code !== 1001 && event.code !== 1011 && this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -111,7 +127,12 @@ class ToCryWebSocketClient {
     this.socket.onerror = (error) => {
       console.error('WebSocket error:', error)
       this.connectionInProgress = false
-      this.showConnectionStatus('Connection Error', 'error')
+
+      // Only show error notification after all reconnection attempts have failed
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        const store = this.getAlpineStore()
+        if (store) store.showError('WebSocket connection failed after multiple attempts')
+      }
     }
   }
 
@@ -127,7 +148,7 @@ class ToCryWebSocketClient {
     this.connectedBoard = null
     this.connectionInProgress = false
     this.reconnectAttempts = 0
-    this.hideConnectionStatus()
+    this.hasConnectedOnce = false // Reset flag when manually disconnecting
   }
 
   /**
@@ -137,8 +158,20 @@ class ToCryWebSocketClient {
     this.reconnectAttempts++
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1) // Exponential backoff
 
-    console.log(`Attempting WebSocket reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`)
-    this.showConnectionStatus(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`, 'warning')
+    // Only show reconnection notifications if we've connected successfully before
+    // This prevents annoying notifications on initial page load
+    if (this.hasConnectedOnce) {
+      // Use global debounce to prevent duplicate toasts across all instances
+      const now = Date.now()
+      if (now - window.toCryWebSocketLastToastTime > 1000) { // 1 second global debounce
+        window.toCryWebSocketLastToastTime = now
+        this.lastReconnectToastTime = now // Also update local for backwards compatibility
+        const store = this.getAlpineStore()
+        if (store) {
+          store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+        }
+      }
+    }
 
     setTimeout(() => {
       if (this.connectedBoard) {
@@ -167,7 +200,6 @@ class ToCryWebSocketClient {
       if (!store) {
         console.error('Alpine store not available - this should not happen with proper initialization')
         // Log error but don't retry infinitely
-        this.showConnectionStatus('Store unavailable', 'error')
         return
       }
 
@@ -224,72 +256,6 @@ class ToCryWebSocketClient {
       }
     } catch (error) {
       console.error('Error processing WebSocket message:', error)
-    }
-  }
-
-  /**
-   * Show connection status indicator
-   * @param {string} message - Status message
-   * @param {string} type - Status type: 'success', 'warning', 'error'
-   */
-  showConnectionStatus (message, type) {
-    // Remove existing status indicator
-    this.hideConnectionStatus()
-
-    const indicator = document.createElement('div')
-    indicator.id = 'websocket-status'
-    indicator.className = `websocket-status websocket-status--${type}`
-    indicator.textContent = message
-
-    // Add styles
-    indicator.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      z-index: 9999;
-      transition: all 0.3s ease;
-    `
-
-    // Set color based on type
-    switch (type) {
-      case 'success':
-        indicator.style.backgroundColor = '#10b981'
-        indicator.style.color = 'white'
-        break
-      case 'warning':
-        indicator.style.backgroundColor = '#f59e0b'
-        indicator.style.color = 'white'
-        break
-      case 'error':
-        indicator.style.backgroundColor = '#ef4444'
-        indicator.style.color = 'white'
-        break
-      default:
-        indicator.style.backgroundColor = '#6b7280'
-        indicator.style.color = 'white'
-    }
-
-    document.body.appendChild(indicator)
-
-    // Auto-hide success messages after 3 seconds
-    if (type === 'success') {
-      setTimeout(() => {
-        this.hideConnectionStatus()
-      }, 3000)
-    }
-  }
-
-  /**
-   * Hide connection status indicator
-   */
-  hideConnectionStatus () {
-    const indicator = document.getElementById('websocket-status')
-    if (indicator) {
-      indicator.remove()
     }
   }
 
@@ -365,7 +331,9 @@ class ToCryWebSocketClient {
 
       if (attempts >= maxAttempts) {
         console.error('Alpine store did not become ready within timeout period')
-        this.showConnectionStatus('Store initialization timeout', 'error')
+        // Use toast notification for initialization timeout
+        const store = this.getAlpineStore()
+        if (store) store.showError('WebSocket initialization failed')
         return
       }
 
@@ -377,13 +345,22 @@ class ToCryWebSocketClient {
   }
 }
 
+// Global debouncing for reconnection toasts across all instances
+if (typeof window !== 'undefined') {
+  window.toCryWebSocketLastToastTime = 0
+}
+
 // Create global WebSocket client instance when available (singleton pattern)
 if (typeof window !== 'undefined') {
-  if (!window.toCryWebSocket) {
+  if (!window.toCryWebSocketInstance) {
     console.log('Creating WebSocket client instance')
-    window.toCryWebSocket = new ToCryWebSocketClient()
+    window.toCryWebSocketInstance = new ToCryWebSocketClient()
+    // Also expose as toCryWebSocket for backwards compatibility
+    window.toCryWebSocket = window.toCryWebSocketInstance
   } else {
     console.log('WebSocket client instance already exists, reusing existing')
+    // Ensure both references point to the same instance
+    window.toCryWebSocket = window.toCryWebSocketInstance
   }
 }
 

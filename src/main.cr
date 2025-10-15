@@ -63,8 +63,8 @@ def main
       data_path = File.join(home_dir, ".local", "share", "tocry")
     end
   end
-  safe_mode = args["--safe-mode"] == true # Safely parse --safe-mode argument as boolean
-  demo_mode = args["--demo"] == true      # Parse --demo argument as boolean
+  safe_mode = !!args["--safe-mode"] # Safely parse --safe-mode argument as boolean
+  demo_mode = !!args["--demo"]      # Parse --demo argument as boolean
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
@@ -228,8 +228,11 @@ def main
     Kemal.run do |config|
       # Don't bind to TCP port when using Unix socket
       config.port = 0
-      server = config.server.not_nil!
-      server.bind_unix(unix_socket_path)
+      if server = config.server
+        server.bind_unix(unix_socket_path)
+      else
+        ToCry::Log.error { "Failed to get server instance for Unix socket binding" }
+      end
     end
   else
     # Use standard TCP server

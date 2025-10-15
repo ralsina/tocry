@@ -556,7 +556,7 @@ module ToCry::OpenAPIManual
               success:           {type: "boolean", description: "Success status", example: true},
               filename:          {type: "string", description: "Stored filename", example: "abc123.pdf"},
               original_filename: {type: "string", description: "Original filename", example: "document.pdf"},
-              file_size:         {type: "integer", description: "File size in bytes", example: 1024000},
+              file_size:         {type: "integer", description: "File size in bytes", example: 1_024_000},
               note_id:           {type: "string", description: "Note ID"},
               board_name:        {type: "string", description: "Board name"},
               url:               {type: "string", description: "URL to access attachment", example: "/api/v1/boards/MyBoard/note/123/abc123.pdf"},
@@ -568,7 +568,7 @@ module ToCry::OpenAPIManual
               url:               {type: "string", description: "Public URL of the uploaded image", example: "/uploads/abc123.jpg"},
               upload_id:         {type: "string", description: "Unique upload identifier", example: "abc123"},
               original_filename: {type: "string", description: "Original filename", example: "photo.jpg"},
-              file_size:         {type: "integer", description: "File size in bytes", example: 512000},
+              file_size:         {type: "integer", description: "File size in bytes", example: 512_000},
             },
           },
           AuthModeResponse: {

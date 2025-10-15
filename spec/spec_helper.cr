@@ -10,14 +10,12 @@ TEST_DATA_DIR = "/tmp/tocry-test-data"
 
 # Clean up test data directory before tests
 def cleanup_test_data
-  if Dir.exists?(TEST_DATA_DIR)
-    FileUtils.rm_rf(TEST_DATA_DIR)
-  end
+  return unless Dir.exists?(TEST_DATA_DIR)
+  FileUtils.rm_rf(TEST_DATA_DIR)
 end
 
 # Clean up at the start
 cleanup_test_data
-
 
 # Configure the generated API client for tests
 def configure_test_client

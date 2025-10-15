@@ -90,11 +90,9 @@ module ToCry::Endpoints::Helpers
     if name.includes?('/') || name.includes?('\\')
       raise MissingBodyError.new("Name cannot contain path separators ('/' or '\\').")
     end
-    unless allow_dots
-      if name.starts_with?('.')
-        raise MissingBodyError.new("Name cannot start with a dot ('.').")
-      end
-    end
+    return if allow_dots
+    return unless name.starts_with?('.')
+    raise MissingBodyError.new("Name cannot start with a dot ('.').")
   end
 
   # Helper function to safely get the JSON request body.

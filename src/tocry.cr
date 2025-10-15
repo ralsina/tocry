@@ -34,7 +34,11 @@ module ToCry
 
   # Getter for the BoardManager instance.
   def self.board_manager : BoardManager
-    @@_board_manager.not_nil!
+    if manager = @@_board_manager
+      manager
+    else
+      raise "BoardManager not initialized. Call ToCry.board_manager= first."
+    end
   end
 
   # Setter for the BoardManager instance.

@@ -213,8 +213,7 @@ module ToCry::Endpoints::Boards
       end
 
       # Handle show_hidden_lanes update
-      unless payload.show_hidden_lanes.nil?
-        show_hidden_lanes = payload.show_hidden_lanes.not_nil!
+      if show_hidden_lanes = payload.show_hidden_lanes
         board.show_hidden_lanes = show_hidden_lanes
         board.save
       end
@@ -226,8 +225,7 @@ module ToCry::Endpoints::Boards
       end
 
       # Handle public update
-      unless payload.public.nil?
-        public_status = payload.public.not_nil!
+      if public_status = payload.public
         ToCry::Log.info { "Updating board public status from #{board.public} to #{public_status}" }
         board.public = public_status
         board.save
