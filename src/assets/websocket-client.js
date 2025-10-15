@@ -21,6 +21,7 @@ class ToCryWebSocketClient {
     this.isConnected = false
     this.isInitialized = false
     this.connectionInProgress = false
+    this.hasConnectedOnce = false // Track if we've connected successfully before
 
     // Mark this instance as the global one
     window.toCryWebSocketInstance = this
@@ -81,6 +82,7 @@ class ToCryWebSocketClient {
       this.isConnected = true
       this.connectionInProgress = false
       this.reconnectAttempts = 0
+      this.hasConnectedOnce = true // Mark that we've connected successfully at least once
 
       // Don't show success notification - connections should be silent
       // Only show errors for connection problems
@@ -139,6 +141,7 @@ class ToCryWebSocketClient {
     this.connectedBoard = null
     this.connectionInProgress = false
     this.reconnectAttempts = 0
+    this.hasConnectedOnce = false // Reset flag when manually disconnecting
   }
 
   /**
@@ -150,10 +153,13 @@ class ToCryWebSocketClient {
 
     console.log(`Attempting WebSocket reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`)
 
-    // Use toast notification for reconnection attempts (will auto-dismiss)
-    const store = this.getAlpineStore()
-    if (store) {
-      store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+    // Only show reconnection notifications if we've connected successfully before
+    // This prevents annoying notifications on initial page load
+    if (this.hasConnectedOnce) {
+      const store = this.getAlpineStore()
+      if (store) {
+        store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+      }
     }
 
     setTimeout(() => {
