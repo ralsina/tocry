@@ -929,6 +929,14 @@
 
           <div style="margin-bottom: 1rem; display: flex; gap: 1rem;">
             <div style="flex: 1;">
+              <label>Lane</label>
+              <select x-model="noteEdit.currentLane">
+                <template x-for="lane in currentBoard?.lanes || []" :key="lane.name">
+                  <option :value="lane.name" x-text="lane.name"></option>
+                </template>
+              </select>
+            </div>
+            <div style="flex: 1;">
               <label>Priority</label>
               <select x-model="noteEdit.priority">
                 <option value="">None</option>
