@@ -159,9 +159,9 @@
                    :aria-label="'Select color scheme'"
                    :aria-expanded="showColorSelector">
               </div>
-              <select x-model="currentColorScheme"
+              <select :value="currentColorScheme"
+                      @input="currentBoard.colorScheme = $event.target.value; updateColorScheme(); showColorSelector = false"
                       id="color-scheme-switcher"
-                      @change="updateColorScheme(); showColorSelector = false"
                       aria-label="Color scheme">
                 <option value="amber">Amber</option>
                 <option value="blue">Blue</option>
