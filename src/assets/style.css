@@ -188,14 +188,14 @@
       background: color-mix(in srgb, var(--pico-card-background-color) 85%, rgba(var(--primary-rgb), 0.15) 15%);
       border: 2px solid rgba(var(--primary-rgb), 0.4);
       border-radius: var(--pico-border-radius);
-      min-width: 280px;
-      max-width: 280px;
+      min-width: 250px;
       height: 100%;
       display: flex;
       flex-direction: column;
       position: relative;
-      transition: all 0.2s ease;
+      transition: width 0.3s ease, all 0.2s ease;
       box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
+      flex-shrink: 0;
     }
 
     .lane:hover {
