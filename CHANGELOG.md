@@ -2,19 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.19.0] - 2025-10-14
-
-### 🚀 Features
-
-- Add reverse proxy subfolder support
-- Add cache-busting for JavaScript and CSS assets
-
-### 🐛 Bug Fixes
-
-- Remove distracting lane hover animation
-- Prevent UI flashing on page load
-
-## [0.18.0] - 2025-10-14
+## [0.18.0] - 2025-10-15
 
 ### 🚀 Features
 
@@ -23,16 +11,23 @@ All notable changes to this project will be documented in this file.
 - Gzip+minify+source maps for assets
 - Add public board sharing feature and remove minification
 - Implement polished board sharing controls
+- Add reverse proxy subfolder support
+- Add cache-busting for JavaScript and CSS assets
+- Implement WebSocket real-time synchronization
+- Implement color scheme reactivity and improve WebSocket notifications
 
 ### 🐛 Bug Fixes
 
 - UI tweaks and refinements
 - Lowercase color scheme on board loading
 - Correct 'set -e' in do_release.sh to enable error exit mode
+- Remove distracting lane hover animation
+- Prevent UI flashing on page load
 
 ### 💼 Other
 
 - Release v0.18.0
+- Release v0.19.0
 
 ### 🚜 Refactor
 
