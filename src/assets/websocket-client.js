@@ -22,6 +22,7 @@ class ToCryWebSocketClient {
     this.isInitialized = false
     this.connectionInProgress = false
     this.hasConnectedOnce = false // Track if we've connected successfully before
+    this.lastReconnectToastTime = 0 // Track last reconnection toast to prevent duplicates
 
     // Mark this instance as the global one
     window.toCryWebSocketInstance = this
@@ -156,9 +157,14 @@ class ToCryWebSocketClient {
     // Only show reconnection notifications if we've connected successfully before
     // This prevents annoying notifications on initial page load
     if (this.hasConnectedOnce) {
-      const store = this.getAlpineStore()
-      if (store) {
-        store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+      // Prevent duplicate toasts within a short time window (500ms)
+      const now = Date.now()
+      if (now - this.lastReconnectToastTime > 500) {
+        this.lastReconnectToastTime = now
+        const store = this.getAlpineStore()
+        if (store) {
+          store.showInfo(`Reconnecting to board... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+        }
       }
     }
 
@@ -336,11 +342,15 @@ class ToCryWebSocketClient {
 
 // Create global WebSocket client instance when available (singleton pattern)
 if (typeof window !== 'undefined') {
-  if (!window.toCryWebSocket) {
+  if (!window.toCryWebSocketInstance) {
     console.log('Creating WebSocket client instance')
-    window.toCryWebSocket = new ToCryWebSocketClient()
+    window.toCryWebSocketInstance = new ToCryWebSocketClient()
+    // Also expose as toCryWebSocket for backwards compatibility
+    window.toCryWebSocket = window.toCryWebSocketInstance
   } else {
     console.log('WebSocket client instance already exists, reusing existing')
+    // Ensure both references point to the same instance
+    window.toCryWebSocket = window.toCryWebSocketInstance
   }
 }
 
