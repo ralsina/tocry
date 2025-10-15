@@ -7,12 +7,23 @@
 
 class ToCryWebSocketClient {
   constructor () {
+    // Prevent multiple instances
+    if (window.toCryWebSocketInstance) {
+      console.warn('WebSocket client instance already exists, reusing existing instance')
+      return window.toCryWebSocketInstance
+    }
+
     this.socket = null
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
     this.reconnectDelay = 1000 // 1 second
     this.connectedBoard = null
     this.isConnected = false
+    this.isInitialized = false
+    this.connectionInProgress = false
+
+    // Mark this instance as the global one
+    window.toCryWebSocketInstance = this
   }
 
   /**
@@ -20,8 +31,19 @@ class ToCryWebSocketClient {
    * @param {string} boardName - The name of the board to connect to
    */
   connect (boardName) {
+    // Validate board name
+    if (!boardName || typeof boardName !== 'string' || boardName.trim() === '') {
+      console.error('[WebSocket] Invalid board name provided to WebSocket connect:', boardName)
+      this.showConnectionStatus('Invalid board name', 'error')
+      return
+    }
+
+    // Prevent duplicate connections
+    if (this.connectionInProgress) {
+      return
+    }
+
     if (this.socket && this.connectedBoard === boardName && this.isConnected) {
-      // Already connected to this board
       return
     }
 
@@ -30,8 +52,19 @@ class ToCryWebSocketClient {
       this.disconnect()
     }
 
+    // Wait for Alpine store to be ready before connecting
+    if (!this.isStoreReady()) {
+      this.connectionInProgress = true
+      this.waitForStore(() => {
+        this.connectionInProgress = false
+        this.connect(boardName)
+      })
+      return
+    }
+
     this.connectedBoard = boardName
     this.reconnectAttempts = 0
+    this.connectionInProgress = true
 
     // Construct WebSocket URL with proper protocol and board parameter
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -44,6 +77,7 @@ class ToCryWebSocketClient {
     this.socket.onopen = () => {
       console.log(`WebSocket connected for board: ${boardName}`)
       this.isConnected = true
+      this.connectionInProgress = false
       this.reconnectAttempts = 0
 
       // Show connection indicator
@@ -62,16 +96,21 @@ class ToCryWebSocketClient {
     this.socket.onclose = (event) => {
       console.log(`WebSocket disconnected for board: ${boardName}, code: ${event.code}, reason: ${event.reason}`)
       this.isConnected = false
+      this.connectionInProgress = false
       this.showConnectionStatus('Disconnected', 'error')
 
-      // Attempt to reconnect if not a normal closure
-      if (event.code !== 1000 && event.code !== 1001 && this.reconnectAttempts < this.maxReconnectAttempts) {
+      // Attempt to reconnect if not a normal closure and not due to access denied
+      if (event.code !== 1000 && event.code !== 1001 && event.code !== 1011 && this.reconnectAttempts < this.maxReconnectAttempts) {
         this.attemptReconnect()
+      } else if (event.code === 1011) {
+        // Don't attempt reconnect for access denied errors
+        console.log('WebSocket access denied, not attempting reconnection')
       }
     }
 
     this.socket.onerror = (error) => {
       console.error('WebSocket error:', error)
+      this.connectionInProgress = false
       this.showConnectionStatus('Connection Error', 'error')
     }
   }
@@ -86,6 +125,8 @@ class ToCryWebSocketClient {
     }
     this.isConnected = false
     this.connectedBoard = null
+    this.connectionInProgress = false
+    this.reconnectAttempts = 0
     this.hideConnectionStatus()
   }
 
@@ -119,14 +160,14 @@ class ToCryWebSocketClient {
       return
     }
 
-    // Access Alpine store safely with retry mechanism
+    // Access Alpine store safely - get the actual working store instance
     try {
-      // Alpine.store('tocry') is the global store instance
-      const store = window.Alpine?.store?.('tocry')
+      // Get the actual working store from Alpine.data('toCryApp')
+      const store = this.getAlpineStore()
       if (!store) {
-        console.warn('Alpine store not available, retrying in 100ms')
-        // Retry after a short delay to allow Alpine to initialize
-        setTimeout(() => this.handleMessage(message), 100)
+        console.error('Alpine store not available - this should not happen with proper initialization')
+        // Log error but don't retry infinitely
+        this.showConnectionStatus('Store unavailable', 'error')
         return
       }
 
@@ -138,7 +179,7 @@ class ToCryWebSocketClient {
         case 'board_created':
           console.log('Board created notification received')
           // Refresh board list if user is on main page
-          if (store.currentBoard === null) {
+          if (store.currentBoardName === null) {
             store.loadBoards()
           }
           break
@@ -146,7 +187,7 @@ class ToCryWebSocketClient {
         case 'board_updated':
           console.log('Board updated notification received')
           // If we're viewing this board, refresh it
-          if (store.currentBoard === message.boardName) {
+          if (store.currentBoardName === message.boardName) {
             store.loadBoard(message.boardName)
           }
           break
@@ -154,8 +195,9 @@ class ToCryWebSocketClient {
         case 'board_deleted':
           console.log('Board deleted notification received')
           // If we were viewing this board, redirect to main page
-          if (store.currentBoard === message.boardName) {
+          if (store.currentBoardName === message.boardName) {
             store.currentBoard = null
+            store.currentBoardName = null
             store.board = null
             store.loadBoards()
             // Update URL to root
@@ -172,7 +214,7 @@ class ToCryWebSocketClient {
         case 'lane_updated':
           console.log(`${message.type} notification received`)
           // If we're viewing this board, refresh it to get latest changes
-          if (store.currentBoard === message.boardName) {
+          if (store.currentBoardName === message.boardName) {
             store.loadBoard(message.boardName)
           }
           break
@@ -258,11 +300,91 @@ class ToCryWebSocketClient {
   isSocketConnected () {
     return this.isConnected && this.socket && this.socket.readyState === (typeof window !== 'undefined' && window.WebSocket ? window.WebSocket.OPEN : 1)
   }
+
+  /**
+   * Get the actual working Alpine store instance
+   * @returns {Object|null}
+   */
+  getAlpineStore () {
+    try {
+      // Try to get the store from the DOM - Alpine.data('toCryApp') creates the actual working store
+      if (window.Alpine && window.Alpine.data) {
+        // Look for an element with the toCryApp data in the DOM
+        const appElement = document.querySelector('[x-data*="toCryApp"]') || document.querySelector('[x-data]')
+        if (appElement && appElement._x_dataStack) {
+          // Get the store from Alpine's internal data stack
+          const toCryApp = appElement._x_dataStack.find(data => data && typeof data.loadBoards === 'function')
+          if (toCryApp) {
+            return toCryApp
+          }
+        }
+
+        // Fallback: try to get the data directly from Alpine
+        const storeData = window.Alpine.data('toCryApp')
+        if (storeData && typeof storeData === 'function') {
+          // Create an instance to get the store methods
+          return storeData()
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('Error accessing Alpine store:', error)
+      return null
+    }
+  }
+
+  /**
+   * Check if Alpine store is ready
+   * @returns {boolean}
+   */
+  isStoreReady () {
+    // Check if Alpine is initialized and we can access the store
+    if (!window.Alpine || !window.Alpine.data) {
+      return false
+    }
+
+    const store = this.getAlpineStore()
+    return store !== null && typeof store.loadBoards === 'function'
+  }
+
+  /**
+   * Wait for Alpine store to become ready
+   * @param {Function} callback - Function to call when store is ready
+   */
+  waitForStore (callback) {
+    let attempts = 0
+    const maxAttempts = 50 // 2.5 seconds max wait
+
+    const checkStore = () => {
+      attempts++
+
+      if (this.isStoreReady()) {
+        callback()
+        return
+      }
+
+      if (attempts >= maxAttempts) {
+        console.error('Alpine store did not become ready within timeout period')
+        this.showConnectionStatus('Store initialization timeout', 'error')
+        return
+      }
+
+      // Check again in 50ms
+      setTimeout(checkStore, 50)
+    }
+
+    checkStore()
+  }
 }
 
-// Create global WebSocket client instance when available
+// Create global WebSocket client instance when available (singleton pattern)
 if (typeof window !== 'undefined') {
-  window.toCryWebSocket = new ToCryWebSocketClient()
+  if (!window.toCryWebSocket) {
+    console.log('Creating WebSocket client instance')
+    window.toCryWebSocket = new ToCryWebSocketClient()
+  } else {
+    console.log('WebSocket client instance already exists, reusing existing')
+  }
 }
 
 // Export for use in other modules

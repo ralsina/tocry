@@ -528,6 +528,19 @@ function createToCryStore () {
         // No board in URL and multiple or zero boards - show selection or welcome screen
         this.loading = false
       }
+
+      // Store initialization complete - WebSocket client will poll for availability
+      this.$nextTick(() => {
+        // Prevent multiple ready events
+        if (window.tocryStoreReady === true) {
+          return
+        }
+
+        // Set flag for easy checking
+        window.tocryStoreReady = true
+
+        console.log('[Store] Alpine store is ready - WebSocket can now connect')
+      })
     },
 
     // Global keyboard handler for enhanced navigation
@@ -3202,3 +3215,6 @@ Only you and users you've explicitly shared with will be able to access this boa
 
   }
 }
+
+// Note: Store is registered via Alpine.data('toCryApp') in app.js
+// This prevents race conditions and ensures single source of truth
