@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.0] - 2025-10-16
+
+### 🚀 Features
+
+- Implement comprehensive WebSocket echo prevention system
+
+### 🐛 Bug Fixes
+
+- *(boards)* Correctly make boards private
+
+### 🚜 Refactor
+
+- Change note content interaction from single-click to double-click
+
 ## [0.22.0] - 2025-10-16
 
 ### 🚀 Features
@@ -12,6 +26,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Correct ameba disable rule name from UselessAssignment to UselessAssign
+
+### 💼 Other
+
+- Release v0.22.0
 
 ### 🚜 Refactor
 
