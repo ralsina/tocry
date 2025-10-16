@@ -879,8 +879,11 @@ function createToCryStore () {
           })
         } else {
           // Just update lane widths if no initial scroll needed
+          // Use multiple nextTicks to ensure DOM is fully rendered after WebSocket updates
           this.$nextTick(() => {
-            this.updateLaneWidths()
+            this.$nextTick(() => {
+              this.updateLaneWidths()
+            })
           })
         }
 

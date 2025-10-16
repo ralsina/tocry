@@ -185,6 +185,11 @@ module ToCry::Endpoints::Helpers
   struct LanePayload
     include JSON::Serializable
 
+    # The unique identifier for the lane (UUID)
+    # If provided, this is used to identify existing lanes during updates
+    # If not provided, a new lane will be created
+    property lane_id : String?
+
     # The name/title of the lane (e.g., "Todo", "In Progress", "Done")
     property name : String
 

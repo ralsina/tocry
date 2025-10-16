@@ -84,9 +84,9 @@ describe "Boards API using Generated Client" do
       APITestHelpers.boards_api.create_board(create_request)
 
       lanes = [
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Todo"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "In Progress"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Done"),
       ]
 
       update_request = OpenAPIClient::BoardUpdateRequest.new(
@@ -185,11 +185,11 @@ describe "Boards API using Generated Client" do
 
       # 3. Add kanban lanes
       lanes = [
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Backlog"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Review"),
-        OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Backlog"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Todo"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "In Progress"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Review"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Done"),
       ]
       update_request = OpenAPIClient::BoardUpdateRequest.new(
         nil, 0, nil, false, lanes

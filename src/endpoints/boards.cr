@@ -96,8 +96,9 @@ module ToCry::Endpoints::Boards
     # Build complete board representation with lanes and notes
     lanes_data = board.lanes.map do |lane|
       {
-        name:  lane.name,
-        notes: lane.notes.map do |note|
+        lane_id: lane.sepia_id,
+        name:    lane.name,
+        notes:   lane.notes.map do |note|
           {
             sepia_id:    note.sepia_id,
             title:       note.title,
@@ -243,27 +244,22 @@ module ToCry::Endpoints::Boards
             next ToCry::Endpoints::Helpers.error_response(env, "Lane name cannot be empty.", 400)
           end
 
-          # Find existing lane with this name on this board
-          existing_lane = board.lanes.find { |lane| lane.name == lane_name }
+          existing_lane = nil
+
+          # Try to find existing lane by lane_id first (preferred method)
+          if lane_id = lane_payload.lane_id
+            existing_lane = board.lanes.find { |lane| lane.sepia_id == lane_id }
+          end
+
+          # Fallback: try to find by name (for backward compatibility during migration)
+          if existing_lane.nil?
+            existing_lane = board.lanes.find { |lane| lane.name == lane_name }
+          end
 
           if existing_lane
-            # Move existing lane to new position (create fresh Lane object)
-            new_lane = ToCry::Lane.new(existing_lane.name)
-            # Copy all notes to the new lane (creating fresh Note instances)
-            new_lane.notes = existing_lane.notes.map do |note|
-              new_note = ToCry::Note.new(
-                note.title,
-                note.tags,
-                note.content,
-                note.expanded,
-                note.public,
-                note.attachments,
-                note.start_date,
-                note.end_date,
-                note.priority
-              )
-              new_note
-            end
+            # Update existing lane name (handles renames) and preserve all notes
+            # Use the constructor that preserves the existing sepia_id
+            new_lane = ToCry::Lane.new(existing_lane.sepia_id, lane_name, existing_lane.notes)
             new_lanes << new_lane
           else
             # Create completely new lane
@@ -280,8 +276,9 @@ module ToCry::Endpoints::Boards
         lane_data = JSON::Any.new({
           "lanes" => JSON::Any.new(new_lanes.map do |lane|
             JSON::Any.new({
-              "name"  => JSON::Any.new(lane.name),
-              "notes" => JSON::Any.new(lane.notes.map do |note|
+              "lane_id" => JSON::Any.new(lane.sepia_id),
+              "name"    => JSON::Any.new(lane.name),
+              "notes"   => JSON::Any.new(lane.notes.map do |note|
                 JSON::Any.new({
                   "sepia_id" => JSON::Any.new(note.sepia_id),
                   "title"    => JSON::Any.new(note.title),

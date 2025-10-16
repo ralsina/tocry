@@ -481,7 +481,8 @@ module ToCry::OpenAPIManual
                 items:       {
                   type:       "object",
                   properties: {
-                    name: {type: "string", description: "Lane name", example: "To Do"},
+                    lane_id: {type: "string", description: "Lane UUID (optional, for existing lanes)", example: "abc123-def456-7890-1234-567890abcdef"},
+                    name:    {type: "string", description: "Lane name", example: "To Do"},
                   },
                 },
               },

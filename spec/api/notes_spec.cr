@@ -17,9 +17,9 @@ describe "Notes API using Generated Client" do
 
     # Add lanes to the board
     lanes = [
-      OpenAPIClient::BoardUpdateRequestLanesInner.new("Todo"),
-      OpenAPIClient::BoardUpdateRequestLanesInner.new("In Progress"),
-      OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
+      OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Todo"),
+      OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "In Progress"),
+      OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Done"),
     ]
     update_request = OpenAPIClient::BoardUpdateRequest.new(
       nil, nil, nil, nil, lanes
