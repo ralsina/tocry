@@ -14,9 +14,7 @@ module ToCry::Endpoints::Boards
   end
 
   # Serve the main application HTML for board-specific URLs
-  get "/b/:board_name" do |env|
-    board_name = env.params.url["board_name"].as(String)
-    demo_mode = ToCry::Demo.demo_mode?
+  get "/b/:board_name" do |_env|
     render "templates/app.ecr"
   end
 
@@ -35,7 +33,8 @@ module ToCry::Endpoints::Boards
         next render "templates/404.ecr"
       end
 
-      # Make board available to ECR template
+      # Make board available to ECR template (used in templates/public_board.ecr)
+      # ameba:disable Lint/UselessAssignment
       public_board = board
 
       # Render the template - ECR will have access to local variables
@@ -65,7 +64,6 @@ module ToCry::Endpoints::Boards
   #   "name": "Board Name",
   #   "color_scheme": "Blue",
   #   "first_visible_lane": 0,
-  #   "show_hidden_lanes": false,
   #   "lanes": [
   #     {
   #       "name": "Todo",
@@ -121,7 +119,6 @@ module ToCry::Endpoints::Boards
       name:               board.name,
       color_scheme:       ToCry::ColorScheme.validate(board.color_scheme),
       first_visible_lane: board.first_visible_lane,
-      show_hidden_lanes:  board.show_hidden_lanes,
       public:             board.public,
       lanes:              lanes_data,
     }
@@ -172,7 +169,7 @@ module ToCry::Endpoints::Boards
       ToCry::Log.info { payload.to_s }
 
       # Log parsed payload fields
-      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, show_hidden_lanes: #{payload.show_hidden_lanes.inspect}, public: #{payload.public.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
+      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, public: #{payload.public.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
 
       user = ToCry.get_current_user_id(env)
       board = ToCry.board_manager.get(old_board_name, user)
@@ -210,12 +207,6 @@ module ToCry::Endpoints::Boards
         if reloaded
           ToCry::Log.info { "Reloaded board first_visible_lane is #{reloaded.first_visible_lane}" }
         end
-      end
-
-      # Handle show_hidden_lanes update
-      if show_hidden_lanes = payload.show_hidden_lanes
-        board.show_hidden_lanes = show_hidden_lanes
-        board.save
       end
 
       # Handle color_scheme update

@@ -14,18 +14,22 @@ module ToCry
     property lanes : Array(Lane)
     property color_scheme : String?
     property first_visible_lane : Int32 = 0
-    property show_hidden_lanes : Bool = false
 
     @[JSON::Field(emit_null: false)]
     property public : Bool = false
 
     # Constructor that accepts a name, which will be used as sepia_id.
-    def initialize(@name : String, @lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @show_hidden_lanes : Bool = false, @public : Bool = false)
+    def initialize(@name : String, @lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @public : Bool = false)
     end
 
     # Default constructor for deserialization (Sepia needs this)
-    def initialize(@lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @show_hidden_lanes : Bool = false, @public : Bool = false)
+    def initialize(@lanes : Array(Lane) = [] of Lane, @color_scheme : String? = nil, @first_visible_lane : Int32 = 0, @public : Bool = false)
       @name = "Untitled Board" # Default name if not provided
+    end
+
+    # Add query method for boolean property
+    def public?
+      @public
     end
 
     def lane_add(name : String) : Lane
@@ -80,7 +84,6 @@ module ToCry
             enum:        ["Amber", "Blue", "Cyan", "Default", "Fuchsia", "Grey", "Green", "Indigo", "Jade", "Lime", "Orange", "Pink", "Pumpkin", "Purple", "Red", "Sand", "Slate", "Violet", "Yellow", "Zinc"],
           },
           first_visible_lane: {type: "integer", description: "Index of the first visible lane"},
-          show_hidden_lanes:  {type: "boolean", description: "Whether to show hidden lanes"},
           public:             {type: "boolean", description: "Whether the board is publicly accessible"},
           lanes:              {
             type:        "array",

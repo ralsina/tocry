@@ -468,7 +468,6 @@ module ToCry::OpenAPIManual
             properties: {
               new_name:           {type: "string", description: "New board name", example: "Updated Project"},
               first_visible_lane: {type: "integer", description: "Index of first visible lane", example: 0},
-              show_hidden_lanes:  {type: "boolean", description: "Show hidden lanes flag", example: false},
               color_scheme:       {
                 type:        "string",
                 description: "Color scheme name",

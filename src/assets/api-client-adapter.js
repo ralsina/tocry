@@ -95,7 +95,6 @@
       const payload = {}
       if (options.newName) payload.newName = options.newName
       if (options.firstVisibleLane !== undefined) payload.firstVisibleLane = options.firstVisibleLane
-      if (options.showHiddenLanes !== undefined) payload.showHiddenLanes = options.showHiddenLanes
       if (options.colorScheme) payload.colorScheme = options.colorScheme
       if (options.lanes) payload.lanes = options.lanes
       if (options.public !== undefined) payload._public = options.public
