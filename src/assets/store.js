@@ -855,7 +855,6 @@ function createToCryStore () {
           lanes: boardData.lanes || [],
           colorScheme: validatedColorScheme,
           firstVisibleLane: boardData.firstVisibleLane || 0,
-          showHiddenLanes: boardData.showHiddenLanes || false,
           public: boardData._public || false
         }
         console.log('Set currentBoard:', this.currentBoard)
@@ -2588,38 +2587,28 @@ function createToCryStore () {
         }
       }
 
-      let requiredKanbanWidth
+      // Always use the logic from the "else" branch since show_hidden_lanes is removed
+      // This calculates width for the normal lane visibility behavior
+      let visibleLanesWidth = 0
+      let hiddenLanesWidth = 0
 
-      if (this.currentBoard.show_hidden_lanes) {
-        // When showing hidden lanes, kanban should fit all lanes or window width, whichever is larger
-        requiredKanbanWidth = Math.max(allLanesWidth, viewportWidth)
-      } else {
-        // When hiding lanes, kanban should fit:
-        // 1. All visible lanes, OR
-        // 2. All hidden lanes + window width (so we can scroll hidden lanes completely off-screen)
-        // 3. Window width (minimum)
-
-        let visibleLanesWidth = 0
-        let hiddenLanesWidth = 0
-
-        for (let i = 0; i < totalLanes; i++) {
-          const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
-          if (i < firstVisibleLane) {
-            hiddenLanesWidth += laneWidth + laneGap
-          } else {
-            visibleLanesWidth += laneWidth
-            if (i < totalLanes - 1) {
-              visibleLanesWidth += laneGap
-            }
+      for (let i = 0; i < totalLanes; i++) {
+        const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
+        if (i < firstVisibleLane) {
+          hiddenLanesWidth += laneWidth + laneGap
+        } else {
+          visibleLanesWidth += laneWidth
+          if (i < totalLanes - 1) {
+            visibleLanesWidth += laneGap
           }
         }
-
-        requiredKanbanWidth = Math.max(
-          visibleLanesWidth,
-          hiddenLanesWidth + viewportWidth,
-          viewportWidth
-        )
       }
+
+      const requiredKanbanWidth = Math.max(
+        visibleLanesWidth,
+        hiddenLanesWidth + viewportWidth,
+        viewportWidth
+      )
 
       // Calculate the right padding needed to achieve this width
       const currentContentWidth = allLanesWidth
@@ -3054,31 +3043,27 @@ function createToCryStore () {
 
       const firstVisibleLane = this.currentBoard.firstVisibleLane || 0
 
-      if (this.currentBoard.show_hidden_lanes) {
-        // Show all lanes from the beginning
+      // Always use the logic from the "else" branch since show_hidden_lanes is removed
+      // This handles normal scroll positioning based on first_visible_lane
+      if (firstVisibleLane === 0) {
         kanbanBoard.scrollLeft = 0
-      } else {
-        // Scroll to position first_visible_lane at the left edge
-        if (firstVisibleLane === 0) {
-          kanbanBoard.scrollLeft = 0
-          return
-        }
-
-        // Use dynamic width calculation for consistent scroll positioning
-        const dynamicLaneWidth = this.calculateDynamicLaneWidth()
-        const boardStyle = window.getComputedStyle(kanbanBoard)
-        const gapValue = boardStyle.gap || '0.75rem'
-        const laneGap = parseInt(gapValue) || 12
-
-        // Calculate scroll position needed to bring first_visible_lane to left edge
-        let scrollPosition = 0
-        for (let i = 0; i < firstVisibleLane; i++) {
-          const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
-          scrollPosition += laneWidth + laneGap
-        }
-
-        kanbanBoard.scrollLeft = scrollPosition
+        return
       }
+
+      // Use dynamic width calculation for consistent scroll positioning
+      const dynamicLaneWidth = this.calculateDynamicLaneWidth()
+      const boardStyle = window.getComputedStyle(kanbanBoard)
+      const gapValue = boardStyle.gap || '0.75rem'
+      const laneGap = parseInt(gapValue) || 12
+
+      // Calculate scroll position needed to bring first_visible_lane to left edge
+      let scrollPosition = 0
+      for (let i = 0; i < firstVisibleLane; i++) {
+        const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
+        scrollPosition += laneWidth + laneGap
+      }
+
+      kanbanBoard.scrollLeft = scrollPosition
     },
 
     // Lane dragging functions
@@ -3165,29 +3150,6 @@ function createToCryStore () {
       } catch (error) {
         console.error('Error saving lane order:', error)
         this.showError('Failed to save lane order')
-      }
-    },
-
-    // Toggle show_hidden_lanes property and update scroll position
-    async toggleShowHiddenLanes () {
-      if (!this.currentBoard) return
-
-      // Toggle the property
-      this.currentBoard.show_hidden_lanes = !this.currentBoard.show_hidden_lanes
-
-      // Save to backend
-      try {
-        await this.api.updateBoard(this.currentBoardName, { showHiddenLanes: this.currentBoard.show_hidden_lanes })
-
-        // Update scroll position after property change
-        this.$nextTick(() => {
-          this.setInitialScrollPosition()
-        })
-      } catch (error) {
-        console.error('Error updating show hidden lanes:', error)
-        this.showError('Failed to update show hidden lanes setting')
-        // Revert the change on error
-        this.currentBoard.show_hidden_lanes = !this.currentBoard.show_hidden_lanes
       }
     },
 

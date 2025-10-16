@@ -22,7 +22,7 @@ describe "Notes API using Generated Client" do
       OpenAPIClient::BoardUpdateRequestLanesInner.new("Done"),
     ]
     update_request = OpenAPIClient::BoardUpdateRequest.new(
-      nil, nil, nil, nil, nil, lanes
+      nil, nil, nil, nil, lanes
     )
     APITestHelpers.boards_api.update_board(NOTES_TEST_BOARD, update_request)
   end

@@ -206,10 +206,6 @@ module ToCry::Endpoints::Helpers
     # Used for horizontal scrolling when there are many lanes
     property first_visible_lane : Int32?
 
-    # Optional flag to control visibility of hidden lanes
-    # When true, shows lanes that might otherwise be hidden
-    property show_hidden_lanes : Bool?
-
     # Optional color scheme for board theming
     # Examples: "Blue", "Green", "Red", etc.
     property color_scheme : String?
