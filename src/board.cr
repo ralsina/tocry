@@ -16,6 +16,7 @@ module ToCry
     property first_visible_lane : Int32 = 0
 
     @[JSON::Field(emit_null: false)]
+    # ameba:disable Naming/QueryBoolMethods
     property public : Bool = false
 
     # Constructor that accepts a name, which will be used as sepia_id.

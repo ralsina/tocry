@@ -42,7 +42,9 @@ module ToCry
     include YAML::Serializable
     property title : String
     property tags : Array(String) = [] of String        # Default to empty array
+    # ameba:disable Naming/QueryBoolMethods
     property expanded : Bool = false                    # Default to false
+    # ameba:disable Naming/QueryBoolMethods
     property public : Bool = false                      # Default to false
     property attachments : Array(String) = [] of String # New: Default to empty array
     property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
@@ -75,7 +77,9 @@ module ToCry
     property title : String = ""                 # Provide a default initializer
     property tags : Array(String) = [] of String # Default empty array for tags
     property content : String = ""
+    # ameba:disable Naming/QueryBoolMethods
     property expanded : Bool = false
+    # ameba:disable Naming/QueryBoolMethods
     property public : Bool = false
     property attachments : Array(String) = [] of String # New: Default to empty array
     property start_date : String? = nil                 # Optional start date in YYYY-MM-DD format
@@ -107,6 +111,16 @@ module ToCry
       @start_date = start_date
       @end_date = end_date
       @priority = priority
+    end
+
+    # Add query method for boolean property
+    def expanded?
+      @expanded
+    end
+
+    # Add query method for boolean property
+    def public?
+      @public
     end
 
     # Let Sepia handle save_with_generation automatically
