@@ -34,7 +34,7 @@ module ToCry::Endpoints::Boards
       end
 
       # Make board available to ECR template (used in templates/public_board.ecr)
-      # ameba:disable Lint/UselessAssignment
+      # ameba:disable Lint/UselessAssign
       public_board = board
 
       # Render the template - ECR will have access to local variables
