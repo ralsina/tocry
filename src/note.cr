@@ -41,9 +41,9 @@ module ToCry
   struct FrontMatter
     include YAML::Serializable
     property title : String
-    property tags : Array(String) = [] of String        # Default to empty array
+    property tags : Array(String) = [] of String # Default to empty array
     # ameba:disable Naming/QueryBoolMethods
-    property expanded : Bool = false                    # Default to false
+    property expanded : Bool = false # Default to false
     # ameba:disable Naming/QueryBoolMethods
     property public : Bool = false                      # Default to false
     property attachments : Array(String) = [] of String # New: Default to empty array
