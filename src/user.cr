@@ -13,7 +13,7 @@ module ToCry
 
     property email : String
     property name : String
-    property provider : String      # e.g., "noauth", "basic", "google", "fake_google"
+    property provider : String # e.g., "noauth", "basic", "google", "fake_google"
     # ameba:disable Naming/QueryBoolMethods
     property is_root : Bool = false # Special flag for root user access
 
