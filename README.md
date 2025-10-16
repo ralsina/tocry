@@ -33,6 +33,49 @@ Try the live demo at <https://tocry-demo.ralsina.me>
 * **Image Uploading:** Just paste an image and it's uploaded and linked
 * **Easy Installation:** One-line install script with system-wide and user options
 
+## Model Context Protocol (MCP) Integration
+
+ToCry supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), allowing AI agents to access your Kanban boards, notes, and data through a standardized JSON-RPC interface.
+
+### What You Can Do With MCP
+
+* **Access Your Notes:** Search, read, and update your notes from any MCP-compatible AI agent
+* **Board Management:** List and retrieve complete Kanban board structures
+* **Real-Time Integration:** AI assistants can work with your tasks while maintaining proper authentication
+* **Secure Access:** Full integration with ToCry's authentication system (Google OAuth, Basic Auth, or No Auth)
+
+### Quick Start with MCP
+
+1. **Start ToCry with MCP enabled (default):**
+   ```bash
+   tocry --port 3000
+   ```
+
+2. **Configure your MCP client** to connect to one of these URLs:
+   - **No Auth:** `http://localhost:3000/mcp`
+   - **Basic Auth:** `http://admin:secret@localhost:3000/mcp`
+   - **Google OAuth:** `http://localhost:3000/mcp` (after web authentication)
+
+3. **Available MCP Tools:**
+   - `tocry_list_boards` - List all accessible boards
+   - `tocry_get_board` - Get complete board structure
+   - `tocry_search_notes` - Search across all notes
+   - `tocry_create_note` - Create new notes
+   - `tocry_update_note` - Update existing notes
+   - `tocry_get_note` - Get specific note details
+
+### Disable MCP Support
+
+If you don't need MCP integration (useful for demo mode):
+
+```bash
+tocry --no-mcp --port 3000
+```
+
+### Complete Documentation
+
+For detailed MCP documentation, including tool parameters, authentication setup, and integration examples, see [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md).
+
 ## Quick Install (Recommended)
 
 The easiest way to install ToCry is using the automated installation script:

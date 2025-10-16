@@ -19,6 +19,7 @@ module ToCry
   # It's initialized with a default, but will be set by `main.cr` at startup.
   @@data_directory : String = "data"
   @@safe_mode_enabled : Bool = false # New class variable for safe mode
+  @@mcp_enabled : Bool = true         # MCP support toggle
 
   # Getter for the globally configured data directory.
   def self.data_directory
@@ -28,6 +29,16 @@ module ToCry
   # Setter for safe mode.
   def self.safe_mode_enabled=(enabled : Bool)
     @@safe_mode_enabled = enabled
+  end
+
+  # Getter for MCP enabled status.
+  def self.mcp_enabled : Bool
+    @@mcp_enabled
+  end
+
+  # Setter for MCP enabled status.
+  def self.mcp_enabled=(enabled : Bool)
+    @@mcp_enabled = enabled
   end
 
   @@_board_manager : BoardManager? = nil

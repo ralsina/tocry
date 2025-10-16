@@ -75,6 +75,13 @@
         margin: 2rem 0;
       }
 
+      /* Handle odd number of cards - center the last one */
+      .features-grid .feature-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
       @media (max-width: 768px) {
         .features-grid {
           grid-template-columns: 1fr;
@@ -416,6 +423,21 @@
               <li>Free and open source (MIT license)</li>
               <li>Active development and community support</li>
               <li>Easy data backup and migration</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <header>
+              <h3>🤖 Model Context Protocol (MCP)</h3>
+            </header>
+            <p>Integrate with AI agents through the standardized Model Context Protocol.</p>
+            <ul>
+              <li>Access your boards and notes from any MCP-compatible AI assistant</li>
+              <li>Full CRUD operations for notes, lanes, and boards</li>
+              <li>Secure authentication integration (OAuth, Basic Auth, or No Auth)</li>
+              <li>Real-time search across all your tasks and content</li>
+              <li>JSON-RPC 2.0 based protocol for reliable communication</li>
+              <li>Perfect for AI-powered task management workflows</li>
             </ul>
           </article>
         </div>
