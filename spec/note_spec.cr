@@ -150,8 +150,8 @@ describe ToCry::Note do
 
       # Verify initial state
       note_file_path = File.join(TEST_PATH, "ToCry::Note", note.sepia_id)
-      lane_dir = File.join(board_data_dir, "lanes", "0000_Test Lane")           # Assuming first lane
-      note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.sepia_id}") # Get the symlink
+      lane_dir = File.join(board_data_dir, "lanes", "0000_#{lane.sepia_id}")    # Lane dirs use format 0000_{uuid}
+      note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.sepia_id}") # Note symlinks use format 0000_{uuid}
 
       File.exists?(note_file_path).should be_true
       File.symlink?(note_symlink_path).should be_true
@@ -340,7 +340,7 @@ describe ToCry::Note do
 
         # Verify initial state
         note_file_path = File.join(TEST_PATH, "ToCry::Note", note.sepia_id)
-        lane_dir = File.join(board_data_dir, "lanes", "0000_Test Lane")
+        lane_dir = File.join(board_data_dir, "lanes", "0000_#{lane.sepia_id}")
         note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.sepia_id}")
 
         File.exists?(note_file_path).should be_true
