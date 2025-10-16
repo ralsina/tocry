@@ -3121,15 +3121,6 @@ Anyone with the link will be able to view everything.
 This is a permanent action that cannot be easily undone.`
         this.modalConfirmText = 'Make Public Anyway'
         this.modalCancelText = 'Cancel'
-      } else {
-        this.modalTitle = '🔒 Make Board Private?'
-        this.modalMessage = `Making this board private will:
-• Disable public access to the board
-• Break any shared public links
-
-Only you and users you've explicitly shared with will be able to access this board.`
-        this.modalConfirmText = 'Make Private Anyway'
-        this.modalCancelText = 'Cancel'
       }
 
       return new Promise((resolve) => {
@@ -3175,20 +3166,10 @@ Only you and users you've explicitly shared with will be able to access this boa
       if (!this.currentBoard) return
 
       try {
-        // Show warning and wait for user confirmation
-        const confirmed = await this.showPublicWarning('make-private')
-        if (!confirmed) return
-
-        console.log('makeBoardPrivate: confirmed, setting public to false')
-        // Update the board public status
+        // No warning for making a board private.
         await this.api.updateBoard(this.currentBoardName, { public: false })
-
-        console.log('makeBoardPrivate: API call completed, reloading board...')
-        // Reload board data to get updated state from server
         await this.loadBoard(this.currentBoardName)
 
-        console.log('makeBoardPrivate: board reloaded, new public status:', this.currentBoard.public)
-        // Show success message
         if (!this.currentBoard.public) {
           this.showSuccess(`Board "${this.currentBoardName}" is now private.`)
         } else {

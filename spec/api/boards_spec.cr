@@ -120,6 +120,34 @@ describe "Boards API using Generated Client" do
       updated_board = APITestHelpers.boards_api.get_board_details(original_name)
       updated_board.color_scheme.should eq("orange")
     end
+
+    it "should update board public status" do
+      board_name = "#{TEST_BOARD_PREFIX}_public_toggle_#{Time.utc.to_unix}"
+      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, nil)
+      APITestHelpers.boards_api.create_board(create_request)
+
+      # 1. Make board public
+      make_public_request = OpenAPIClient::BoardUpdateRequest.new(
+        nil, nil, nil, true, nil
+      )
+      make_public_response = APITestHelpers.boards_api.update_board(board_name, make_public_request)
+      make_public_response.success.should_not be_nil
+
+      # 2. Verify board is public
+      public_board = APITestHelpers.boards_api.get_board_details(board_name)
+      public_board.public.should be_true
+
+      # 3. Make board private again
+      make_private_request = OpenAPIClient::BoardUpdateRequest.new(
+        nil, nil, nil, false, nil
+      )
+      make_private_response = APITestHelpers.boards_api.update_board(board_name, make_private_request)
+      make_private_response.success.should_not be_nil
+
+      # 4. Verify board is private
+      private_board = APITestHelpers.boards_api.get_board_details(board_name)
+      private_board.public.should be_false
+    end
   end
 
   describe "DELETE /api/v1/boards/{board_name}" do

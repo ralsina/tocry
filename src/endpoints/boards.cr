@@ -219,7 +219,8 @@ module ToCry::Endpoints::Boards
       end
 
       # Handle public update
-      if public_status = payload.public
+      unless payload.public.nil?
+        public_status = payload.public.as(Bool)
         ToCry::Log.info { "Updating board public status from #{board.public} to #{public_status}" }
         board.public = public_status
         board.save
