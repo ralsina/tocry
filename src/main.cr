@@ -10,6 +10,7 @@ require "./endpoints"         # Add this line to include your new endpoints file
 require "./auth_helpers"      # New: Contains authentication mode setup functions
 require "./demo"              # Demo mode functionality
 require "./websocket_handler" # WebSocket support for real-time synchronization
+require "./mcp/kemal_handler" # MCP (Model Context Protocol) integration
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
