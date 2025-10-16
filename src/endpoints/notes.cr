@@ -323,7 +323,7 @@ module ToCry::Endpoints::Notes
         next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found in this board")
       end
 
-      note, lane = found_note_and_lane
+      note = found_note_and_lane[0]
       user = ToCry.get_current_user_id(env)
 
       # Get the first uploaded file from the request
@@ -434,7 +434,7 @@ module ToCry::Endpoints::Notes
         next
       end
 
-      note, lane = found_note_and_lane
+      note = found_note_and_lane[0]
       user = ToCry.get_current_user_id(env)
 
       # Check if the attachment exists in the note's attachments array
@@ -502,7 +502,7 @@ module ToCry::Endpoints::Notes
         next
       end
 
-      note, lane = found_note_and_lane
+      note = found_note_and_lane[0]
 
       # Check if the attachment exists in the note's attachments array
       unless note.attachments.includes?(filename)

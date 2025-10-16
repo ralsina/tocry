@@ -26,6 +26,11 @@ module ToCry
     @@data_directory
   end
 
+  # Getter for safe mode status.
+  def self.safe_mode_enabled? : Bool
+    @@safe_mode_enabled
+  end
+
   # Setter for safe mode.
   def self.safe_mode_enabled=(enabled : Bool)
     @@safe_mode_enabled = enabled

@@ -19,7 +19,7 @@ module ToCry
     # This should be called once at application startup.
     def self.run
       FileUtils.mkdir_p(ToCry.data_directory)
-      stored_version_str = get_stored_version
+      stored_version_str = stored_version
       current_version = SemanticVersion.parse(VERSION)
 
       if stored_version_str
@@ -46,7 +46,7 @@ module ToCry
       exit 1
     end
 
-    private def self.get_stored_version : String?
+    private def self.stored_version : String?
       path = version_file_path
       File.exists?(path) ? File.read(path).strip : nil
     end
@@ -56,6 +56,7 @@ module ToCry
     end
 
     # This is where we will add all migration steps in order.
+    # ameba:disable Metrics/CyclomaticComplexity
     private def self.apply_migrations(from_version : String?)
       # Parse from_version once if it exists
       parsed_from_version = from_version ? SemanticVersion.parse(from_version) : nil
