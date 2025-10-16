@@ -32,6 +32,7 @@ Options:
   --data-path=PATH              Path to the data directory.
   --safe-mode                   Enable safe mode (checks data integrity).
   --demo                        Enable demo mode (in-memory storage with sample data).
+  --no-mcp                      Disable MCP (Model Context Protocol) support.
   --unix-socket=PATH            Use Unix socket at specified path instead of TCP.
 DOCOPT
 
@@ -66,6 +67,7 @@ def main
   end
   safe_mode = !!args["--safe-mode"] # Safely parse --safe-mode argument as boolean
   demo_mode = !!args["--demo"]      # Parse --demo argument as boolean
+  disable_mcp = !!args["--no-mcp"]  # Parse --no-mcp argument as boolean
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
@@ -76,6 +78,14 @@ def main
     ToCry::Log.info { "Using data path: #{data_path}" }
   end
   ToCry::Log.info { "Safe mode enabled: #{safe_mode}" }
+
+  # Set global MCP status and log
+  ToCry.mcp_enabled = !disable_mcp
+  if disable_mcp
+    ToCry::Log.info { "MCP (Model Context Protocol) support disabled" }
+  else
+    ToCry::Log.info { "MCP (Model Context Protocol) support enabled" }
+  end
 
   # Check for Unix socket option first
   unix_socket_path = args["--unix-socket"]?.as?(String)
