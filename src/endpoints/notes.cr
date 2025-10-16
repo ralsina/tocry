@@ -85,7 +85,10 @@ module ToCry::Endpoints::Notes
         "end_date"    => JSON::Any.new(new_note.end_date || ""),
         "priority"    => JSON::Any.new(new_note.priority.to_s),
       })
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_CREATED, note_data)
+
+      # Extract client ID for echo prevention
+      client_id = ToCry::WebSocketHandler.extract_client_id(env)
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_CREATED, note_data, client_id)
 
       # Return the created note with its generated ID
       note_response = {
@@ -221,7 +224,10 @@ module ToCry::Endpoints::Notes
         "priority"    => JSON::Any.new(current_note.priority.to_s),
         "position"    => JSON::Any.new(payload.position || 0),
       })
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_UPDATED, note_data)
+
+      # Extract client ID for echo prevention
+      client_id = ToCry::WebSocketHandler.extract_client_id(env)
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_UPDATED, note_data, client_id)
 
       # Return the updated note
       note_response = {
@@ -288,7 +294,10 @@ module ToCry::Endpoints::Notes
         "sepia_id"  => JSON::Any.new(note_id),
         "lane_name" => JSON::Any.new(lane.name),
       })
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_DELETED, note_data)
+
+      # Extract client ID for echo prevention
+      client_id = ToCry::WebSocketHandler.extract_client_id(env)
+      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_DELETED, note_data, client_id)
 
       ToCry::Endpoints::Helpers.success_response(env, {
         success: "Note deleted successfully.",
