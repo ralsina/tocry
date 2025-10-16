@@ -7,6 +7,8 @@ require "./auth_helpers"
 module ToCry::WebSocketHandler
   # Connection pool to track active WebSocket connections
   @@connections = Hash(String, Array(HTTP::WebSocket)).new
+  # Track which socket belongs to which client ID
+  @@socket_client_ids = Hash(HTTP::WebSocket, String).new
   @@connection_mutex = Mutex.new
 
   # WebSocket message types
@@ -38,35 +40,58 @@ module ToCry::WebSocketHandler
     end
   end
 
-  # Broadcast a message to all clients viewing a specific board
-  def self.broadcast_to_board(board_name : String, message_type : MessageType, data : JSON::Any? = nil)
+  # Broadcast a message to all clients viewing a specific board, optionally excluding a specific client
+  def self.broadcast_to_board(board_name : String, message_type : MessageType, data : JSON::Any? = nil, exclude_client_id : String? = nil)
     message = WSMessage.new(
       message_type.to_s.downcase,
       board_name,
       data
     ).to_json
 
+    ToCry::Log.info { "Broadcasting #{message_type} to board '#{board_name}', excluding client: #{exclude_client_id || "none"}" }
+
     @@connection_mutex.synchronize do
       if connections = @@connections[board_name]?
+        ToCry::Log.info { "Found #{connections.size} WebSocket connections for board '#{board_name}'" }
         connections.each do |socket|
+          socket_client_id = @@socket_client_ids[socket]?
+          ToCry::Log.debug { "Checking socket for client ID: #{socket_client_id || "none"} (exclude: #{exclude_client_id || "none"})" }
+
+          # Skip this socket if it belongs to the excluded client
+          if exclude_client_id && socket_client_id == exclude_client_id
+            ToCry::Log.info { "🚫 Skipping broadcast to originating client: #{exclude_client_id}" }
+            next
+          end
+
           begin
             socket.send(message)
+            ToCry::Log.debug { "✅ Sent message to client: #{socket_client_id || "unknown"}" }
           rescue ex
             ToCry::Log.error(exception: ex) { "Failed to send WebSocket message to client: #{ex.message}" }
             # Remove dead connection
             connections.delete(socket)
+            @@socket_client_ids.delete(socket)
           end
         end
+      else
+        ToCry::Log.warn { "No WebSocket connections found for board '#{board_name}'" }
       end
     end
   end
 
   # Add a connection to the board's connection pool
-  def self.add_connection(board_name : String, socket : HTTP::WebSocket)
+  def self.add_connection(board_name : String, socket : HTTP::WebSocket, client_id : String? = nil)
     @@connection_mutex.synchronize do
       @@connections[board_name] ||= [] of HTTP::WebSocket
       @@connections[board_name] << socket
-      ToCry::Log.info { "WebSocket client added to board '#{board_name}'. Total connections: #{@@connections[board_name].size}" }
+
+      # Track which client ID this socket belongs to
+      if client_id
+        @@socket_client_ids[socket] = client_id
+        ToCry::Log.info { "WebSocket client (#{client_id}) added to board '#{board_name}'. Total connections: #{@@connections[board_name].size}" }
+      else
+        ToCry::Log.info { "WebSocket client added to board '#{board_name}'. Total connections: #{@@connections[board_name].size}" }
+      end
     end
   end
 
@@ -75,7 +100,13 @@ module ToCry::WebSocketHandler
     @@connection_mutex.synchronize do
       if connections = @@connections[board_name]?
         connections.delete(socket)
-        ToCry::Log.info { "WebSocket client removed from board '#{board_name}'. Total connections: #{connections.size}" }
+        client_id = @@socket_client_ids.delete(socket)
+
+        if client_id
+          ToCry::Log.info { "WebSocket client (#{client_id}) removed from board '#{board_name}'. Total connections: #{connections.size}" }
+        else
+          ToCry::Log.info { "WebSocket client removed from board '#{board_name}'. Total connections: #{connections.size}" }
+        end
 
         # Clean up empty connection arrays
         if connections.empty?
@@ -96,6 +127,17 @@ module ToCry::WebSocketHandler
         boards:            @@connections.map { |board, connections| {board: board, connections: connections.size} },
       }
     end
+  end
+
+  # Extract client ID from HTTP request headers for echo prevention
+  def self.extract_client_id(env : HTTP::Server::Context) : String?
+    client_id = env.request.headers["X-ToCry-Client-ID"]?
+    if client_id
+      ToCry::Log.info { "🔍 Extracted client ID from headers: #{client_id}" }
+    else
+      ToCry::Log.debug { "⚠️ No client ID found in headers" }
+    end
+    client_id
   end
 
   # Extract user information from WebSocket request context
@@ -129,14 +171,22 @@ module ToCry::WebSocketHandler
       return
     end
 
+    # Extract client ID from query parameters
+    client_id = env.params.query["clientId"]?
+    if client_id
+      ToCry::Log.info { "WebSocket connection with client ID: #{client_id}" }
+    else
+      ToCry::Log.debug { "WebSocket connection without client ID" }
+    end
+
     # Validate user has access to this board
     unless validate_board_access(env, board_name)
       socket.close(1003, "Access denied")
       return
     end
 
-    # Add connection to the board's pool
-    add_connection(board_name, socket)
+    # Add connection to the board's pool with client ID
+    add_connection(board_name, socket, client_id)
 
     # Send initial connection confirmation
     welcome_msg = WSMessage.new(

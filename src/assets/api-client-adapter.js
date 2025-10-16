@@ -49,8 +49,48 @@
     constructor (baseUrl = '') {
       const basePath = getBasePath()
       const fullBasePath = basePath ? `${window.location.origin}${basePath}` : (baseUrl || window.location.origin)
+
+      // Get client ID from Alpine store for WebSocket echo prevention
+      const getApiClientClientId = () => {
+        try {
+          // Try to access the Alpine store that contains the client ID
+          if (window.Alpine && window.Alpine.store) {
+            const store = window.Alpine.store('toCryApp')
+            if (store && store.clientId) {
+              return store.clientId
+            }
+          }
+
+          // Fallback: try to get from any element with toCryApp data
+          const appElement = document.querySelector('[x-data*="toCryApp"]')
+          if (appElement && appElement._x_dataStack) {
+            const store = appElement._x_dataStack.find(data => data && data.clientId)
+            if (store && store.clientId) {
+              return store.clientId
+            }
+          }
+
+          // Fallback: try global instance if it exists
+          if (window.toCryStoreInstance && window.toCryStoreInstance.clientId) {
+            return window.toCryStoreInstance.clientId
+          }
+
+          console.warn('Could not retrieve client ID from Alpine store for API client')
+          return null
+        } catch (error) {
+          console.error('Error getting client ID for API client:', error)
+          return null
+        }
+      }
+
+      const clientId = getApiClientClientId()
+
+      // Add X-ToCry-Client-ID header if client ID is available
+      const headers = clientId ? { 'X-ToCry-Client-ID': clientId } : {}
+
       const config = new Configuration({
-        basePath: fullBasePath
+        basePath: fullBasePath,
+        headers
       })
 
       this.boardsApi = new BoardsApi(config)

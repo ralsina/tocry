@@ -148,7 +148,9 @@ module ToCry::Endpoints::Boards
     end
 
     # Broadcast board creation to WebSocket clients
-    ToCry::WebSocketHandler.broadcast_to_board(new_board_name, ToCry::WebSocketHandler::MessageType::BOARD_CREATED)
+    # Extract client ID for echo prevention
+    client_id = ToCry::WebSocketHandler.extract_client_id(env)
+    ToCry::WebSocketHandler.broadcast_to_board(new_board_name, ToCry::WebSocketHandler::MessageType::BOARD_CREATED, nil, client_id)
 
     ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
   end
@@ -288,12 +290,16 @@ module ToCry::Endpoints::Boards
             })
           end),
         })
-        ToCry::WebSocketHandler.broadcast_to_board(old_board_name, ToCry::WebSocketHandler::MessageType::LANE_UPDATED, lane_data)
+        # Extract client ID for echo prevention
+        client_id = ToCry::WebSocketHandler.extract_client_id(env)
+        ToCry::WebSocketHandler.broadcast_to_board(old_board_name, ToCry::WebSocketHandler::MessageType::LANE_UPDATED, lane_data, client_id)
       end
 
       # Broadcast board update to WebSocket clients (use the potentially renamed board)
       final_board_name = old_board_name
-      ToCry::WebSocketHandler.broadcast_to_board(final_board_name, ToCry::WebSocketHandler::MessageType::BOARD_UPDATED)
+      # Extract client ID for echo prevention
+      client_id = ToCry::WebSocketHandler.extract_client_id(env)
+      ToCry::WebSocketHandler.broadcast_to_board(final_board_name, ToCry::WebSocketHandler::MessageType::BOARD_UPDATED, nil, client_id)
 
       ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
     rescue ex
@@ -311,7 +317,9 @@ module ToCry::Endpoints::Boards
     user = ToCry.get_current_user_id(env)
 
     # Broadcast board deletion to WebSocket clients before actually deleting
-    ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::BOARD_DELETED)
+    # Extract client ID for echo prevention
+    client_id = ToCry::WebSocketHandler.extract_client_id(env)
+    ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::BOARD_DELETED, nil, client_id)
 
     ToCry.board_manager.delete(board_name, user)
     ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})

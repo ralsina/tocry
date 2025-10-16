@@ -1,5 +1,27 @@
 // Alpine.js store for ToCry reactive app
-/* global toastui, history, marked, hljs, localStorage, ResizeObserver */
+/* global toastui, history, marked, hljs, localStorage, sessionStorage, ResizeObserver */
+
+// Utility function to generate a unique client ID
+const generateClientId = () => {
+  // Check if we already have a client ID in session storage (persists across page reloads)
+  let clientId = sessionStorage.getItem('tocryClientId')
+  if (clientId) {
+    return clientId
+  }
+
+  // Generate a new client ID with multiple sources of entropy to avoid collisions
+  const randomPart = Math.random().toString(36).substr(2, 12)
+  const timestamp = Date.now()
+  const performanceNow = performance.now()
+  const cryptoRandom = crypto.getRandomValues(new Uint32Array(1))[0].toString(36)
+
+  clientId = 'client_' + randomPart + '_' + timestamp + '_' + cryptoRandom + '_' + Math.floor(performanceNow)
+
+  // Store in session storage to persist across page reloads and store recreations
+  sessionStorage.setItem('tocryClientId', clientId)
+
+  return clientId
+}
 
 // Modern API Service using generated ToCryApiClient
 class BoardApiService {
@@ -230,6 +252,9 @@ class BoardApiService {
 // eslint-disable-next-line no-unused-vars
 function createToCryStore () {
   return {
+    // Client identification for echo prevention
+    clientId: generateClientId(),
+
     // State
     boards: [],
     currentBoardName: '',
@@ -238,6 +263,10 @@ function createToCryStore () {
     loadingBoardFromUrl: false,
     error: null,
     boardNotFound: false,
+
+    // Debouncing state
+    loadingBoardPromise: null,
+    loadingBoardName: null,
 
     // UI State
     showAddLane: false,
@@ -826,80 +855,99 @@ function createToCryStore () {
         return
       }
 
+      // Debouncing: If we're already loading this board, return the existing promise
+      if (this.loadingBoardPromise && this.loadingBoardName === boardName) {
+        return this.loadingBoardPromise
+      }
+
+      // Cancel any previous loading for a different board
+      if (this.loadingBoardPromise && this.loadingBoardName !== boardName) {
+        this.loadingBoardPromise = null
+        this.loadingBoardName = null
+      }
+
       this.loading = true
       this.error = null
       this.boardNotFound = false
+      this.loadingBoardName = boardName
 
-      try {
+      // Create the loading promise
+      this.loadingBoardPromise = (async () => {
+        try {
         // Use enhanced API to get complete board state in single call
-        const boardData = await this.api.getBoard(boardName)
-        console.log('Loaded board data:', boardData)
+          const boardData = await this.api.getBoard(boardName)
+          console.log('Loaded board data:', boardData)
 
-        // Validate color scheme early
-        const validatedColorScheme = this.validateColorScheme(boardData.colorScheme)
+          // Validate color scheme early
+          const validatedColorScheme = this.validateColorScheme(boardData.colorScheme)
 
-        this.currentBoard = {
-          id: boardData.id,
-          name: boardData.name,
-          lanes: boardData.lanes || [],
-          colorScheme: validatedColorScheme,
-          firstVisibleLane: boardData.firstVisibleLane || 0,
-          public: boardData._public || false
-        }
-        console.log('Set currentBoard:', this.currentBoard)
-        console.log('Board public field from API:', boardData._public)
-        console.log('Current board public field after assignment:', this.currentBoard.public)
+          this.currentBoard = {
+            id: boardData.id,
+            name: boardData.name,
+            lanes: boardData.lanes || [],
+            colorScheme: validatedColorScheme,
+            firstVisibleLane: boardData.firstVisibleLane || 0,
+            public: boardData._public || false
+          }
+          console.log('Set currentBoard:', this.currentBoard)
+          console.log('Board public field from API:', boardData._public)
+          console.log('Current board public field after assignment:', this.currentBoard.public)
 
-        // Apply color scheme immediately to ensure lane borders are visible (don't save to backend)
-        this.updateColorScheme(false)
+          // Apply color scheme immediately to ensure lane borders are visible (don't save to backend)
+          this.updateColorScheme(false)
 
-        this.currentBoardName = boardName
-        this.boardNotFound = false
+          this.currentBoardName = boardName
+          this.boardNotFound = false
 
-        // Update lane widths and set initial scroll position after board is loaded
-        if (scrollToInitialPosition) {
-          this.$nextTick(() => {
-            // Update lane widths first
-            this.updateLaneWidths()
-            // Then set scroll position after width changes are applied
+          // Update lane widths and set initial scroll position after board is loaded
+          if (scrollToInitialPosition) {
             this.$nextTick(() => {
-              this.setInitialScrollPosition()
+            // Update lane widths first
+              this.updateLaneWidths()
+              // Then set scroll position after width changes are applied
+              this.$nextTick(() => {
+                this.setInitialScrollPosition()
+              })
             })
-          })
-        } else {
+          } else {
           // Just update lane widths if no initial scroll needed
           // Use multiple nextTicks to ensure DOM is fully rendered after WebSocket updates
-          this.$nextTick(() => {
             this.$nextTick(() => {
-              this.updateLaneWidths()
+              this.$nextTick(() => {
+                this.updateLaneWidths()
+              })
             })
-          })
+          }
+
+          // Color scheme changes are now handled automatically by the reactive watcher
+          // Clear loadingBoardFromUrl after board is loaded
+          this.loadingBoardFromUrl = false
+
+          // Update URL without reload
+          history.pushState({ board: boardName }, '', this.resolvePath(`/b/${boardName}`))
+
+          // Initialize scroll watcher after board is loaded
+          this.initScrollWatcher()
+
+          // Initialize WebSocket connection for real-time updates
+          this.initWebSocket(boardName)
+        } catch (error) {
+          console.error('Error loading board:', error)
+          if (error.message.includes('not found') || error.message.includes('404')) {
+            this.error = `Board '${boardName}' not found. It may have been deleted or you may not have access to it.`
+            this.boardNotFound = true
+          } else {
+            this.error = error.message
+            this.showError(`Failed to load board: ${error.message}`)
+          }
+        } finally {
+          this.loading = false
+          this.loadingBoardPromise = null
+          this.loadingBoardName = null
         }
+      })()
 
-        // Color scheme changes are now handled automatically by the reactive watcher
-        // Clear loadingBoardFromUrl after board is loaded
-        this.loadingBoardFromUrl = false
-
-        // Update URL without reload
-        history.pushState({ board: boardName }, '', this.resolvePath(`/b/${boardName}`))
-
-        // Initialize scroll watcher after board is loaded
-        this.initScrollWatcher()
-
-        // Initialize WebSocket connection for real-time updates
-        this.initWebSocket(boardName)
-      } catch (error) {
-        console.error('Error loading board:', error)
-        if (error.message.includes('not found') || error.message.includes('404')) {
-          this.error = `Board '${boardName}' not found. It may have been deleted or you may not have access to it.`
-          this.boardNotFound = true
-        } else {
-          this.error = error.message
-          this.showError(`Failed to load board: ${error.message}`)
-        }
-      } finally {
-        this.loading = false
-      }
+      return this.loadingBoardPromise
     },
     // Handle new board action
     async handleNewBoard () {
@@ -2568,12 +2616,6 @@ function createToCryStore () {
           lane.style.width = `${calculatedWidth}px`
         }
       })
-
-      console.log('Updated lane widths:', {
-        calculatedWidth,
-        visibleLanes: this.currentBoard.lanes.length - (this.currentBoard.firstVisibleLane || 0),
-        totalLanes: this.currentBoard.lanes.length
-      })
     },
 
     // Initialize scroll watchers
@@ -2635,6 +2677,12 @@ function createToCryStore () {
       // Ensure WebSocket client is available
       if (!window.toCryWebSocket) {
         console.warn('WebSocket client not available')
+        return
+      }
+
+      // Check if we're already connected to this board
+      if (window.toCryWebSocket.connectedBoard === boardName && window.toCryWebSocket.isConnected) {
+        // Already connected to this board, no need to reconnect
         return
       }
 

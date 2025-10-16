@@ -56,10 +56,10 @@ class ToCryWebSocketClient {
       this.disconnect()
     }
 
-    // Wait for Alpine store to be ready before connecting
-    if (!this.isStoreReady()) {
+    // Wait for Alpine store to be ready and have client ID before connecting
+    if (!this.isStoreReady() || !this.storeHasClientId()) {
       this.connectionInProgress = true
-      this.waitForStore(() => {
+      this.waitForStoreWithClientId(() => {
         this.connectionInProgress = false
         this.connect(boardName)
       })
@@ -79,9 +79,18 @@ class ToCryWebSocketClient {
     // Construct WebSocket URL with proper protocol and board parameter
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const wsUrl = `${protocol}//${host}/ws?board=${encodeURIComponent(boardName)}`
 
-    console.log(`Connecting to WebSocket for board: ${boardName}`)
+    // Get client ID from Alpine store for echo prevention
+    const store = this.getAlpineStore()
+    const clientId = store?.clientId || null
+
+    // Build URL with board and client ID parameters
+    let wsUrl = `${protocol}//${host}/ws?board=${encodeURIComponent(boardName)}`
+    if (clientId) {
+      wsUrl += `&clientId=${encodeURIComponent(clientId)}`
+    }
+
+    console.log(`Connecting to WebSocket for board: ${boardName}${clientId ? ` with client ID: ${clientId}` : ''}`)
     this.socket = new (typeof window !== 'undefined' ? window.WebSocket : require('ws'))(wsUrl)
 
     this.socket.onopen = () => {
@@ -314,6 +323,15 @@ class ToCryWebSocketClient {
   }
 
   /**
+   * Check if Alpine store has a client ID
+   * @returns {boolean}
+   */
+  storeHasClientId () {
+    const store = this.getAlpineStore()
+    return store !== null && store.clientId && typeof store.clientId === 'string'
+  }
+
+  /**
    * Wait for Alpine store to become ready
    * @param {Function} callback - Function to call when store is ready
    */
@@ -334,6 +352,39 @@ class ToCryWebSocketClient {
         // Use toast notification for initialization timeout
         const store = this.getAlpineStore()
         if (store) store.showError('WebSocket initialization failed')
+        return
+      }
+
+      // Check again in 50ms
+      setTimeout(checkStore, 50)
+    }
+
+    checkStore()
+  }
+
+  /**
+   * Wait for Alpine store to become ready and have client ID
+   * @param {Function} callback - Function to call when store is ready with client ID
+   */
+  waitForStoreWithClientId (callback) {
+    let attempts = 0
+    const maxAttempts = 100 // 5 seconds max wait
+
+    const checkStore = () => {
+      attempts++
+
+      if (this.isStoreReady() && this.storeHasClientId()) {
+        const store = this.getAlpineStore()
+        console.log(`Store ready with client ID: ${store.clientId}`)
+        callback()
+        return
+      }
+
+      if (attempts >= maxAttempts) {
+        console.error('Alpine store did not become ready with client ID within timeout period')
+        // Use toast notification for initialization timeout
+        const store = this.getAlpineStore()
+        if (store) store.showError('WebSocket initialization failed - no client ID')
         return
       }
 
