@@ -25,11 +25,17 @@ module ToCry
     Log = ::Log.for(self)
     # In-memory cache for loaded boards (board_uuid => Board instance)
     @boards = {} of String => Board
+    # ameba:disable Naming/QueryBoolMethods
     property safe_mode_enabled : Bool
 
     def initialize(@safe_mode_enabled : Bool)
       # No need for filesystem scanning - Sepia handles persistence
       # Cache will be populated on-demand when boards are accessed
+    end
+
+    # Add query method for boolean property
+    def safe_mode_enabled?
+      @safe_mode_enabled
     end
 
     # Get a cached board or load it from Sepia storage

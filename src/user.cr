@@ -14,6 +14,7 @@ module ToCry
     property email : String
     property name : String
     property provider : String      # e.g., "noauth", "basic", "google", "fake_google"
+    # ameba:disable Naming/QueryBoolMethods
     property is_root : Bool = false # Special flag for root user access
 
     # Constructor that uses email as sepia_id (similar to Board using name)
@@ -25,6 +26,11 @@ module ToCry
 
     # Default constructor for deserialization (Sepia needs this)
     def initialize(@email : String = "", @name : String = "", @provider : String = "", @is_root : Bool = false)
+    end
+
+    # Add query method for boolean property
+    def root?
+      @is_root
     end
 
     # Saves the user using Sepia persistence (inherited from Sepia::Object)
