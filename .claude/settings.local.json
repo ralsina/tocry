@@ -10,7 +10,15 @@
       "WebFetch(domain:github.com)",
       "Bash(shards install:*)",
       "Bash(crystal build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(shards build)",
+      "Bash(pkill:*)",
+      "Bash(killall:*)",
+      "Bash(kill:*)",
+      "Bash(crystal run:*)",
+      "Bash(make:*)",
+      "Bash(gh pr create:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
