@@ -2,12 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.22.0] - 2025-10-16
+
+### 🚀 Features
+
+- Implement Model Context Protocol (MCP) integration
+- Fix lane renaming data loss with UUID-based storage
+
+### 🐛 Bug Fixes
+
+- Correct ameba disable rule name from UselessAssignment to UselessAssign
+
+### 🚜 Refactor
+
+- Remove show_hidden_lanes property completely
+
+### 🎨 Styling
+
+- Suppress Naming/QueryBoolMethods warnings
+- Apply linting formatting to note.cr and user.cr
+
 ## [0.21.0] - 2025-10-15
 
 ### 🚀 Features
 
 - Add lane selection field to note editor modal
 - Implement dynamic lane widths with responsive design
+
+### 💼 Other
+
+- Release v0.21.0
 
 ## [0.20.0] - 2025-10-15
 
