@@ -550,10 +550,11 @@
                     <div class="note-content-wrapper">
                       <!-- View mode: Rendered markdown -->
                       <div class="note-content"
-                           x-show="note.expanded && editingNoteContent !== note.sepiaId"
+                           x-show="note.expanded"
                            x-cloak
-                           @click="startEditingNoteContent(note.sepiaId, lane.name, note.content)"
-                           title="Click to edit content"
+                           @click="toggleNoteExpansion(note)"
+                           @dblclick="editNoteById(note.sepiaId, lane.name)"
+                           title="Double-click to edit in modal, click to expand/collapse"
                            style="cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; transition: background 0.2s ease;"
                            @mouseover="$el.style.background = 'rgba(var(--primary-rgb), 0.05)'"
                            @mouseout="$el.style.background = 'transparent'"
@@ -564,38 +565,6 @@
                            x-transition:leave-start="opacity-100 max-height-1000px transform scale(100) translate-y-0"
                            x-transition:leave-end="opacity-0 max-height-0 transform scale(95) -translate-y-2"
                            x-html="markdownToHtml(note.content)">
-                      </div>
-
-                      <!-- Edit mode: Textarea for content editing -->
-                      <div class="note-content"
-                           x-show="note.expanded && editingNoteContent === note.sepiaId"
-                           x-cloak
-                           x-transition:enter="transition-all duration-300 ease"
-                           x-transition:enter-start="opacity-0 transform scale(95)"
-                           x-transition:enter-end="opacity-100 transform scale(100)"
-                           style="padding: 0;">
-                        <textarea x-model="editingNoteContentText"
-                                  @input="autoSaveNoteContent()"
-                                  @keydown.enter.ctrl="saveNoteContent()"
-                                  @keydown.esc="cancelNoteContentEdit()"
-                                  @blur="saveNoteContent()"
-                                  :x-ref="`noteContentInput-${note.sepiaId}`"
-                                  class="note-content-input"
-                                  placeholder="Enter note content (markdown supported)..."
-                                  style="width: 100%; min-height: 100px; resize: vertical; font-family: inherit; font-size: 0.875rem; line-height: 1.5; border: 1px solid var(--pico-primary); border-radius: 0.25rem; padding: 0.5rem; background: var(--pico-background-color); color: var(--pico-color); outline: none; transition: border-color 0.2s ease;"
-                                  @focus="$el.style.borderColor = 'var(--pico-primary-focus)'"
-                                  @blur="$el.style.borderColor = 'var(--pico-primary)'"></textarea>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--pico-muted-color);">
-                          <span>Markdown supported • Ctrl+Enter to save • Esc to cancel</span>
-                          <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span x-show="editingNoteContent && debouncedSaveNoteContent"
-                                  style="display: flex; align-items: center; gap: 0.25rem;">
-                              <span style="width: 8px; height: 8px; background: var(--pico-primary); border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;"></span>
-                              Auto-saving...
-                            </span>
-                            <span x-show="editingNoteContent && !debouncedSaveNoteContent">✓ All changes saved</span>
-                          </div>
-                        </div>
                       </div>
 
                       <!-- Attachments section -->

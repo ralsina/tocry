@@ -279,11 +279,6 @@ function createToCryStore () {
     // Note Title Editing Lane Context
     editingNoteTitleLane: null, // Store lane name for context
 
-    // Note Content Editing
-    editingNoteContent: null, // Store note ID being edited
-    editingNoteContentText: '',
-    editingNoteContentLane: null, // Store lane name for context
-
     // Note Tag Editing
     editingNoteTags: null, // Store note ID being edited
     editingNoteTagsText: '',
@@ -582,9 +577,6 @@ function createToCryStore () {
           if (this.editingNoteTitle) {
             this.cancelNoteTitleEdit()
             e.preventDefault()
-          } else if (this.editingNoteContent) {
-            this.cancelNoteContentEdit()
-            e.preventDefault()
           } else if (this.editingNoteTags) {
             this.cancelNoteTagsEdit()
             e.preventDefault()
@@ -618,10 +610,7 @@ function createToCryStore () {
 
         // Ctrl/Cmd + Enter: save current edit
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-          if (this.editingNoteContent) {
-            this.saveNoteContent()
-            e.preventDefault()
-          } else if (this.editingNoteTags) {
+          if (this.editingNoteTags) {
             this.saveNoteTags()
             e.preventDefault()
           } else if (this.editingNoteTitle) {
@@ -1261,97 +1250,6 @@ function createToCryStore () {
       this.editingNoteTitle = null
       this.editingNoteTitleText = ''
       this.editingNoteTitleLane = null
-    },
-
-    // Note Content Editing Functions
-    startEditingNoteContent (noteId, laneName, currentContent) {
-      this.editingNoteContent = noteId
-      this.editingNoteContentText = currentContent || ''
-      this.editingNoteContentLane = laneName
-      // Focus the textarea after it becomes visible
-      this.$nextTick(() => {
-        const textarea = this.$refs[`noteContentInput-${noteId}`]
-        if (textarea) {
-          textarea.focus()
-          // Place cursor at end of content
-          textarea.setSelectionRange(textarea.value.length, textarea.value.length)
-        }
-      })
-    },
-
-    async saveNoteContent () {
-      if (!this.editingNoteContent) {
-        this.cancelNoteContentEdit()
-        return
-      }
-
-      const newContent = this.editingNoteContentText
-
-      // Find the current note to get its full data
-      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteContentLane)
-      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteContent)
-
-      if (!note || note.content === newContent) {
-        this.cancelNoteContentEdit()
-        return
-      }
-
-      // Declare variable in the outer scope
-      let originalContent = null
-
-      try {
-        // Use optimistic updates for better UX
-        originalContent = note.content
-        note.content = newContent
-        this.showInfo('Updating note content...')
-
-        // Use API service to update the note
-        await this.api.updateNote(this.currentBoardName, this.editingNoteContent, {
-          title: note.title,
-          tags: note.tags || [],
-          content: newContent,
-          expanded: note.expanded,
-          public: note.public || false,
-          start_date: note.startDate || null,
-          end_date: note.endDate || null,
-          priority: note.priority || null,
-          attachments: note.attachments || []
-        }, {
-          laneName: this.editingNoteContentLane
-        })
-
-        this.showSuccess('Note content updated')
-      } catch (error) {
-        // Revert optimistic update on error
-        if (originalContent !== null) {
-          note.content = originalContent
-        }
-        console.error('Error updating note content:', error)
-        this.showError('Failed to update note content')
-      } finally {
-        this.cancelNoteContentEdit()
-      }
-    },
-
-    cancelNoteContentEdit () {
-      this.editingNoteContent = null
-      this.editingNoteContentText = ''
-      this.editingNoteContentLane = null
-    },
-
-    // Auto-save with debouncing for content
-    debouncedSaveNoteContent: null,
-
-    autoSaveNoteContent () {
-      // Clear existing timeout
-      if (this.debouncedSaveNoteContent) {
-        clearTimeout(this.debouncedSaveNoteContent)
-      }
-
-      // Set new timeout to save after 1 second of inactivity
-      this.debouncedSaveNoteContent = setTimeout(() => {
-        this.saveNoteContent()
-      }, 1000)
     },
 
     // Note Tag Editing Functions
