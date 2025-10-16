@@ -18,7 +18,9 @@
       "Bash(crystal run:*)",
       "Bash(make:*)",
       "Bash(gh pr create:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./generate_clients.sh:*)",
+      "Bash(./scripts/generate_clients.sh:*)"
     ],
     "deny": [],
     "ask": []

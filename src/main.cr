@@ -45,6 +45,7 @@ end
 # This `main()`function is called from the top-level so it's code that
 # always gets executed.
 
+# ameba:disable Metrics/CyclomaticComplexity
 def main
   # We parse the command line (`ARGV`) using the help we described above.
 
