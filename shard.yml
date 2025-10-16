@@ -5,6 +5,8 @@ dependencies:
   baked_file_system:
     github: ralsina/baked_file_system
     branch: master
+  model_context_protocol:
+    github: petterthowsen/crystal-mcp
   docopt:
     github: ralsina/docopt.cr
   html_builder:
