@@ -500,6 +500,31 @@
   margin-bottom: 0;
 }
 
+.note-completion-progress progress.progress-empty {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Prevent indeterminate state spinning in WebKit browsers */
+.note-completion-progress progress.progress-empty::-webkit-progress-bar {
+  background-color: var(--pico-background-color);
+  border-radius: 4px;
+}
+
+.note-completion-progress progress.progress-empty::-webkit-progress-value {
+  background-color: var(--pico-background-color);
+  border-radius: 4px;
+  width: 0;
+}
+
+/* Prevent indeterminate state spinning in Firefox */
+.note-completion-progress progress.progress-empty::-moz-progress-bar {
+  background-color: var(--pico-background-color);
+  border-radius: 4px;
+  width: 0;
+}
+
 .note-completion-progress span {
   font-size: 0.75rem;
   font-weight: 600;
