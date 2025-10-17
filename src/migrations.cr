@@ -1,3 +1,5 @@
+require "crystar"
+require "compress/gzip"
 require "./migrations/v0_1_0"
 require "./migrations/v0_6_1"
 require "./migrations/v0_8_0"
@@ -37,6 +39,30 @@ module ToCry
       end
 
       Log.warn { "Data directory is at version '#{stored_version_str || "pre-0.1.0"}' and needs migration to '#{current_version}'." }
+
+      # Create backup before applying migrations
+      backup_dir = File.join(Dir.current, "backups")
+      FileUtils.mkdir_p(backup_dir)
+      timestamp = Time.utc.to_s("%Y%m%d%H%M%S")
+      backup_filename = "tocry_backup_#{timestamp}.tar.gz"
+      backup_path = File.join(backup_dir, backup_filename)
+
+      Log.info { "Creating backup of data directory '#{ToCry.data_directory}' to '#{backup_path}' before migration." }
+      begin
+        File.open(backup_path, "w") do |file_io|
+          Compress::Gzip::Writer.open(file_io) do |gzip_writer|
+            Crystar::Writer.open(gzip_writer) do |tar_writer|
+              # Helper method to add files/directories recursively
+              add_to_tar(tar_writer, ToCry.data_directory, ToCry.data_directory)
+            end
+          end
+        end
+        Log.info { "Backup created successfully." }
+      rescue ex
+        Log.error(exception: ex) { "Failed to create backup: #{ex.message}" }
+        # Continue with migration, but log the error. Consider making this fatal in production.
+      end
+
       apply_migrations(stored_version_str)
 
       # After successful migration, update the version file.
@@ -54,6 +80,33 @@ module ToCry
 
     private def self.update_version_file
       File.write(version_file_path, VERSION)
+    end
+
+    private def self.add_to_tar(tar_writer : Crystar::Writer, source_path : String, base_path : String)
+      Dir.each_child(source_path) do |entry_name|
+        full_path = File.join(source_path, entry_name)
+        relative_path = Path[full_path].relative_to(Path[base_path]).to_s
+
+        if File.file?(full_path)
+          file_info = File.info(full_path)
+          header = Crystar::Header.new(
+            name: relative_path,
+            mode: file_info.permissions.to_i64,
+            size: file_info.size
+          )
+          tar_writer.write_header(header)
+          tar_writer.write(File.read(full_path).to_slice) # Write content directly
+        elsif File.directory?(full_path)
+          dir_info = File.info(full_path)
+          header = Crystar::Header.new(
+            name: relative_path + "/", # Tar directories usually end with a slash
+            mode: dir_info.permissions.to_i64,
+            size: 0 # Directories have size 0 in tar headers
+          )
+          tar_writer.write_header(header)
+          add_to_tar(tar_writer, full_path, base_path) # Recurse
+        end
+      end
     end
 
     # This is where we will add all migration steps in order.
