@@ -854,6 +854,7 @@ function createToCryStore () {
       if (!boardName) {
         return
       }
+      const isReload = this.currentBoardName === boardName && this.currentBoard
 
       // Debouncing: If we're already loading this board, return the existing promise
       if (this.loadingBoardPromise && this.loadingBoardName === boardName) {
@@ -866,7 +867,9 @@ function createToCryStore () {
         this.loadingBoardName = null
       }
 
-      this.loading = true
+      if (!isReload) {
+        this.loading = true
+      }
       this.error = null
       this.boardNotFound = false
       this.loadingBoardName = boardName
