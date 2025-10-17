@@ -4,6 +4,7 @@ require "../tocry"
 require "../demo"
 require "../websocket_handler"
 require "./helpers"
+require "../services/board_service"
 
 module ToCry::Endpoints::Boards
   # Path-scoped before filter to validate the board name and store it in the context.
@@ -131,181 +132,103 @@ module ToCry::Endpoints::Boards
   # Expects a JSON body with a board name and optional color scheme, e.g.:
   # { "name": "My New Board", "color_scheme": "Blue" }
   post "/api/v1/boards" do |env|
-    json_body = ToCry::Endpoints::Helpers.get_json_body(env)
-    payload = ToCry::Endpoints::Helpers::NewBoardPayload.from_json(json_body)
+    begin
+      json_body = ToCry::Endpoints::Helpers.get_json_body(env)
+      payload = ToCry::Endpoints::Helpers::NewBoardPayload.from_json(json_body)
 
-    new_board_name = payload.name.strip
-    ToCry::Endpoints::Helpers.validate_path_component(new_board_name)
+      new_board_name = payload.name.strip
+      ToCry::Endpoints::Helpers.validate_path_component(new_board_name)
 
-    # Get the current user from the request context and pass it to create.
-    user = ToCry.get_current_user_id(env)
-    board = ToCry.board_manager.create(new_board_name, user)
+      user = ToCry.get_current_user_id(env)
 
-    # Set color scheme if provided
-    if payload.color_scheme
-      board.color_scheme = ToCry::ColorScheme.validate(payload.color_scheme)
-      board.save
+      # Use BoardService to create the board
+      result = ToCry::Services::BoardService.create_board(
+        board_name: new_board_name,
+        user_id: user,
+        color_scheme: payload.color_scheme,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
+      )
+
+      if result[:success]
+        ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created successfully."})
+      else
+        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error creating board" }
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create board", 500)
     end
-
-    # Broadcast board creation to WebSocket clients
-    # Extract client ID for echo prevention
-    client_id = ToCry::WebSocketHandler.extract_client_id(env)
-    ToCry::WebSocketHandler.broadcast_to_board(new_board_name, ToCry::WebSocketHandler::MessageType::BOARD_CREATED, nil, client_id)
-
-    ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created."})
   end
 
-  # API Endpoint to update a board (rename or change first_visible_lane)
+  # API Endpoint to update a board (rename or change properties)
   # Expects the current board name in the URL path, e.g.:
   # PUT /boards/Old%20Board%20Name
   # Expects a JSON body like:
-  # { "new_name": "New Board Name" } or { "first_visible_lane": 2 } or both
+  # { "new_name": "New Board Name", "color_scheme": "Blue", "public": true }
   put "/api/v1/boards/:board_name" do |env|
     begin
       old_board_name = env.params.url["board_name"].as(String)
       json_body = ToCry::Endpoints::Helpers.get_json_body(env)
-
-      # Log the raw JSON payload for debugging
-      ToCry::Log.info { "PUT /api/v1/boards/#{old_board_name} - Raw JSON payload: #{json_body}" }
-
       payload = ToCry::Endpoints::Helpers::UpdateBoardPayload.from_json(json_body)
-      ToCry::Log.info { payload.to_s }
-
-      # Log parsed payload fields
-      ToCry::Log.info { "Parsed payload - new_name: #{payload.new_name.inspect}, first_visible_lane: #{payload.first_visible_lane.inspect}, public: #{payload.public.inspect}, lanes: #{payload.lanes.try(&.size)} lanes" }
 
       user = ToCry.get_current_user_id(env)
-      board = ToCry.board_manager.get(old_board_name, user)
 
-      unless board
-        next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
-      end
-
-      # Handle board renaming
-      if new_name = payload.new_name
-        new_board_name = new_name.strip
-        raise ToCry::Endpoints::Helpers::MissingBodyError.new("New board name cannot be empty.") if new_board_name.empty?
+      # Validate new name if provided
+      new_board_name = payload.new_name
+      if new_board_name
+        new_board_name = new_board_name.strip
+        if new_board_name.empty?
+          next ToCry::Endpoints::Helpers.error_response(env, "New board name cannot be empty.", 400)
+        end
         ToCry::Endpoints::Helpers.validate_path_component(new_board_name)
-        ToCry.board_manager.rename(old_board_name, new_board_name, user)
-        old_board_name = new_board_name # Update for success message
       end
 
-      # Handle first_visible_lane update
-      if first_visible_lane = payload.first_visible_lane
-        # Validate the first_visible_lane value
-        if first_visible_lane < 0
-          next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot be negative", 400)
-        end
-        if first_visible_lane > board.lanes.size
-          next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot exceed number of lanes", 400)
-        end
-
-        ToCry::Log.info { "Updating first_visible_lane from #{board.first_visible_lane} to #{first_visible_lane}" }
-        board.first_visible_lane = first_visible_lane
-        board.save
-        ToCry::Log.info { "After save, board.first_visible_lane is #{board.first_visible_lane}" }
-
-        # Verify by reloading
-        reloaded = ToCry.board_manager.get(board.name, user: user)
-        if reloaded
-          ToCry::Log.info { "Reloaded board first_visible_lane is #{reloaded.first_visible_lane}" }
+      # Convert lanes to the format expected by BoardService
+      lanes_data = payload.lanes.try do |lanes|
+        lanes.map do |lane|
+          {
+            "name" => JSON::Any.new(lane.name),
+          }
         end
       end
 
-      # Handle color_scheme update
-      if color_scheme = payload.color_scheme
-        board.color_scheme = ToCry::ColorScheme.validate(color_scheme)
-        board.save
-      end
+      # Use BoardService to update the board
+      result = ToCry::Services::BoardService.update_board(
+        board_name: old_board_name,
+        user_id: user,
+        new_board_name: new_board_name,
+        public: payload.public,
+        color_scheme: payload.color_scheme,
+        lanes: lanes_data,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
+      )
 
-      # Handle public update
-      unless payload.public.nil?
-        public_status = payload.public.as(Bool)
-        ToCry::Log.info { "Updating board public status from #{board.public} to #{public_status}" }
-        board.public = public_status
-        board.save
-        ToCry::Log.info { "After save, board.public is #{board.public}" }
+      if result[:success]
+        # Handle first_visible_lane update if provided (not handled by BoardService)
+        if first_visible_lane = payload.first_visible_lane
+          final_board_name = result[:new_name]? || result[:old_name]
+          board = ToCry.board_manager.get(final_board_name, user)
+          if board
+            # Validate the first_visible_lane value
+            if first_visible_lane < 0
+              next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot be negative", 400)
+            end
+            if first_visible_lane > board.lanes.size
+              next ToCry::Endpoints::Helpers.error_response(env, "first_visible_lane cannot exceed number of lanes", 400)
+            end
 
-        # Verify by reloading
-        reloaded = ToCry.board_manager.get(board.name, user: user)
-        if reloaded
-          ToCry::Log.info { "Reloaded board.public is #{reloaded.public}" }
-        end
-      end
-
-      # Handle complete lane state management
-      if lanes = payload.lanes
-        # Create new lanes array with proper ordering based on payload
-        new_lanes = [] of ToCry::Lane
-
-        # Process each lane definition from the payload
-        lanes.each do |lane_payload|
-          lane_name = lane_payload.name.strip
-
-          # Validate lane name
-          if lane_name.empty?
-            next ToCry::Endpoints::Helpers.error_response(env, "Lane name cannot be empty.", 400)
-          end
-
-          existing_lane = nil
-
-          # Try to find existing lane by lane_id first (preferred method)
-          if lane_id = lane_payload.lane_id
-            existing_lane = board.lanes.find { |lane| lane.sepia_id == lane_id }
-          end
-
-          # Fallback: try to find by name (for backward compatibility during migration)
-          if existing_lane.nil?
-            existing_lane = board.lanes.find { |lane| lane.name == lane_name }
-          end
-
-          if existing_lane
-            # Update existing lane name (handles renames) and preserve all notes
-            # Use the constructor that preserves the existing sepia_id
-            new_lane = ToCry::Lane.new(existing_lane.sepia_id, lane_name, existing_lane.notes)
-            new_lanes << new_lane
-          else
-            # Create completely new lane
-            new_lane = ToCry::Lane.new(lane_name)
-            new_lanes << new_lane
+            board.first_visible_lane = first_visible_lane
+            board.save
           end
         end
 
-        # Replace the board's lanes entirely with the new ordered lanes
-        board.lanes = new_lanes
-        board.save
-
-        # Broadcast lane update to WebSocket clients
-        lane_data = JSON::Any.new({
-          "lanes" => JSON::Any.new(new_lanes.map do |lane|
-            JSON::Any.new({
-              "lane_id" => JSON::Any.new(lane.sepia_id),
-              "name"    => JSON::Any.new(lane.name),
-              "notes"   => JSON::Any.new(lane.notes.map do |note|
-                JSON::Any.new({
-                  "sepia_id" => JSON::Any.new(note.sepia_id),
-                  "title"    => JSON::Any.new(note.title),
-                  "position" => JSON::Any.new(0), # Position not tracked at this level
-                })
-              end),
-            })
-          end),
-        })
-        # Extract client ID for echo prevention
-        client_id = ToCry::WebSocketHandler.extract_client_id(env)
-        ToCry::WebSocketHandler.broadcast_to_board(old_board_name, ToCry::WebSocketHandler::MessageType::LANE_UPDATED, lane_data, client_id)
+        ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
+      else
+        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
-
-      # Broadcast board update to WebSocket clients (use the potentially renamed board)
-      final_board_name = old_board_name
-      # Extract client ID for echo prevention
-      client_id = ToCry::WebSocketHandler.extract_client_id(env)
-      ToCry::WebSocketHandler.broadcast_to_board(final_board_name, ToCry::WebSocketHandler::MessageType::BOARD_UPDATED, nil, client_id)
-
-      ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating board '#{old_board_name}'" }
-      raise ex
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update board", 500)
     end
   end
 
@@ -314,16 +237,28 @@ module ToCry::Endpoints::Boards
   # DELETE /boards/My%20Board
   # Note: This endpoint is idempotent - deleting an already deleted board will succeed
   delete "/api/v1/boards/:board_name" do |env|
-    board_name = env.params.url["board_name"].as(String)
-    user = ToCry.get_current_user_id(env)
+    begin
+      board_name = env.params.url["board_name"].as(String)
+      user = ToCry.get_current_user_id(env)
 
-    # Broadcast board deletion to WebSocket clients before actually deleting
-    # Extract client ID for echo prevention
-    client_id = ToCry::WebSocketHandler.extract_client_id(env)
-    ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::BOARD_DELETED, nil, client_id)
+      # Use BoardService to delete the board
+      result = ToCry::Services::BoardService.delete_board(
+        board_name: board_name,
+        user_id: user,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
+      )
 
-    ToCry.board_manager.delete(board_name, user)
-    ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+      if result[:success]
+        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+      else
+        # For delete operations, we want to return success even if board wasn't found (idempotent)
+        # This matches the original API behavior and test expectations
+        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error deleting board '#{board_name}'" }
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete board", 500)
+    end
   end
 
   # API Endpoint to share a board with another user
