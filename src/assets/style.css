@@ -188,7 +188,7 @@
       background: color-mix(in srgb, var(--pico-card-background-color) 85%, rgba(var(--primary-rgb), 0.15) 15%);
       border: 2px solid rgba(var(--primary-rgb), 0.4);
       border-radius: var(--pico-border-radius);
-      min-width: 250px;
+      min-width: 290px;
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -368,6 +368,9 @@
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .note-title:hover {
