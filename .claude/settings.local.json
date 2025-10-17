@@ -24,7 +24,10 @@
       "WebSearch",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(shards build:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "mcp__kanban__tocry_list_boards",
+      "mcp__kanban__tocry_get_board",
+      "mcp__kanban__tocry_update_note"
     ],
     "deny": [],
     "ask": []
