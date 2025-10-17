@@ -1,15 +1,15 @@
 require "json"
+require "../tool"
 
-class ListBoardsTool < ModelContextProtocol::Server::Tool
+class ListBoardsTool < Tool
   def initialize
     super(
       name: "tocry_list_boards",
       description: "List all accessible Kanban boards for the current user",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({} of String => JSON::Any),
       },
-      required_parameters: [] of String
     )
   end
 

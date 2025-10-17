@@ -1,11 +1,12 @@
 require "json"
+require "../tool"
 
-class UpdateNoteTool < ModelContextProtocol::Server::Tool
+class UpdateNoteTool < Tool
   def initialize
     super(
       name: "tocry_update_note",
       description: "Update an existing note's properties or move it to a different lane",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({
           "note_id" => JSON::Any.new({
@@ -51,7 +52,6 @@ class UpdateNoteTool < ModelContextProtocol::Server::Tool
         }),
         "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
       },
-      required_parameters: ["note_id", "board_name"]
     )
   end
 

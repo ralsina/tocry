@@ -26,7 +26,11 @@ class MCPHandler
     user_id = ToCry.get_current_user_id(env)
     ToCry::Log.info { "MCP request from authenticated user: #{user_id}" }
 
-    @@mcp_server.handle_kemal_request(env, user_id)
+    # Handle the request with our new server
+    response = @@mcp_server.handle_request(env, user_id)
+
+    env.response.content_type = "application/json"
+    env.response.print response
   end
 
   def self.handle_get(env)
@@ -44,6 +48,7 @@ class MCPHandler
     user_id = ToCry.get_current_user_id(env)
     ToCry::Log.info { "MCP SSE connection from authenticated user: #{user_id}" }
 
+    # Handle SSE with our new server
     @@mcp_server.handle_sse(env, user_id)
   end
 end

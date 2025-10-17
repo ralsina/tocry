@@ -1,11 +1,12 @@
 require "json"
+require "../tool"
 
-class GetNoteTool < ModelContextProtocol::Server::Tool
+class GetNoteTool < Tool
   def initialize
     super(
       name: "tocry_get_note",
       description: "Get detailed information about a specific note",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({
           "note_id" => JSON::Any.new({
@@ -19,7 +20,6 @@ class GetNoteTool < ModelContextProtocol::Server::Tool
         }),
         "required" => JSON::Any.new(["note_id"].map { |param| JSON::Any.new(param) }),
       },
-      required_parameters: ["note_id"]
     )
   end
 

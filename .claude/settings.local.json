@@ -20,7 +20,11 @@
       "Bash(gh pr create:*)",
       "Bash(find:*)",
       "Bash(./generate_clients.sh:*)",
-      "Bash(./scripts/generate_clients.sh:*)"
+      "Bash(./scripts/generate_clients.sh:*)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(shards build:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

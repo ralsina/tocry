@@ -1,11 +1,12 @@
 require "json"
+require "../tool"
 
-class SearchNotesTool < ModelContextProtocol::Server::Tool
+class SearchNotesTool < Tool
   def initialize
     super(
       name: "tocry_search_notes",
       description: "Search across all notes in all boards for matching content",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({
           "query" => JSON::Any.new({
@@ -27,7 +28,6 @@ class SearchNotesTool < ModelContextProtocol::Server::Tool
         }),
         "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
       },
-      required_parameters: ["query"]
     )
   end
 
