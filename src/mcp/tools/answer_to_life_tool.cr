@@ -1,15 +1,15 @@
 require "json"
+require "../tool"
 
-class AnswerToLifeTool < ModelContextProtocol::Server::Tool
+class AnswerToLifeTool < Tool
   def initialize
     super(
       name: "answer_to_life",
       description: "Returns the answer to life, the universe, and everything",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({} of String => JSON::Any),
-      },
-      required_parameters: [] of String
+      }
     )
   end
 

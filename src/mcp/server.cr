@@ -1,5 +1,6 @@
 require "kemal"
-require "model_context_protocol"
+require "json"
+require "./tool"
 require "./tools/answer_to_life_tool"
 require "./tools/list_boards_tool"
 require "./tools/get_board_tool"
@@ -8,111 +9,52 @@ require "./tools/create_note_tool"
 require "./tools/update_note_tool"
 require "./tools/get_note_tool"
 
-# Custom transport that works with Kemal integration
-class KemalMCPTransport < ModelContextProtocol::Transport::Base
+# Lightweight MCP 2024-11-05 Server Implementation
+class ToCryMCPServer
   def initialize
-    @request_handlers = [] of ModelContextProtocol::Messages::Request -> ModelContextProtocol::Messages::Response
-    @notification_handlers = [] of ModelContextProtocol::Messages::Notification -> Nil
-  end
-
-  def send_request(request : ModelContextProtocol::Messages::Request) : ModelContextProtocol::Messages::Response
-    # For our integration, we handle requests directly through Kemal
-    # This method won't be called in server mode
-    raise "Not implemented for Kemal integration"
-  end
-
-  def send_notification(notification : ModelContextProtocol::Messages::Notification) : Nil
-    # For our integration, we handle notifications directly through Kemal
-    # This method won't be called in server mode
-    raise "Not implemented for Kemal integration"
-  end
-
-  def on_request(&block : ModelContextProtocol::Messages::Request -> ModelContextProtocol::Messages::Response)
-    @request_handlers << block
-  end
-
-  def on_notification(&block : ModelContextProtocol::Messages::Notification -> Nil)
-    @notification_handlers << block
-  end
-
-  def close : Nil
-    # No connections to close in Kemal integration
-  end
-end
-
-class ToCryMCPServer < ModelContextProtocol::Server::Server
-  def initialize
-    transport = KemalMCPTransport.new
-    super(transport)
-
     # Register all ToCry MCP tools
-    register_tool(AnswerToLifeTool.new)
-    register_tool(ListBoardsTool.new)
-    register_tool(GetBoardTool.new)
-    register_tool(SearchNotesTool.new)
-    register_tool(CreateNoteTool.new)
-    register_tool(UpdateNoteTool.new)
-    register_tool(GetNoteTool.new)
+    @tools = {} of String => Tool
+
+    @tools["answer_to_life"] = AnswerToLifeTool.new
+    @tools["tocry_list_boards"] = ListBoardsTool.new
+    @tools["tocry_get_board"] = GetBoardTool.new
+    @tools["tocry_search_notes"] = SearchNotesTool.new
+    @tools["tocry_create_note"] = CreateNoteTool.new
+    @tools["tocry_update_note"] = UpdateNoteTool.new
+    @tools["tocry_get_note"] = GetNoteTool.new
   end
 
-  # Handle MCP JSON-RPC requests through Kemal
-  def handle_kemal_request(env, user_id : String)
-    # Get the JSON-RPC request body
+  # Handle MCP JSON-RPC requests via Kemal
+  def handle_request(env, user_id : String)
+    # Parse JSON-RPC request
     request_body = env.request.body || raise "Missing request body"
-
-    # Parse the JSON-RPC request
     json_request = JSON.parse(request_body)
+    request_id = json_request["id"]?
 
-    # Create MCP Request object from JSON
-    method = json_request["method"]?.try(&.as_s) || ""
+    ToCry::Log.info { "MCP Request: #{json_request}" }
 
-    # Convert id to correct type (Int64 | String)
-    id_value = if raw_id = json_request["id"]?
-                 if raw_id.as_i?
-                   raw_id.as_i64
-                 elsif raw_id.as_s?
-                   raw_id.as_s
-                 else
-                   raise "Invalid id type"
-                 end
-               else
-                 raise "Missing id field"
-               end
-
-    params = json_request["params"]?.try(&.as_h)
-
-    mcp_request = ModelContextProtocol::Messages::Request.new(
-      id: id_value,
-      method: method,
-      params: params
-    )
-
-    # Process the request using the MCP server logic with authenticated user
-    response = handle_request_with_user(mcp_request, user_id)
-
-    # Send the response
-    env.response.content_type = "application/json"
-    env.response.print response.to_json
-  rescue ex
-    ToCry::Log.error(exception: ex) { "Error handling MCP request: #{ex.message}" }
-    env.response.status_code = 500
-    env.response.content_type = "application/json"
-
-    # Build error response as JSON::Any
-    error_data = {
-      "jsonrpc" => JSON::Any.new("2.0"),
-      "error"   => JSON::Any.new({
-        "code"    => JSON::Any.new(-32603),
-        "message" => JSON::Any.new("Internal error: #{ex.message}"),
-      } of String => JSON::Any),
-    } of String => JSON::Any
-
-    # Add id if it exists in the request
-    if json_request && (request_id = json_request["id"]?)
-      error_data["id"] = request_id
+    # Validate JSON-RPC 2.0 format
+    unless json_request["jsonrpc"]? == "2.0"
+      return send_error(-32600, "Invalid Request", request_id)
     end
 
-    env.response.print(error_data.to_json)
+    method = json_request["method"]?.try(&.as_s)
+    id = json_request["id"]?
+    params = json_request["params"]?.try(&.as_h) || {} of String => JSON::Any
+
+    case method
+    when "initialize"
+      handle_initialize(params, id)
+    when "tools/list"
+      handle_tools_list(params, id)
+    when "tools/call"
+      handle_tools_call(params, id, user_id)
+    else
+      send_error(-32601, "Method not found: #{method}", id)
+    end
+  rescue ex
+    ToCry::Log.error(exception: ex) { "Error handling MCP request: #{ex.message}" }
+    send_error(-32603, "Internal error: #{ex.message}", request_id)
   end
 
   # Handle Server-Sent Events for real-time communication
@@ -120,99 +62,145 @@ class ToCryMCPServer < ModelContextProtocol::Server::Server
     env.response.headers["Content-Type"] = "text/event-stream"
     env.response.headers["Cache-Control"] = "no-cache"
     env.response.headers["Connection"] = "keep-alive"
+    env.response.headers["Access-Control-Allow-Origin"] = "*"
+    env.response.headers["Access-Control-Allow-Headers"] = "Cache-Control"
 
-    # Send initial connection event with user info
+    # Send initial connection event
     env.response.puts("event: connected")
     env.response.puts("data: {\"message\": \"Connected to ToCry MCP server as user: #{user_id}\"}")
     env.response.puts
+    env.response.flush
 
-    # For now, just keep the connection open
-    # In the future, this could be used for real-time updates
-
-
+    # Keep connection alive with periodic heartbeats
+    spawn do
+      loop do
+        sleep(30.seconds) # Send heartbeat every 30 seconds
+        begin
+          env.response.puts(": heartbeat")
+          env.response.puts
+          env.response.flush
+        rescue ex
+          break # Connection closed
+        end
+      end
+    end
   rescue ex
     ToCry::Log.error(exception: ex) { "Error in SSE connection: #{ex.message}" }
   end
 
-  # Override handle_request to pass authenticated user_id to tools
-  private def handle_request_with_user(request : ModelContextProtocol::Messages::Request, user_id : String) : ModelContextProtocol::Messages::Response
-    case request.method
-    when "initialize"
-      handle_initialize(request)
-    when "tools/list"
-      handle_list_tools(request)
-    when "tools/invoke"
-      handle_invoke_tool_with_user(request, user_id)
-    else
-      ModelContextProtocol::Messages::Response.new(
-        request.id,
-        error: ModelContextProtocol::Messages::Error.new(
-          ModelContextProtocol::Messages::ErrorCodes::METHOD_NOT_FOUND,
-          "Method not found: #{request.method}"
-        )
-      )
+  private def handle_initialize(params, id)
+    client_version = params["protocolVersion"]?.try(&.as_s)
+
+    # Accept 2025-06-18 (Claude) and 2024-11-05 (standard)
+    unless client_version == "2025-06-18" || client_version == "2024-11-05"
+      return send_error(-32602, "Unsupported protocol version: #{client_version}", id)
     end
-  rescue ex : Exception
-    ModelContextProtocol::Messages::Response.new(
-      request.id,
-      error: ModelContextProtocol::Messages::Error.new(
-        ModelContextProtocol::Messages::ErrorCodes::INTERNAL_ERROR,
-        "Internal error: #{ex.message}"
-      )
-    )
+
+    response = {
+      "jsonrpc" => "2.0",
+      "id"      => id,
+      "result"  => {
+        "protocolVersion" => "2024-11-05",
+        "capabilities"    => {
+          "tools" => {
+            "listChanged" => true,
+          },
+        },
+        "serverInfo" => {
+          "name"    => "ToCry MCP Server",
+          "version" => "0.1.0",
+        },
+      },
+    }
+
+    response.to_json
   end
 
-  # Override handle_invoke_tool to pass user_id to tools
-  # ameba:disable Metrics/CyclomaticComplexity
-  private def handle_invoke_tool_with_user(request : ModelContextProtocol::Messages::Request, user_id : String) : ModelContextProtocol::Messages::Response
-    params = request.params
-    raise "Missing parameters" unless params
-
-    tool_name = params["name"]?.try(&.as_s)
-    raise "Missing tool name" unless tool_name
-
-    tool = @tools[tool_name]?
-    raise "Tool not found: #{tool_name}" unless tool
-
-    tool_params = params["params"]?.try(&.as_h) || {} of String => JSON::Any
-
-    # Check if this is one of our authenticated tools
-    case tool_name
-    when "answer_to_life"
-      result = tool.as(AnswerToLifeTool).invoke_with_user(tool_params, user_id)
-    when "tocry_list_boards"
-      result = tool.as(ListBoardsTool).invoke_with_user(tool_params, user_id)
-    when "tocry_get_board"
-      result = tool.as(GetBoardTool).invoke_with_user(tool_params, user_id)
-    when "tocry_search_notes"
-      result = tool.as(SearchNotesTool).invoke_with_user(tool_params, user_id)
-    when "tocry_create_note"
-      result = tool.as(CreateNoteTool).invoke_with_user(tool_params, user_id)
-    when "tocry_update_note"
-      result = tool.as(UpdateNoteTool).invoke_with_user(tool_params, user_id)
-    when "tocry_get_note"
-      result = tool.as(GetNoteTool).invoke_with_user(tool_params, user_id)
-    else
-      # Fallback for tools that don't support authentication (like example tools)
-      result = tool.invoke(tool_params)
+  private def handle_tools_list(params, id)
+    tools = @tools.values.map do |tool|
+      {
+        "name"        => tool.name,
+        "description" => tool.description,
+        "inputSchema" => tool.input_schema,
+      }
     end
 
-    ModelContextProtocol::Messages::Response.new(request.id, result: result)
-  rescue ex : ModelContextProtocol::Server::ToolError
-    ModelContextProtocol::Messages::Response.new(
-      request.id,
-      error: ModelContextProtocol::Messages::Error.new(
-        ModelContextProtocol::Messages::ErrorCodes::INVALID_PARAMS,
-        ex.message || "Tool error"
-      )
-    )
-  rescue ex : Exception
-    ModelContextProtocol::Messages::Response.new(
-      request.id,
-      error: ModelContextProtocol::Messages::Error.new(
-        ModelContextProtocol::Messages::ErrorCodes::INTERNAL_ERROR,
-        "Internal error: #{ex.message}"
-      )
-    )
+    response = {
+      "jsonrpc" => "2.0",
+      "id"      => id,
+      "result"  => {
+        "tools" => tools,
+      },
+    }
+
+    response.to_json
+  end
+
+  # ameba:disable Metrics/CyclomaticComplexity
+  private def handle_tools_call(params, id, user_id : String)
+    tool_name = params["name"]?.try(&.as_s)
+
+    unless tool_name
+      return send_error(-32602, "Missing tool name", id)
+    end
+
+    tool = @tools[tool_name]?
+    unless tool
+      return send_error(-32602, "Unknown tool: #{tool_name}", id)
+    end
+
+    # MCP 2024-11-05 uses "arguments", 0.1.0 uses "params"
+    arguments = params["arguments"]?.try(&.as_h) || params["params"]?.try(&.as_h) || {} of String => JSON::Any
+
+    begin
+      # Check if this is one of our authenticated tools
+      result = case tool_name
+               when "answer_to_life"
+                 tool.as(AnswerToLifeTool).invoke_with_user(arguments, user_id)
+               when "tocry_list_boards"
+                 tool.as(ListBoardsTool).invoke_with_user(arguments, user_id)
+               when "tocry_get_board"
+                 tool.as(GetBoardTool).invoke_with_user(arguments, user_id)
+               when "tocry_search_notes"
+                 tool.as(SearchNotesTool).invoke_with_user(arguments, user_id)
+               when "tocry_create_note"
+                 tool.as(CreateNoteTool).invoke_with_user(arguments, user_id)
+               when "tocry_update_note"
+                 tool.as(UpdateNoteTool).invoke_with_user(arguments, user_id)
+               when "tocry_get_note"
+                 tool.as(GetNoteTool).invoke_with_user(arguments, user_id)
+               else
+                 # Fallback for tools that don't support authentication
+                 tool.invoke(arguments)
+               end
+
+      response = {
+        "jsonrpc" => "2.0",
+        "id"      => id,
+        "result"  => {
+          "content" => [
+            {
+              "type" => "text",
+              "text" => result.to_json,
+            },
+          ],
+        },
+      }
+
+      response.to_json
+    rescue ex : Exception
+      send_error(-32602, "Tool error: #{ex.message}", id)
+    end
+  end
+
+  private def send_error(code, message, id)
+    {
+      "jsonrpc" => "2.0",
+      "id"      => id,
+      "error"   => {
+        "code"    => code,
+        "message" => message,
+      },
+    }.to_json
   end
 end

@@ -1,11 +1,12 @@
 require "json"
+require "../tool"
 
-class GetBoardTool < ModelContextProtocol::Server::Tool
+class GetBoardTool < Tool
   def initialize
     super(
       name: "tocry_get_board",
       description: "Get complete board structure with all lanes and notes",
-      parameters: {
+      input_schema: {
         "type"       => JSON::Any.new("object"),
         "properties" => JSON::Any.new({
           "board_name" => JSON::Any.new({
@@ -15,7 +16,6 @@ class GetBoardTool < ModelContextProtocol::Server::Tool
         }),
         "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
       },
-      required_parameters: ["board_name"]
     )
   end
 
