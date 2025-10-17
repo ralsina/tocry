@@ -22,16 +22,16 @@ class ListBoardsTool < Tool
     # Get the board manager
     board_manager = ToCry.board_manager
 
-    # List all boards for the authenticated user
-    board_uuids = board_manager.list(user_id)
+    # Get all board references for the user to access user-specific board names
+    user_references = ToCry::BoardReference.accessible_to_user(user_id)
 
-    boards_data = board_uuids.compact_map do |board_uuid|
-      board = board_manager.get_by_uuid(board_uuid)
+    boards_data = user_references.compact_map do |reference|
+      board = board_manager.get_by_uuid(reference.board_uuid)
       next unless board
 
       {
         "id"           => JSON::Any.new(board.sepia_id),
-        "name"         => JSON::Any.new(board.name),
+        "name"         => JSON::Any.new(reference.board_name), # Use user-specific name from BoardReference
         "lane_count"   => JSON::Any.new(board.lanes.size),
         "public"       => JSON::Any.new(board.public),
         "color_scheme" => board.color_scheme ? JSON::Any.new(board.color_scheme) : JSON::Any.new(nil),

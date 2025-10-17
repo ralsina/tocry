@@ -66,7 +66,7 @@ class GetBoardTool < Tool
 
       {
         "id"           => JSON::Any.new(board.sepia_id),
-        "name"         => JSON::Any.new(board.name),
+        "name"         => JSON::Any.new(board_name), # Use the user-specific board name that was requested
         "lanes"        => JSON::Any.new(lanes_data.map { |lane_data| JSON::Any.new(lane_data) }),
         "public"       => JSON::Any.new(board.public),
         "color_scheme" => board.color_scheme ? JSON::Any.new(board.color_scheme) : JSON::Any.new(nil),
