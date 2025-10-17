@@ -2343,6 +2343,26 @@ function createToCryStore () {
       return attachment
     },
 
+    // Calculate completion percentage for a note
+    calculateCompletion (note) {
+      if (!note || !note.content) {
+        return { total: 0, completed: 0, percentage: 0 }
+      }
+
+      const content = note.content
+      const openTasks = (content.match(/^\s*[-*] \[ \]/gm) || []).length
+      const completedTasks = (content.match(/^\s*[-*] \[x\]/gm) || []).length
+      const totalTasks = openTasks + completedTasks
+
+      if (totalTasks === 0) {
+        return { total: 0, completed: 0, percentage: 0 }
+      }
+
+      const percentage = Math.round((completedTasks / totalTasks) * 100)
+
+      return { total: totalTasks, completed: completedTasks, percentage }
+    },
+
     // Delete attachment from expanded note view
     async deleteAttachmentFromNote (note, attachment) {
       const confirmed = await this.showAlert(
