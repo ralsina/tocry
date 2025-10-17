@@ -3,6 +3,7 @@ require "kemal"
 require "../tocry"
 require "../websocket_handler"
 require "./helpers"
+require "../services/note_service"
 require "uuid"       # For generating unique filenames
 require "file_utils" # For creating directories
 
@@ -28,22 +29,11 @@ module ToCry::Endpoints::Notes
       payload = ToCry::Endpoints::Helpers::NewNotePayload.from_json(json_body)
 
       user = ToCry.get_current_user_id(env)
-      board = ToCry.board_manager.get(board_name, user)
-
-      unless board
-        next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
-      end
 
       # Validate lane name
       lane_name = payload.lane_name.strip
       if lane_name.empty?
         next ToCry::Endpoints::Helpers.error_response(env, "Lane name cannot be empty.", 400)
-      end
-
-      # Find the lane
-      target_lane = board.lanes.find { |lane| lane.name == lane_name }
-      unless target_lane
-        next ToCry::Endpoints::Helpers.error_response(env, "Lane '#{lane_name}' not found.", 404)
       end
 
       # Validate note title
@@ -52,65 +42,50 @@ module ToCry::Endpoints::Notes
         next ToCry::Endpoints::Helpers.error_response(env, "Note title cannot be empty.", 400)
       end
 
-      # Create new note with the provided data
-      new_note = ToCry::Note.new(
-        payload.note.title,
-        payload.note.tags,
-        payload.note.content,
-        payload.note.expanded,
-        payload.note.public,
-        payload.note.attachments,
-        payload.note.start_date,
-        payload.note.end_date,
-        payload.note.priority
+      # Convert priority to string for service
+      priority_str = payload.note.priority.try(&.to_s)
+
+      # Use NoteService to create the note
+      result = ToCry::Services::NoteService.create_note(
+        board_name: board_name,
+        lane_name: lane_name,
+        title: payload.note.title,
+        user_id: user,
+        content: payload.note.content,
+        tags: payload.note.tags,
+        priority: priority_str,
+        start_date: payload.note.start_date,
+        end_date: payload.note.end_date,
+        public: payload.note.public,
+        expanded: payload.note.expanded,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      # Add note to the lane (at the end by default)
-      target_lane.notes << new_note
-      board.save
+      if result[:success]
+        # Return the created note with its generated ID
+        note_response = {
+          sepia_id:    result[:id],
+          title:       result[:title],
+          content:     result[:content],
+          tags:        result[:tags].map(&.as_s),
+          expanded:    false, # Not included in service response, default to false
+          public:      result[:public].as_bool,
+          attachments: [] of String, # Not included in service response, default to empty
+          start_date:  result[:start_date].as_s?,
+          end_date:    result[:end_date].as_s?,
+          priority:    result[:priority],
+        }
 
-      ToCry::Log.info { "Note '#{new_note.title}' created in lane '#{lane_name}' on board '#{board_name}' by user '#{user}'" }
-
-      # Broadcast note creation to WebSocket clients
-      note_data = JSON::Any.new({
-        "sepia_id"    => JSON::Any.new(new_note.sepia_id),
-        "title"       => JSON::Any.new(new_note.title),
-        "content"     => JSON::Any.new(new_note.content),
-        "lane_name"   => JSON::Any.new(lane_name),
-        "tags"        => JSON::Any.new(new_note.tags.map { |tag| JSON::Any.new(tag) }),
-        "expanded"    => JSON::Any.new(new_note.expanded),
-        "public"      => JSON::Any.new(new_note.public),
-        "attachments" => JSON::Any.new(new_note.attachments.map { |att| JSON::Any.new(att) }),
-        "start_date"  => JSON::Any.new(new_note.start_date || ""),
-        "end_date"    => JSON::Any.new(new_note.end_date || ""),
-        "priority"    => JSON::Any.new(new_note.priority.to_s),
-      })
-
-      # Extract client ID for echo prevention
-      client_id = ToCry::WebSocketHandler.extract_client_id(env)
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_CREATED, note_data, client_id)
-
-      # Return the created note with its generated ID
-      note_response = {
-        sepia_id:    new_note.sepia_id,
-        title:       new_note.title,
-        content:     new_note.content,
-        tags:        new_note.tags,
-        expanded:    new_note.expanded,
-        public:      new_note.public,
-        attachments: new_note.attachments,
-        start_date:  new_note.start_date,
-        end_date:    new_note.end_date,
-        priority:    new_note.priority.to_s,
-      }
-
-      ToCry::Endpoints::Helpers.created_response(env, {
-        success: "Note created successfully.",
-        note:    note_response,
-      })
+        ToCry::Endpoints::Helpers.created_response(env, {
+          success: "Note created successfully.",
+          note:    note_response,
+        })
+      else
+        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+      end
     rescue ex
-      ToCry::Log.error(exception: ex) { "Error creating note in board '#{board_name}'" }
-      raise ex
+      ToCry::Log.error(exception: ex) { "Error creating note in board '#{env.params.url["board_name"]}'" }
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create note", 500)
     end
   end
 
@@ -127,19 +102,6 @@ module ToCry::Endpoints::Notes
       payload = ToCry::Endpoints::Helpers::UpdateNotePayload.from_json(json_body)
 
       user = ToCry.get_current_user_id(env)
-      board = ToCry.board_manager.get(board_name, user)
-
-      unless board
-        next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
-      end
-
-      # Find the note across all lanes
-      found_note_and_lane = board.note(note_id)
-      unless found_note_and_lane
-        next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found")
-      end
-
-      current_note, current_lane = found_note_and_lane
 
       # Validate note title if provided
       if payload.note.title
@@ -149,107 +111,82 @@ module ToCry::Endpoints::Notes
         end
       end
 
-      # Update note properties
-      current_note.title = payload.note.title
-      current_note.tags = payload.note.tags
-      current_note.content = payload.note.content
-      current_note.expanded = payload.note.expanded
-      current_note.public = payload.note.public
-      current_note.attachments = payload.note.attachments
-      current_note.start_date = payload.note.start_date
-      current_note.end_date = payload.note.end_date
-      current_note.priority = payload.note.priority
-
-      # Handle lane change if specified
-      if new_lane_name = payload.lane_name
+      # Handle lane name validation if specified
+      new_lane_name = payload.lane_name
+      if new_lane_name
         new_lane_name = new_lane_name.strip
         if new_lane_name.empty?
           next ToCry::Endpoints::Helpers.error_response(env, "Lane name cannot be empty.", 400)
         end
+      end
 
-        # Only move if lane is different
-        if new_lane_name != current_lane.name
-          # Find the target lane
-          target_lane = board.lanes.find { |lane| lane.name == new_lane_name }
-          unless target_lane
-            next ToCry::Endpoints::Helpers.error_response(env, "Target lane '#{new_lane_name}' not found.", 404)
-          end
+      # Convert priority to string for service
+      priority_str = payload.note.priority.try(&.to_s)
 
-          # Remove note from current lane
-          current_lane.notes.delete(current_note)
+      # Use NoteService to update the note
+      result = ToCry::Services::NoteService.update_note(
+        board_name: board_name,
+        note_id: note_id,
+        user_id: user,
+        title: payload.note.title,
+        content: payload.note.content,
+        tags: payload.note.tags,
+        priority: priority_str,
+        start_date: payload.note.start_date,
+        end_date: payload.note.end_date,
+        public: payload.note.public,
+        expanded: payload.note.expanded,
+        new_lane_name: new_lane_name,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
+      )
 
-          # Add note to target lane
-          if target_position = payload.position
-            # Insert at specific position
-            if target_position >= target_lane.notes.size
-              target_lane.notes << current_note
-            else
-              target_lane.notes.insert(target_position, current_note)
-            end
-          else
-            # Add to end by default
-            target_lane.notes << current_note
-          end
-        else
-          # Same lane, handle position change if specified
-          if target_position = payload.position
-            # Remove from current position
-            current_lane.notes.delete(current_note)
-            # Insert at new position
-            if target_position >= current_lane.notes.size
-              current_lane.notes << current_note
-            else
-              current_lane.notes.insert(target_position, current_note)
+      if result[:success]
+        # Handle position changes if specified (NoteService doesn't handle position)
+        if payload.position && payload.position != 0
+          board = ToCry.board_manager.get(board_name, user)
+          if board
+            found_note_and_lane = board.note(note_id)
+            if found_note_and_lane
+              current_note, current_lane = found_note_and_lane
+              target_position = payload.position.not_nil!
+
+              # Remove from current position
+              current_lane.notes.delete(current_note)
+              # Insert at new position
+              if target_position >= current_lane.notes.size
+                current_lane.notes << current_note
+              else
+                current_lane.notes.insert(target_position, current_note)
+              end
+              board.save
             end
           end
         end
+
+        # Return the updated note
+        note_response = {
+          sepia_id:    result[:id],
+          title:       result[:title],
+          content:     result[:content],
+          tags:        result[:tags].map(&.as_s),
+          expanded:    payload.note.expanded, # Use the value from request
+          public:      result[:public].as_bool,
+          attachments: [] of String, # Not included in service response, default to empty
+          start_date:  result[:start_date].as_s?,
+          end_date:    result[:end_date].as_s?,
+          priority:    result[:priority],
+        }
+
+        ToCry::Endpoints::Helpers.success_response(env, {
+          success: "Note updated successfully.",
+          note:    note_response,
+        })
+      else
+        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
-
-      board.save
-
-      ToCry::Log.info { "Note '#{current_note.title}' updated in board '#{board_name}' by user '#{user}'" }
-
-      # Broadcast note update to WebSocket clients
-      note_data = JSON::Any.new({
-        "sepia_id"    => JSON::Any.new(current_note.sepia_id),
-        "title"       => JSON::Any.new(current_note.title),
-        "content"     => JSON::Any.new(current_note.content),
-        "lane_name"   => JSON::Any.new(payload.lane_name || current_lane.name),
-        "tags"        => JSON::Any.new(current_note.tags.map { |tag| JSON::Any.new(tag) }),
-        "expanded"    => JSON::Any.new(current_note.expanded),
-        "public"      => JSON::Any.new(current_note.public),
-        "attachments" => JSON::Any.new(current_note.attachments.map { |att| JSON::Any.new(att) }),
-        "start_date"  => JSON::Any.new(current_note.start_date || ""),
-        "end_date"    => JSON::Any.new(current_note.end_date || ""),
-        "priority"    => JSON::Any.new(current_note.priority.to_s),
-        "position"    => JSON::Any.new(payload.position || 0),
-      })
-
-      # Extract client ID for echo prevention
-      client_id = ToCry::WebSocketHandler.extract_client_id(env)
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_UPDATED, note_data, client_id)
-
-      # Return the updated note
-      note_response = {
-        sepia_id:    current_note.sepia_id,
-        title:       current_note.title,
-        content:     current_note.content,
-        tags:        current_note.tags,
-        expanded:    current_note.expanded,
-        public:      current_note.public,
-        attachments: current_note.attachments,
-        start_date:  current_note.start_date,
-        end_date:    current_note.end_date,
-        priority:    current_note.priority.to_s,
-      }
-
-      ToCry::Endpoints::Helpers.success_response(env, {
-        success: "Note updated successfully.",
-        note:    note_response,
-      })
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating note '#{note_id}' in board '#{board_name}'" }
-      raise ex
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update note", 500)
     end
   end
 
@@ -263,48 +200,41 @@ module ToCry::Endpoints::Notes
       note_id = env.params.url["note_id"].as(String)
 
       user = ToCry.get_current_user_id(env)
-      board = ToCry.board_manager.get(board_name, user)
 
-      # If board doesn't exist, the note is already deleted
+      # Check if board exists to maintain idempotent behavior
+      board = ToCry.board_manager.get(board_name, user)
       unless board
         ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user}'" }
         ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
         next
       end
 
-      # Find the note across all lanes
+      # Check if note exists to maintain idempotent behavior
       found_note_and_lane = board.note(note_id)
       unless found_note_and_lane
-        # Note doesn't exist - already deleted
         ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user}'" }
         ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
         next
       end
 
-      note_to_delete, lane = found_note_and_lane
+      # Use NoteService to delete the note
+      result = ToCry::Services::NoteService.delete_note(
+        board_name: board_name,
+        note_id: note_id,
+        user_id: user,
+        exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
+      )
 
-      # Remove the note from its lane
-      lane.notes.delete(note_to_delete)
-      board.save
-
-      ToCry::Log.info { "Note '#{note_to_delete.title}' deleted from board '#{board_name}' by user '#{user}'" }
-
-      # Broadcast note deletion to WebSocket clients
-      note_data = JSON::Any.new({
-        "sepia_id"  => JSON::Any.new(note_id),
-        "lane_name" => JSON::Any.new(lane.name),
-      })
-
-      # Extract client ID for echo prevention
-      client_id = ToCry::WebSocketHandler.extract_client_id(env)
-      ToCry::WebSocketHandler.broadcast_to_board(board_name, ToCry::WebSocketHandler::MessageType::NOTE_DELETED, note_data, client_id)
-
-      ToCry::Endpoints::Helpers.success_response(env, {
-        success: "Note deleted successfully.",
-      })
+      if result[:success]
+        ToCry::Endpoints::Helpers.success_response(env, {
+          success: "Note deleted successfully.",
+        })
+      else
+        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+      end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting note '#{note_id}' from board '#{board_name}'" }
-      raise ex
+      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete note", 500)
     end
   end
 

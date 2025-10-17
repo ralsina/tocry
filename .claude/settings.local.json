@@ -27,7 +27,9 @@
       "Bash(timeout:*)",
       "mcp__kanban__tocry_list_boards",
       "mcp__kanban__tocry_get_board",
-      "mcp__kanban__tocry_update_note"
+      "mcp__kanban__tocry_update_note",
+      "mcp__kanban__tocry_search_notes",
+      "mcp__kanban__tocry_get_note"
     ],
     "deny": [],
     "ask": []

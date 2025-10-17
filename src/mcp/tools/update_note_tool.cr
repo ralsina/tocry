@@ -1,5 +1,6 @@
 require "json"
 require "../tool"
+require "../../services/note_service"
 
 class UpdateNoteTool < Tool
   def initialize
@@ -49,6 +50,10 @@ class UpdateNoteTool < Tool
             "type"        => JSON::Any.new("string"),
             "description" => JSON::Any.new("New lane name to move the note to (optional)"),
           }),
+          "expanded" => JSON::Any.new({
+            "type"        => JSON::Any.new("boolean"),
+            "description" => JSON::Any.new("Whether the note should be expanded (optional)"),
+          }),
         }),
         "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
       },
@@ -60,115 +65,57 @@ class UpdateNoteTool < Tool
     raise "Authentication required"
   end
 
-  # ameba:disable Metrics/CyclomaticComplexity
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     note_id = params["note_id"].as_s
     board_name = params["board_name"].as_s
 
-    begin
-      # Get the board manager
-      board_manager = ToCry.board_manager
+    # Extract optional parameters
+    title = params["title"]?.try(&.as_s)
+    content = params["content"]?.try(&.as_s)
+    tags = params["tags"]?.try(&.as_a.map(&.as_s))
+    priority = params["priority"]?.try(&.as_s)
+    start_date = params["start_date"]?.try(&.as_s)
+    end_date = params["end_date"]?.try(&.as_s)
+    public = params["public"]?.try(&.as_bool)
+    expanded = params["expanded"]?.try(&.as_bool)
+    new_lane_name = params["new_lane_name"]?.try(&.as_s)
 
-      # Get the board
-      board = board_manager.get(board_name, user_id)
-      unless board
+    result = ToCry::Services::NoteService.update_note(
+        board_name: board_name,
+        note_id: note_id,
+        user_id: user_id,
+        title: title,
+        content: content,
+        tags: tags,
+        priority: priority,
+        start_date: start_date,
+        end_date: end_date,
+        public: public,
+        expanded: expanded,
+        new_lane_name: new_lane_name,
+        exclude_client_id: "mcp-client"
+      )
+
+      # Check if the operation was successful
+      if result[:success]
         return {
-          "error" => JSON::Any.new("Board '#{board_name}' not found for user '#{user_id}'"),
+          "success"    => JSON::Any.new(true),
+          "id"         => JSON::Any.new(result[:id]),
+          "title"      => JSON::Any.new(result[:title]),
+          "content"    => JSON::Any.new(result[:content]),
+          "lane_name"  => JSON::Any.new(result[:lane_name]),
+          "board_name" => JSON::Any.new(board_name),
+          "tags"       => JSON::Any.new(result[:tags]),
+          "priority"   => JSON::Any.new(result[:priority]),
+          "start_date" => result[:start_date],
+          "end_date"   => result[:end_date],
+          "public"     => result[:public],
+        }
+      else
+        return {
+          "error"   => JSON::Any.new(result[:error]),
+          "success" => JSON::Any.new(false),
         }
       end
-
-      # Find the note
-      found_note_and_lane = board.note(note_id)
-      unless found_note_and_lane
-        return {
-          "error" => JSON::Any.new("Note '#{note_id}' not found in board '#{board_name}'"),
-        }
-      end
-
-      current_note, current_lane = found_note_and_lane
-
-      # Update note properties if provided
-      if title = params["title"]?
-        current_note.title = title.as_s
-      end
-
-      if content = params["content"]?
-        current_note.content = content.as_s
-      end
-
-      if tags_array = params["tags"]?
-        current_note.tags = tags_array.as_a.map(&.as_s)
-      end
-
-      if priority_str = params["priority"]?
-        priority = case priority_str.as_s
-                   when "high"   then ToCry::Priority::High
-                   when "medium" then ToCry::Priority::Medium
-                   when "low"    then ToCry::Priority::Low
-                   else               nil
-                   end
-        current_note.priority = priority
-      end
-
-      if start_date = params["start_date"]?
-        current_note.start_date = start_date.as_s
-      end
-
-      if end_date = params["end_date"]?
-        current_note.end_date = end_date.as_s
-      end
-
-      if public_val = params["public"]?
-        current_note.public = public_val.as_bool
-      end
-
-      # Handle lane change if specified
-      if new_lane_name = params["new_lane_name"]?
-        new_lane_name = new_lane_name.as_s
-
-        # Only move if lane is different
-        if new_lane_name != current_lane.name
-          # Find the target lane
-          target_lane = board.lanes.find { |lane| lane.name == new_lane_name }
-          unless target_lane
-            return {
-              "error" => JSON::Any.new("Target lane '#{new_lane_name}' not found in board '#{board_name}'"),
-            }
-          end
-
-          # Remove note from current lane
-          current_lane.notes.delete(current_note)
-
-          # Add note to target lane (at the end)
-          target_lane.notes << current_note
-
-          ToCry::Log.info { "Note '#{current_note.title}' moved from '#{current_lane.name}' to '#{new_lane_name}'" }
-        end
-      end
-
-      # Save the board
-      board.save
-
-      ToCry::Log.info { "Note '#{current_note.title}' updated in board '#{board_name}' by user '#{user_id}'" }
-
-      {
-        "success"    => JSON::Any.new(true),
-        "id"         => JSON::Any.new(current_note.sepia_id),
-        "title"      => JSON::Any.new(current_note.title),
-        "content"    => JSON::Any.new(current_note.content),
-        "lane_name"  => JSON::Any.new(new_lane_name ? new_lane_name : current_lane.name),
-        "board_name" => JSON::Any.new(board_name),
-        "tags"       => JSON::Any.new(current_note.tags.map { |tag| JSON::Any.new(tag) }),
-        "priority"   => JSON::Any.new(current_note.priority.to_s),
-        "start_date" => current_note.start_date ? JSON::Any.new(current_note.start_date) : JSON::Any.new(nil),
-        "end_date"   => current_note.end_date ? JSON::Any.new(current_note.end_date) : JSON::Any.new(nil),
-        "public"     => JSON::Any.new(current_note.public),
-      }
-    rescue ex
-      {
-        "error"   => JSON::Any.new("Failed to update note: #{ex.message}"),
-        "success" => JSON::Any.new(false),
-      }
-    end
   end
 end
