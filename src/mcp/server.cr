@@ -54,7 +54,7 @@ class ToCryMCPServer
     end
   rescue ex
     ToCry::Log.error(exception: ex) { "Error handling MCP request: #{ex.message}" }
-    send_error(-32603, "Internal error: #{ex.message}", request_id)
+    send_error(-32603, "Internal error: #{ex.message}", id)
   end
 
   # Handle Server-Sent Events for real-time communication
@@ -194,13 +194,18 @@ class ToCryMCPServer
   end
 
   private def send_error(code, message, id)
-    {
-      "jsonrpc" => "2.0",
-      "id"      => id,
-      "error"   => {
-        "code"    => code,
-        "message" => message,
-      },
-    }.to_json
+    error_response = Hash(String, JSON::Any).new
+    error_response["jsonrpc"] = JSON::Any.new("2.0")
+    error_response["error"] = JSON::Any.new({
+      "code"    => JSON::Any.new(code),
+      "message" => JSON::Any.new(message),
+    } of String => JSON::Any)
+
+    # Only include id if it exists and is not nil
+    if id && !id.nil?
+      error_response["id"] = id
+    end
+
+    error_response.to_json
   end
 end
