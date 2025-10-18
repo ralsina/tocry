@@ -343,10 +343,12 @@ module ToCry::Services
     )
       board = ToCry.board_manager.get(board_name, user_id)
       unless board
+        # Idempotent: return success if board doesn't exist (matches REST endpoint behavior)
+        ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user_id}'" }
         return {
-          success:    false,
-          error:      "Board '#{board_name}' not found for user '#{user_id}'",
-          id:         "",
+          success:    true,
+          error:      "",
+          id:         note_id,
           title:      "",
           content:    "",
           lane_name:  "",
@@ -362,10 +364,12 @@ module ToCry::Services
       # Find the note
       found_note_and_lane = board.note(note_id)
       unless found_note_and_lane
+        # Idempotent: return success if note doesn't exist (matches REST endpoint behavior)
+        ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user_id}'" }
         return {
-          success:    false,
-          error:      "Note '#{note_id}' not found in board '#{board_name}'",
-          id:         "",
+          success:    true,
+          error:      "",
+          id:         note_id,
           title:      "",
           content:    "",
           lane_name:  "",
