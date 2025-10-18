@@ -135,10 +135,10 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created successfully."})
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating board" }
@@ -189,10 +189,10 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         # Handle first_visible_lane update if provided (not handled by BoardService)
         if first_visible_lane = payload.first_visible_lane
-          final_board_name = result[:new_name]? || result[:old_name]
+          final_board_name = result.new_name.empty? ? result.old_name : result.new_name
           board = ToCry.board_manager.get(final_board_name, user)
           if board
             # Validate the first_visible_lane value
@@ -210,7 +210,7 @@ module ToCry::Endpoints::Boards
 
         ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating board '#{old_board_name}'" }
@@ -234,10 +234,10 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        ToCry::Endpoints::Helpers.success_response(env, {success: result[:message]})
+      if result.success
+        ToCry::Endpoints::Helpers.success_response(env, {success: result.message})
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:message], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting board '#{board_name}'" }

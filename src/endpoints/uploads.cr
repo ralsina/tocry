@@ -35,10 +35,16 @@ module ToCry::Endpoints::Uploads
         demo_mode: ToCry::Demo.demo_mode?
       )
 
-      if result[:success]
-        ToCry::Endpoints::Helpers.created_response(env, result[:upload])
+      if result.success
+        upload_data = {
+          url:               result.url,
+          upload_id:         result.upload_id,
+          original_filename: result.original_filename,
+          file_size:         result.file_size,
+        }
+        ToCry::Endpoints::Helpers.created_response(env, upload_data)
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error uploading image" }

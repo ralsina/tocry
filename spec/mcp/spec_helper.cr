@@ -46,6 +46,7 @@ struct BoardSummary
   property id : String
   property name : String
   property lane_count : Int32
+  # ameba:disable Naming/QueryBoolMethods
   property public : Bool
   property color_scheme : String?
 end
@@ -54,7 +55,7 @@ end
 module MCPTestHelpers
   extend self
 
-  TEST_USER_ID = "test_mcp_user"
+  TEST_USER_ID  = "test_mcp_user"
   TEST_DATA_DIR = "/tmp/tocry-mcp-spec-test"
 
   def setup_test_environment
@@ -113,18 +114,18 @@ module MCPTestHelpers
   end
 
   def create_test_note(board : ToCry::Board, lane_name : String, title : String, content : String? = nil, **options)
-    lane = board.lanes.find { |l| l.name == lane_name }
+    lane = board.lanes.find { |found_lane| found_lane.name == lane_name }
     raise "Lane '#{lane_name}' not found in board '#{board.name}'" unless lane
 
     note = ToCry::Note.new(title)
     note.content = content if content
     note.tags = options[:tags]? || [] of String
     note.priority = case options[:priority]?
-                   when "high" then ToCry::Priority::High
-                   when "medium" then ToCry::Priority::Medium
-                   when "low" then ToCry::Priority::Low
-                   else ToCry::Priority::Medium
-                   end
+                    when "high"   then ToCry::Priority::High
+                    when "medium" then ToCry::Priority::Medium
+                    when "low"    then ToCry::Priority::Low
+                    else               ToCry::Priority::Medium
+                    end
     note.start_date = options[:start_date]?.try(&.to_s)
     note.end_date = options[:end_date]?.try(&.to_s)
     note.public = options[:public]? || false
@@ -149,7 +150,7 @@ module MCPTestHelpers
   # Helper to create parameter hashes for MCP tools
   def board_params(board_name : String, **options)
     params = {
-      "board_name" => JSON::Any.new(board_name)
+      "board_name" => JSON::Any.new(board_name),
     } of String => JSON::Any
 
     options.each do |key, value|
@@ -174,7 +175,7 @@ module MCPTestHelpers
     params = {
       "board_name" => JSON::Any.new(board_name),
       "lane_name"  => JSON::Any.new(lane_name),
-      "title"      => JSON::Any.new(title)
+      "title"      => JSON::Any.new(title),
     } of String => JSON::Any
 
     options.each do |key, value|
@@ -197,7 +198,7 @@ module MCPTestHelpers
 
   def search_params(query : String, **options)
     params = {
-      "query" => JSON::Any.new(query)
+      "query" => JSON::Any.new(query),
     } of String => JSON::Any
 
     options.each do |key, value|

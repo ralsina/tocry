@@ -11,7 +11,7 @@ module ToCry::Services
       board_name : String,
       note_data : Hash(String, JSON::Any),
       user_id : String? = nil,
-      exclude_client_id : String? = nil
+      exclude_client_id : String? = nil,
     )
       # Get the user-specific board name for WebSocket clients
       if user_id
@@ -35,7 +35,7 @@ module ToCry::Services
       board_name : String,
       board_data : Hash(String, JSON::Any),
       user_id : String? = nil,
-      exclude_client_id : String? = nil
+      exclude_client_id : String? = nil,
     )
       # Get the user-specific board name for WebSocket clients
       if user_id

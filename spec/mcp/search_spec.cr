@@ -29,9 +29,9 @@ describe "MCP Search Tools" do
         board1 = MCPTestHelpers.create_test_board_with_lanes("board1", ["Todo"])
         board2 = MCPTestHelpers.create_test_board_with_lanes("board2", ["Done"])
 
-        note1 = MCPTestHelpers.create_test_note(board1, "Todo", "Important Task")
-        note2 = MCPTestHelpers.create_test_note(board2, "Done", "Regular Task")
-        note3 = MCPTestHelpers.create_test_note(board1, "Todo", "Another Important Item")
+        MCPTestHelpers.create_test_note(board1, "Todo", "Important Task")
+        MCPTestHelpers.create_test_note(board2, "Done", "Regular Task")
+        MCPTestHelpers.create_test_note(board1, "Todo", "Another Important Item")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("Important")
@@ -41,7 +41,7 @@ describe "MCP Search Tools" do
         result["count"].as_i.should eq(2)
         result["boards_searched"].as_i.should eq(2)
 
-        titles = result["results"].as_a.map { |r| r["title"].as_s }
+        titles = result["results"].as_a.map(&.["title"].as_s)
         titles.should contain("Important Task")
         titles.should contain("Another Important Item")
         titles.should_not contain("Regular Task")
@@ -55,9 +55,9 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("search_board", ["Todo"])
-        note1 = MCPTestHelpers.create_test_note(board, "Todo", "Task 1", content: "This is about database migration")
-        note2 = MCPTestHelpers.create_test_note(board, "Todo", "Task 2", content: "Regular development task")
-        note3 = MCPTestHelpers.create_test_note(board, "Todo", "Task 3", content: "Database performance optimization")
+        MCPTestHelpers.create_test_note(board, "Todo", "Task 1", content: "This is about database migration")
+        MCPTestHelpers.create_test_note(board, "Todo", "Task 2", content: "Regular development task")
+        MCPTestHelpers.create_test_note(board, "Todo", "Task 3", content: "Database performance optimization")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("database")
@@ -66,7 +66,7 @@ describe "MCP Search Tools" do
         MCPTestHelpers.assert_success_response(result)
         result["count"].as_i.should eq(2)
 
-        titles = result["results"].as_a.map { |r| r["title"].as_s }
+        titles = result["results"].as_a.map(&.["title"].as_s)
         titles.should contain("Task 1")
         titles.should contain("Task 3")
         titles.should_not contain("Task 2")
@@ -80,9 +80,9 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("tag_board", ["Todo"])
-        note1 = MCPTestHelpers.create_test_note(board, "Todo", "Bug Fix", tags: ["bug", "urgent"])
-        note2 = MCPTestHelpers.create_test_note(board, "Todo", "Feature", tags: ["feature", "enhancement"])
-        note3 = MCPTestHelpers.create_test_note(board, "Todo", "Urgent Task", tags: ["urgent", "priority"])
+        MCPTestHelpers.create_test_note(board, "Todo", "Bug Fix", tags: ["bug", "urgent"])
+        MCPTestHelpers.create_test_note(board, "Todo", "Feature", tags: ["feature", "enhancement"])
+        MCPTestHelpers.create_test_note(board, "Todo", "Urgent Task", tags: ["urgent", "priority"])
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("urgent")
@@ -91,7 +91,7 @@ describe "MCP Search Tools" do
         MCPTestHelpers.assert_success_response(result)
         result["count"].as_i.should eq(2)
 
-        titles = result["results"].as_a.map { |r| r["title"].as_s }
+        titles = result["results"].as_a.map(&.["title"].as_s)
         titles.should contain("Bug Fix")
         titles.should contain("Urgent Task")
         titles.should_not contain("Feature")
@@ -107,8 +107,8 @@ describe "MCP Search Tools" do
         board1 = MCPTestHelpers.create_test_board_with_lanes("project1", ["Todo"])
         board2 = MCPTestHelpers.create_test_board_with_lanes("project2", ["Todo"])
 
-        note1 = MCPTestHelpers.create_test_note(board1, "Todo", "API Development")
-        note2 = MCPTestHelpers.create_test_note(board2, "Todo", "API Documentation")
+        MCPTestHelpers.create_test_note(board1, "Todo", "API Development")
+        MCPTestHelpers.create_test_note(board2, "Todo", "API Documentation")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("API", board_name: "project1")
@@ -130,10 +130,10 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("priority_board", ["Todo"])
-        note1 = MCPTestHelpers.create_test_note(board, "Todo", "High Priority Task", priority: "high")
-        note2 = MCPTestHelpers.create_test_note(board, "Todo", "Medium Priority Task", priority: "medium")
-        note3 = MCPTestHelpers.create_test_note(board, "Todo", "Low Priority Task", priority: "low")
-        note4 = MCPTestHelpers.create_test_note(board, "Todo", "Another High Task", priority: "high")
+        MCPTestHelpers.create_test_note(board, "Todo", "High Priority Task", priority: "high")
+        MCPTestHelpers.create_test_note(board, "Todo", "Medium Priority Task", priority: "medium")
+        MCPTestHelpers.create_test_note(board, "Todo", "Low Priority Task", priority: "low")
+        MCPTestHelpers.create_test_note(board, "Todo", "Another High Task", priority: "high")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("Task", priority_filter: "high")
@@ -142,10 +142,10 @@ describe "MCP Search Tools" do
         MCPTestHelpers.assert_success_response(result)
         result["count"].as_i.should eq(2)
 
-        priorities = result["results"].as_a.map { |r| r["priority"].as_s }
-        priorities.all? { |p| p == "high" }.should be_true
+        priorities = result["results"].as_a.map(&.["priority"].as_s)
+        priorities.all? { |priority| priority == "high" }.should be_true
 
-        titles = result["results"].as_a.map { |r| r["title"].as_s }
+        titles = result["results"].as_a.map(&.["title"].as_s)
         titles.should contain("High Priority Task")
         titles.should contain("Another High Task")
         titles.should_not contain("Medium Priority Task")
@@ -186,10 +186,10 @@ describe "MCP Search Tools" do
         board3 = MCPTestHelpers.create_test_board_with_lanes("learning", ["Todo"])
 
         # Add notes to different boards
-        work_note1 = MCPTestHelpers.create_test_note(board1, "Todo", "Work Task 1", content: "Important project deadline")
-        work_note2 = MCPTestHelpers.create_test_note(board1, "In Progress", "Work Task 2", content: "Another important task")
-        personal_note = MCPTestHelpers.create_test_note(board2, "Todo", "Personal Task", content: "Important personal goal")
-        learning_note = MCPTestHelpers.create_test_note(board3, "Todo", "Learning Task", content: "Important learning objective")
+        MCPTestHelpers.create_test_note(board1, "Todo", "Work Task 1", content: "Important project deadline")
+        MCPTestHelpers.create_test_note(board1, "In Progress", "Work Task 2", content: "Another important task")
+        MCPTestHelpers.create_test_note(board2, "Todo", "Personal Task", content: "Important personal goal")
+        MCPTestHelpers.create_test_note(board3, "Todo", "Learning Task", content: "Important learning objective")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("important")
@@ -200,7 +200,7 @@ describe "MCP Search Tools" do
         result["boards_searched"].as_i.should eq(3)
 
         # Verify all boards are represented
-        board_names = result["results"].as_a.map { |r| r["board_name"].as_s }.uniq
+        board_names = result["results"].as_a.map(&.["board_name"].as_s).uniq!
         board_names.should contain("work")
         board_names.should contain("personal")
         board_names.should contain("learning")
@@ -214,7 +214,7 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("properties_board", ["Todo"])
-        note = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           board, "Todo", "Complete Note",
           content: "Note with all properties",
           tags: ["complete", "test"],
@@ -253,9 +253,9 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("case_board", ["Todo"])
-        note1 = MCPTestHelpers.create_test_note(board, "Todo", "DATABASE Migration", content: "Important database work")
-        note2 = MCPTestHelpers.create_test_note(board, "Todo", "Database Design", content: "Designing the database schema")
-        note3 = MCPTestHelpers.create_test_note(board, "Todo", "API Work", content: "REST API development")
+        MCPTestHelpers.create_test_note(board, "Todo", "DATABASE Migration", content: "Important database work")
+        MCPTestHelpers.create_test_note(board, "Todo", "Database Design", content: "Designing the database schema")
+        MCPTestHelpers.create_test_note(board, "Todo", "API Work", content: "REST API development")
 
         # Search with different case
         tool = SearchNotesTool.new
@@ -272,7 +272,7 @@ describe "MCP Search Tools" do
         [result_lower, result_upper, result_mixed].each do |result|
           MCPTestHelpers.assert_success_response(result)
           result["count"].as_i.should eq(2)
-          titles = result["results"].as_a.map { |r| r["title"].as_s }
+          titles = result["results"].as_a.map(&.["title"].as_s)
           titles.should contain("DATABASE Migration")
           titles.should contain("Database Design")
           titles.should_not contain("API Work")
@@ -313,7 +313,7 @@ describe "MCP Search Tools" do
 
       begin
         board = MCPTestHelpers.create_test_board_with_lanes("invalid_board", ["Todo"])
-        note = MCPTestHelpers.create_test_note(board, "Todo", "Test Note")
+        MCPTestHelpers.create_test_note(board, "Todo", "Test Note")
 
         tool = SearchNotesTool.new
         params = MCPTestHelpers.search_params("test", priority_filter: "invalid_priority")
@@ -339,7 +339,7 @@ describe "MCP Search Tools" do
         personal_board = MCPTestHelpers.create_test_board_with_lanes("personal_tasks", ["Todo", "Done"])
 
         # Work tasks with different priorities and properties
-        urgent_work = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           work_board, "Todo", "Fix Production Bug",
           content: "Critical bug in authentication system",
           tags: ["bug", "production", "urgent"],
@@ -348,7 +348,7 @@ describe "MCP Search Tools" do
           end_date: "2025-01-12"
         )
 
-        feature_work = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           work_board, "In Progress", "Implement User Dashboard",
           content: "Build responsive dashboard with charts",
           tags: ["feature", "frontend", "dashboard"],
@@ -357,7 +357,7 @@ describe "MCP Search Tools" do
           end_date: "2025-01-25"
         )
 
-        documentation = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           work_board, "Done", "Update API Documentation",
           content: "Document new REST endpoints",
           tags: ["documentation", "api"],
@@ -365,14 +365,14 @@ describe "MCP Search Tools" do
         )
 
         # Personal tasks
-        personal_goal = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           personal_board, "Todo", "Learn Crystal Programming",
           content: "Study Crystal language fundamentals",
           tags: ["learning", "crystal", "programming"],
           priority: "medium"
         )
 
-        health_goal = MCPTestHelpers.create_test_note(
+        MCPTestHelpers.create_test_note(
           personal_board, "Todo", "Exercise Routine",
           content: "Daily 30-minute workout",
           tags: ["health", "fitness"],

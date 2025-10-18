@@ -11,7 +11,7 @@ describe "MCP Note Management Tools" do
 
       begin
         # Create a test board with lanes first
-        board = MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
+        MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
 
         tool = CreateNoteTool.new
         params = MCPTestHelpers.note_params("test_board", "Todo", "Test Note #{Time.utc.to_unix}")
@@ -32,7 +32,7 @@ describe "MCP Note Management Tools" do
       MCPTestHelpers.setup_test_environment
 
       begin
-        board = MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo", "In Progress"])
+        MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo", "In Progress"])
 
         tool = CreateNoteTool.new
         params = MCPTestHelpers.note_params(
@@ -82,7 +82,7 @@ describe "MCP Note Management Tools" do
       MCPTestHelpers.setup_test_environment
 
       begin
-        board = MCPTestHelpers.create_test_board("test_board") # No lanes
+        MCPTestHelpers.create_test_board("test_board") # No lanes
 
         tool = CreateNoteTool.new
         params = MCPTestHelpers.note_params("test_board", "NonExistentLane", "Test Note")
@@ -142,7 +142,7 @@ describe "MCP Note Management Tools" do
       MCPTestHelpers.setup_test_environment
 
       begin
-        board = MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
+        MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
 
         tool = GetNoteTool.new
         params = MCPTestHelpers.board_params("test_board", note_id: "00000000-0000-0000-0000-000000000000")
@@ -274,7 +274,7 @@ describe "MCP Note Management Tools" do
       MCPTestHelpers.setup_test_environment
 
       begin
-        board = MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
+        MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
 
         tool = UpdateNoteTool.new
         params = MCPTestHelpers.board_params("test_board",
@@ -378,7 +378,7 @@ describe "MCP Note Management Tools" do
       MCPTestHelpers.setup_test_environment
 
       begin
-        board = MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
+        MCPTestHelpers.create_test_board_with_lanes("test_board", ["Todo"])
 
         tool = DeleteNoteTool.new
         params = MCPTestHelpers.board_params("test_board", note_id: "00000000-0000-0000-0000-000000000000")
@@ -422,7 +422,7 @@ describe "MCP Note Management Tools" do
 
       begin
         board_name = "lifecycle_board_#{Time.utc.to_unix}"
-        board = MCPTestHelpers.create_test_board_with_lanes(board_name, ["Todo", "In Progress", "Done"])
+        MCPTestHelpers.create_test_board_with_lanes(board_name, ["Todo", "In Progress", "Done"])
 
         # 1. Create note in Todo lane
         create_tool = CreateNoteTool.new

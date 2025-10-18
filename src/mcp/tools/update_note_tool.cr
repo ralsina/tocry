@@ -98,7 +98,13 @@ class UpdateNoteTool < Tool
     # Check if the operation was successful
     if result.success
       # Extract note data from the response
-      note = result.note.not_nil!
+      note = result.note
+      unless note
+        return {
+          "error"   => JSON::Any.new("Note update failed - no note data returned"),
+          "success" => JSON::Any.new(false),
+        }
+      end
       {
         "success"    => JSON::Any.new(true),
         "id"         => JSON::Any.new(note.sepia_id),

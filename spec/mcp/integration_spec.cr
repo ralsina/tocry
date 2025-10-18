@@ -26,7 +26,6 @@ describe "MCP Tools Integration" do
         list_boards = ListBoardsTool.new
         search = SearchNotesTool.new
         get_board = GetBoardTool.new
-        get_note = GetNoteTool.new
         delete_note = DeleteNoteTool.new
         delete_board = DeleteBoardTool.new
 

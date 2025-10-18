@@ -10,6 +10,7 @@ module ToCry::Services
     # Response struct for all note operations
     # Provides a consistent return type with all possible fields
     struct NoteResponse
+      # ameba:disable Naming/QueryBoolMethods
       property success : Bool = false
       property message : String = ""
       property note : ToCry::Note? = nil
@@ -53,7 +54,7 @@ module ToCry::Services
       end_date : String? = nil,
       public : Bool? = false,
       expanded : Bool? = false,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
       begin
         board = ToCry.board_manager.get(board_name, user_id)
@@ -145,6 +146,7 @@ module ToCry::Services
     end
 
     # Update an existing note
+    # ameba:disable Metrics/CyclomaticComplexity
     def self.update_note(
       board_name : String,
       note_id : String,
@@ -159,7 +161,7 @@ module ToCry::Services
       expanded : Bool? = nil,
       new_lane_name : String? = nil,
       position : Int32? = nil,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
       begin
         board = ToCry.board_manager.get(board_name, user_id)
@@ -214,12 +216,12 @@ module ToCry::Services
           current_note.end_date = end_date
         end
 
-        if public != nil
-          current_note.public = public.not_nil!
+        unless public.nil?
+          current_note.public = public
         end
 
-        if expanded != nil
-          current_note.expanded = expanded.not_nil!
+        unless expanded.nil?
+          current_note.expanded = expanded
         end
 
         # Handle lane change if specified
@@ -316,7 +318,7 @@ module ToCry::Services
       board_name : String,
       note_id : String,
       user_id : String,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
       board = ToCry.board_manager.get(board_name, user_id)
       unless board

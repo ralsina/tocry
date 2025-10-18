@@ -62,8 +62,11 @@ module ToCry::Endpoints::Notes
       )
 
       if result.success
-        # Extract note data from the response
-        note = result.note.not_nil!
+        note = result.note
+        unless note
+          next ToCry::Endpoints::Helpers.error_response(env, "Note operation failed - no note data returned", 500)
+        end
+
         note_response = {
           sepia_id:    note.sepia_id,
           title:       note.title,
@@ -143,8 +146,11 @@ module ToCry::Endpoints::Notes
       )
 
       if result.success
-        # Extract note data from the response
-        note = result.note.not_nil!
+        note = result.note
+        unless note
+          next ToCry::Endpoints::Helpers.error_response(env, "Note operation failed - no note data returned", 500)
+        end
+
         note_response = {
           sepia_id:    note.sepia_id,
           title:       note.title,

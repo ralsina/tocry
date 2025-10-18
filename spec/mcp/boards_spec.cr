@@ -87,7 +87,7 @@ describe "MCP Board Management Tools" do
       begin
         # Create a test board first
         board_name = "get_test_board"
-        board = MCPTestHelpers.create_test_board(board_name, color_scheme: "blue")
+        MCPTestHelpers.create_test_board(board_name, color_scheme: "blue")
 
         tool = GetBoardTool.new
         params = MCPTestHelpers.board_params(board_name)
@@ -135,7 +135,7 @@ describe "MCP Board Management Tools" do
       begin
         # Create a test board first
         original_name = "update_test_board"
-        board = MCPTestHelpers.create_test_board(original_name)
+        MCPTestHelpers.create_test_board(original_name)
 
         tool = UpdateBoardTool.new
         params = MCPTestHelpers.board_params(original_name, new_board_name: "updated_board")
@@ -159,7 +159,7 @@ describe "MCP Board Management Tools" do
 
       begin
         board_name = "color_update_board"
-        board = MCPTestHelpers.create_test_board(board_name)
+        MCPTestHelpers.create_test_board(board_name)
 
         tool = UpdateBoardTool.new
         params = MCPTestHelpers.board_params(board_name, color_scheme: "red")
@@ -177,7 +177,7 @@ describe "MCP Board Management Tools" do
 
       begin
         board_name = "public_toggle_board"
-        board = MCPTestHelpers.create_test_board(board_name)
+        MCPTestHelpers.create_test_board(board_name)
 
         tool = UpdateBoardTool.new
 
@@ -202,7 +202,7 @@ describe "MCP Board Management Tools" do
 
       begin
         board_name = "lanes_update_board"
-        board = MCPTestHelpers.create_test_board(board_name)
+        MCPTestHelpers.create_test_board(board_name)
 
         tool = UpdateBoardTool.new
 
@@ -264,7 +264,7 @@ describe "MCP Board Management Tools" do
       begin
         # Create a test board first
         board_name = "delete_test_board"
-        board = MCPTestHelpers.create_test_board(board_name)
+        MCPTestHelpers.create_test_board(board_name)
 
         # Verify board exists
         get_tool = GetBoardTool.new
@@ -293,7 +293,7 @@ describe "MCP Board Management Tools" do
 
       begin
         board_name = "idempotent_delete_board"
-        board = MCPTestHelpers.create_test_board(board_name)
+        MCPTestHelpers.create_test_board(board_name)
 
         delete_tool = DeleteBoardTool.new
         delete_params = MCPTestHelpers.board_params(board_name)
@@ -356,9 +356,9 @@ describe "MCP Board Management Tools" do
 
       begin
         # Create multiple test boards
-        board1 = MCPTestHelpers.create_test_board("board1")
-        board2 = MCPTestHelpers.create_test_board("board2")
-        board3 = MCPTestHelpers.create_test_board("board3", color_scheme: "green")
+        MCPTestHelpers.create_test_board("board1")
+        MCPTestHelpers.create_test_board("board2")
+        MCPTestHelpers.create_test_board("board3", color_scheme: "green")
 
         tool = ListBoardsTool.new
         result = tool.invoke_with_user(({} of String => JSON::Any), MCPTestHelpers::TEST_USER_ID)

@@ -10,6 +10,21 @@ module ToCry::Services
   class UploadService
     MAX_IMAGE_SIZE = 1_048_580 # 1MB
 
+    # Response struct for all upload operations
+    # Provides a consistent return type with all possible fields
+    struct UploadResponse
+      # ameba:disable Naming/QueryBoolMethods
+      property success : Bool = false
+      property message : String = ""
+      property url : String = ""
+      property upload_id : String = ""
+      property original_filename : String = ""
+      property file_size : Int64 = 0
+
+      def initialize(@success : Bool = false, @message : String = "", @url : String = "", @upload_id : String = "", @original_filename : String = "", @file_size : Int64 = 0)
+      end
+    end
+
     # Create an image upload
     def self.create_image_upload(
       original_filename : String,
@@ -17,16 +32,18 @@ module ToCry::Services
       file_size : Int64,
       user_id : String,
       uploaded_file : IO,
-      demo_mode : Bool = false
+      demo_mode : Bool = false,
     )
+      upload : ToCry::Upload?
+      public_url : String
+
       if demo_mode
         # Demo mode: use smaller size limit and create dummy upload
         if file_size > ToCry::Demo::MAX_UPLOAD_SIZE
-          return {
+          return UploadResponse.new(
             success: false,
-            error:   "Image size exceeds the 64KB demo limit.",
-            upload:  nil,
-          }
+            message: "Image size exceeds the 64KB demo limit."
+          )
         end
 
         upload = ToCry::Demo.handle_demo_upload(
@@ -38,11 +55,10 @@ module ToCry::Services
         )
 
         if upload.nil?
-          return {
+          return UploadResponse.new(
             success: false,
-            error:   "Demo upload failed.",
-            upload:  nil,
-          }
+            message: "Demo upload failed."
+          )
         end
 
         # Create a dummy public URL for demo mode
@@ -51,11 +67,10 @@ module ToCry::Services
       else
         # Normal mode: full functionality
         if file_size > MAX_IMAGE_SIZE
-          return {
+          return UploadResponse.new(
             success: false,
-            error:   "Image size exceeds the 1MB limit.",
-            upload:  nil,
-          }
+            message: "Image size exceeds the 1MB limit."
+          )
         end
 
         # Ensure the user-images subdirectory exists within the uploads directory
@@ -90,22 +105,26 @@ module ToCry::Services
 
       ToCry::Log.info { "Image uploaded successfully: #{public_url} by user: #{user_id} (demo: #{demo_mode})" }
 
-      {
-        success: true,
-        error:   "",
-        upload:  {
-          url:               public_url,
-          upload_id:         upload.upload_id,
+      if actual_upload = upload
+        UploadResponse.new(
+          success: true,
+          message: "Image uploaded successfully",
+          url: public_url,
+          upload_id: actual_upload.upload_id,
           original_filename: original_filename,
-          file_size:         upload.file_size,
-        },
-      }
+          file_size: actual_upload.file_size
+        )
+      else
+        UploadResponse.new(
+          success: false,
+          message: "Upload failed - no upload record created"
+        )
+      end
     rescue ex
-      {
+      UploadResponse.new(
         success: false,
-        error:   "Failed to create image upload: #{ex.message}",
-        upload:  nil,
-      }
+        message: "Failed to create image upload: #{ex.message}"
+      )
     end
   end
 end

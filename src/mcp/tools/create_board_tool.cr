@@ -46,19 +46,27 @@ class CreateBoardTool < Tool
     )
 
     # Convert service result to MCP format
-    if result[:success]
+    if result.success
+      # Extract board data from the response
+      board = result.board
+      unless board
+        return {
+          "error"   => JSON::Any.new("Board creation failed - no board data returned"),
+          "success" => JSON::Any.new(false),
+        }
+      end
       {
         "success"      => JSON::Any.new(true),
-        "id"           => JSON::Any.new(result[:id]),
-        "name"         => JSON::Any.new(result[:name]),
-        "public"       => JSON::Any.new(result[:public]),
-        "color_scheme" => result[:color_scheme],
-        "lane_count"   => JSON::Any.new(result[:lane_count]),
-        "total_notes"  => JSON::Any.new(result[:total_notes]),
+        "id"           => JSON::Any.new(board.sepia_id),
+        "name"         => JSON::Any.new(board.name),
+        "public"       => JSON::Any.new(board.public),
+        "color_scheme" => JSON::Any.new(board.color_scheme),
+        "lane_count"   => JSON::Any.new(board.lanes.size),
+        "total_notes"  => JSON::Any.new(board.lanes.sum(&.notes.size)),
       }
     else
       {
-        "error"   => JSON::Any.new(result[:error]),
+        "error"   => JSON::Any.new(result.message),
         "success" => JSON::Any.new(false),
       }
     end
