@@ -6,6 +6,9 @@ abstract class Tool
   getter description : String
   getter input_schema : Hash(String, JSON::Any)
 
+  # Class-level tool registry
+  class_property registered_tools = {} of String => Tool
+
   # Class properties that can be overridden by subclasses
   class_property tool_name : String = "tool"
   class_property tool_description : String = "A generic tool"

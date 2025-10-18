@@ -27,6 +27,9 @@ class CreateBoardTool < Tool
     "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
   }
 
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
   # invoke() method is provided by AuthenticatedTool mixin
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)

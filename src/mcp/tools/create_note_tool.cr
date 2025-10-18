@@ -51,6 +51,9 @@ class CreateNoteTool < Tool
     "required" => JSON::Any.new(["board_name", "lane_name", "title"].map { |param| JSON::Any.new(param) }),
   }
 
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     board_name = params["board_name"].as_s
     lane_name = params["lane_name"].as_s

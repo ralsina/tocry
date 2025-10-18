@@ -30,6 +30,9 @@ class SearchNotesTool < Tool
     "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
   }
 
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
   # invoke() method is provided by AuthenticatedTool mixin
 
   # ameba:disable Metrics/CyclomaticComplexity
