@@ -156,6 +156,7 @@ module ToCry::Services
       public : Bool? = nil,
       expanded : Bool? = nil,
       new_lane_name : String? = nil,
+      position : Int32? = nil,
       exclude_client_id : String? = "mcp-client"
     )
       begin
@@ -267,6 +268,22 @@ module ToCry::Services
           final_lane_name = new_lane_name
         end
 
+        # Handle position changes if specified
+        if position
+          # Find which lane the note is currently in after any lane change
+          current_lane = board.lanes.find(&.notes.includes?(current_note))
+          if current_lane
+            # Remove from current position
+            current_lane.notes.delete(current_note)
+            # Insert at new position
+            if position >= current_lane.notes.size
+              current_lane.notes << current_note
+            else
+              current_lane.notes.insert(position, current_note)
+            end
+          end
+        end
+
         # Save the board
         board.save
 
@@ -285,7 +302,7 @@ module ToCry::Services
         }
 
         # Determine message type based on whether note was moved between lanes
-        message_type = if new_lane_name && new_lane_name != current_lane.name
+        message_type = if new_lane_name && new_lane_name != final_lane_name
                          WebSocketHandler::MessageType::LANE_UPDATED
                        else
                          WebSocketHandler::MessageType::NOTE_UPDATED
@@ -452,6 +469,93 @@ module ToCry::Services
     rescue ex
       ToCry::Log.error(exception: ex) { "Error finding note '#{note_id}' in board '#{board_name}': #{ex.message}" }
       nil
+    end
+
+    # Get complete board details with all lanes and notes
+    def self.get_board_with_details(board_name : String, user_id : String)
+      board = ToCry.board_manager.get(board_name, user_id)
+      unless board
+        return {
+          success: false,
+          error:   "Board '#{board_name}' not found for user '#{user_id}'",
+          board:   {} of String => JSON::Any,
+        }
+      end
+
+      # Build complete board representation with lanes and notes
+      lanes_data = board.lanes.map do |lane|
+        {
+          lane_id: lane.sepia_id,
+          name:    lane.name,
+          notes:   lane.notes.map do |note|
+            {
+              sepia_id:    note.sepia_id,
+              title:       note.title,
+              content:     note.content,
+              tags:        note.tags,
+              expanded:    note.expanded,
+              public:      note.public,
+              attachments: note.attachments,
+              start_date:  note.start_date,
+              end_date:    note.end_date,
+              priority:    note.priority.try(&.to_s),
+            }
+          end,
+        }
+      end
+
+      board_details = {
+        id:                 board.sepia_id,
+        name:               board.name,
+        color_scheme:       ToCry::ColorScheme.validate(board.color_scheme),
+        first_visible_lane: board.first_visible_lane,
+        public:             board.public,
+        lanes:              lanes_data,
+      }
+
+      {
+        success: true,
+        error:   "",
+        board:   board_details,
+      }
+    rescue ex
+      {
+        success: false,
+        error:   "Failed to get board details: #{ex.message}",
+        board:   {} of String => JSON::Any,
+      }
+    end
+
+    # List all boards accessible to user
+    def self.list_all_boards(user_id : String)
+      user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
+
+      boards_data = user_board_refs.compact_map do |reference|
+        board = ToCry.board_manager.get_by_uuid(reference.board_uuid)
+        next unless board
+
+        {
+          id:           board.sepia_id,
+          name:         reference.board_name,
+          lane_count:   board.lanes.size,
+          public:       board.public,
+          color_scheme: board.color_scheme,
+        }
+      end
+
+      {
+        success: true,
+        error:   "",
+        boards:  boards_data,
+        count:   boards_data.size,
+      }
+    rescue ex
+      {
+        success: false,
+        error:   "Failed to list boards: #{ex.message}",
+        boards:  [] of Hash(String, JSON::Any),
+        count:   0,
+      }
     end
   end
 end

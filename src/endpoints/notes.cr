@@ -137,32 +137,11 @@ module ToCry::Endpoints::Notes
         public: payload.note.public,
         expanded: payload.note.expanded,
         new_lane_name: new_lane_name,
+        position: payload.position.try(&.to_i32),
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
       if result[:success]
-        # Handle position changes if specified (NoteService doesn't handle position)
-        if payload.position && payload.position != 0
-          board = ToCry.board_manager.get(board_name, user)
-          if board
-            found_note_and_lane = board.note(note_id)
-            if found_note_and_lane
-              current_note, current_lane = found_note_and_lane
-              target_position = payload.position.not_nil!
-
-              # Remove from current position
-              current_lane.notes.delete(current_note)
-              # Insert at new position
-              if target_position >= current_lane.notes.size
-                current_lane.notes << current_note
-              else
-                current_lane.notes.insert(target_position, current_note)
-              end
-              board.save
-            end
-          end
-        end
-
         # Return the updated note
         note_response = {
           sepia_id:    result[:id],
