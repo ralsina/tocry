@@ -1,8 +1,10 @@
 require "json"
 require "../tool"
 require "../../services/note_service"
+require "../authenticated_tool"
 
 class ListBoardsTool < Tool
+  include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_list_boards"
   @@tool_description = "List all accessible Kanban boards for the current user"
@@ -11,10 +13,7 @@ class ListBoardsTool < Tool
     "properties" => JSON::Any.new({} of String => JSON::Any),
   }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # invoke() method is provided by AuthenticatedTool mixin
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     # Use NoteService to list all boards (handles all business logic)

@@ -1,8 +1,10 @@
 require "json"
 require "../tool"
 require "../../services/note_service"
+require "../authenticated_tool"
 
 class DeleteNoteTool < Tool
+  include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_delete_note"
   @@tool_description = "Delete a note from a board"
@@ -21,11 +23,6 @@ class DeleteNoteTool < Tool
     "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
   }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
-
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     note_id = params["note_id"].as_s
     board_name = params["board_name"].as_s
@@ -39,12 +36,8 @@ class DeleteNoteTool < Tool
 
     if result[:success]
       {
-        "success"    => JSON::Any.new(true),
-        "message"    => JSON::Any.new("Note deleted successfully."),
-        "id"         => JSON::Any.new(result[:id]),
-        "title"      => JSON::Any.new(result[:title]),
-        "lane_name"  => JSON::Any.new(result[:lane_name]),
-        "board_name" => JSON::Any.new(board_name),
+        "success" => JSON::Any.new(true),
+        "message" => JSON::Any.new("Note deleted successfully."),
       }
     else
       {

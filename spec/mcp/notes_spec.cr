@@ -343,8 +343,6 @@ describe "MCP Note Management Tools" do
 
         MCPTestHelpers.assert_success_response(delete_result)
         delete_result["message"].as_s.should contain("deleted successfully")
-        delete_result["id"].as_s.should eq(note.sepia_id)
-        delete_result["title"].as_s.should eq("Delete Test Note")
 
         # Verify note is deleted
         final_get_result = get_tool.invoke_with_user(get_params, MCPTestHelpers::TEST_USER_ID)

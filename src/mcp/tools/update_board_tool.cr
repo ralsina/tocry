@@ -1,8 +1,10 @@
 require "json"
 require "../tool"
 require "../../services/board_service"
+require "../authenticated_tool"
 
 class UpdateBoardTool < Tool
+  include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_update_board"
   @@tool_description = "Update a board's properties"
@@ -33,10 +35,7 @@ class UpdateBoardTool < Tool
     "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
   }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # invoke() method is provided by AuthenticatedTool mixin
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     board_name = params["board_name"].as_s

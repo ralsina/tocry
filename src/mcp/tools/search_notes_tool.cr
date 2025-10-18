@@ -1,7 +1,9 @@
 require "json"
 require "../tool"
+require "../authenticated_tool"
 
 class SearchNotesTool < Tool
+  include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_search_notes"
   @@tool_description = "Search across all notes in all boards for matching content"
@@ -28,10 +30,7 @@ class SearchNotesTool < Tool
     "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
   }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # invoke() method is provided by AuthenticatedTool mixin
 
   # ameba:disable Metrics/CyclomaticComplexity
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)

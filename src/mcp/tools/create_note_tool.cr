@@ -1,8 +1,10 @@
 require "json"
 require "../tool"
 require "../../services/note_service"
+require "../authenticated_tool"
 
 class CreateNoteTool < Tool
+  include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_create_note"
   @@tool_description = "Create a new note in a specific lane on a board"
@@ -48,11 +50,6 @@ class CreateNoteTool < Tool
     }),
     "required" => JSON::Any.new(["board_name", "lane_name", "title"].map { |param| JSON::Any.new(param) }),
   }
-
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     board_name = params["board_name"].as_s
