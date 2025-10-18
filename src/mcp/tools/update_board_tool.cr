@@ -1,47 +1,46 @@
 require "json"
 require "../tool"
 require "../../services/board_service"
+require "../authenticated_tool"
 
 class UpdateBoardTool < Tool
-  def initialize
-    super(
-      name: "tocry_update_board",
-      description: "Update a board's properties",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Current name of the board to update"),
-          }),
-          "new_board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New name for the board (optional)"),
-          }),
-          "public" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the board should be publicly accessible (optional)"),
-          }),
-          "color_scheme" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Color scheme for the board (optional)"),
-          }),
-          "lanes" => JSON::Any.new({
-            "type"        => JSON::Any.new("array"),
-            "description" => JSON::Any.new("Array of lanes with their names and positions (optional)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_update_board"
+  @@tool_description = "Update a board's properties"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Current name of the board to update"),
+      }),
+      "new_board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New name for the board (optional)"),
+      }),
+      "public" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the board should be publicly accessible (optional)"),
+      }),
+      "color_scheme" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Color scheme for the board (optional)"),
+      }),
+      "lanes" => JSON::Any.new({
+        "type"        => JSON::Any.new("array"),
+        "description" => JSON::Any.new("Array of lanes with their names and positions (optional)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
+  # invoke() method is provided by AuthenticatedTool mixin
+
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
     board_name = params["board_name"].as_s
 
     # Extract optional parameters
@@ -66,22 +65,31 @@ class UpdateBoardTool < Tool
     )
 
     # Convert service result to MCP format
-    if result[:success]
+    if result.success
+      # Extract board data from the response
+      board = result.board
+      unless board
+        return {
+          "error"   => "Board update failed - no board data returned",
+          "success" => false,
+        }.to_json
+      end
       {
-        "success"        => JSON::Any.new(true),
-        "id"             => JSON::Any.new(result[:id]),
-        "old_name"       => JSON::Any.new(result[:old_name]),
-        "new_name"       => JSON::Any.new(result[:new_name]),
-        "public"         => result[:public],
-        "color_scheme"   => result[:color_scheme],
-        "lane_count"     => JSON::Any.new(result[:lane_count]),
-        "total_notes"    => JSON::Any.new(result[:total_notes]),
-      }
+        "success"      => true,
+        "id"           => board.sepia_id,
+        "name"         => result.new_name.empty? ? result.old_name : result.new_name,
+        "old_name"     => result.old_name,
+        "new_name"     => result.new_name,
+        "public"       => board.public,
+        "color_scheme" => board.color_scheme,
+        "lane_count"   => board.lanes.size,
+        "total_notes"  => board.lanes.sum(&.notes.size),
+      }.to_json
     else
       {
-        "error"   => JSON::Any.new(result[:error]),
-        "success" => JSON::Any.new(false),
-      }
+        "error"   => result.message,
+        "success" => false,
+      }.to_json
     end
   end
 end

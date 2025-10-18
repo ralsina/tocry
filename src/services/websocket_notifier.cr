@@ -1,59 +1,67 @@
 require "../tocry"
 require "../websocket_handler"
+require "./websocket_events"
 
 module ToCry::Services
   # Centralized WebSocket notification service
   # Handles broadcasting changes to WebSocket clients with proper board name mapping
+  # Refactored to use event-driven architecture for consistency and maintainability
   class WebSocketNotifier
-    # Broadcast a note-related change to WebSocket clients
+    # Main broadcast method using event pattern
+    def self.broadcast(event : WebSocketEvent)
+      user_board_name = resolve_user_board_name(event.board_name, event.user_id)
+      json_data = JSON::Any.new(event.to_hash)
+
+      ToCry::WebSocketHandler.broadcast_to_board(
+        user_board_name,
+        event.type,
+        json_data,
+        event.exclude_client_id
+      )
+    end
+
+    # Legacy methods for backward compatibility (deprecated)
+    # These will be removed once all services are migrated to the event pattern
+    @[Deprecated("Use broadcast(NoteDeletedEvent.new(...)) instead")]
     def self.broadcast_note_change(
       event_type : WebSocketHandler::MessageType,
       board_name : String,
       note_data : Hash(String, JSON::Any),
       user_id : String? = nil,
-      exclude_client_id : String? = nil
+      exclude_client_id : String? = nil,
     )
-      # Get the user-specific board name for WebSocket clients
-      if user_id
-        user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
-        board_ref = user_board_refs.find { |ref| ref.board_uuid == board_manager.get(board_name, user_id).try(&.sepia_id) }
-        user_board_name = board_ref ? board_ref.board_name : board_name
-      else
-        user_board_name = board_name
-      end
-
-      # Convert note data to JSON::Any if needed
+      user_board_name = resolve_user_board_name(board_name, user_id)
       json_data = JSON::Any.new(note_data)
-
-      # Broadcast to WebSocket clients
       ToCry::WebSocketHandler.broadcast_to_board(user_board_name, event_type, json_data, exclude_client_id)
     end
 
-    # Broadcast a board-related change to WebSocket clients
+    @[Deprecated("Use broadcast(BoardDeletedEvent.new(...)) instead")]
     def self.broadcast_board_change(
       event_type : WebSocketHandler::MessageType,
       board_name : String,
       board_data : Hash(String, JSON::Any),
       user_id : String? = nil,
-      exclude_client_id : String? = nil
+      exclude_client_id : String? = nil,
     )
-      # Get the user-specific board name for WebSocket clients
-      if user_id
-        user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
-        board_ref = user_board_refs.find { |ref| ref.board_uuid == board_manager.get(board_name, user_id).try(&.sepia_id) }
-        user_board_name = board_ref ? board_ref.board_name : board_name
-      else
-        user_board_name = board_name
-      end
-
-      # Convert board data to JSON::Any if needed
+      user_board_name = resolve_user_board_name(board_name, user_id)
       json_data = JSON::Any.new(board_data)
-
-      # Broadcast to WebSocket clients
       ToCry::WebSocketHandler.broadcast_to_board(user_board_name, event_type, json_data, exclude_client_id)
     end
 
-      private def self.board_manager
+    # Resolve the user-specific board name for WebSocket clients
+    # This logic was duplicated across multiple methods, now centralized
+    private def self.resolve_user_board_name(board_name : String, user_id : String?) : String
+      return board_name unless user_id
+
+      user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
+      board = board_manager.get(board_name, user_id)
+      return board_name unless board
+
+      board_ref = user_board_refs.find { |ref| ref.board_uuid == board.sepia_id }
+      board_ref ? board_ref.board_name : board_name
+    end
+
+    private def self.board_manager
       ToCry.board_manager
     end
   end

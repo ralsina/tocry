@@ -49,11 +49,21 @@ module ToCry::Endpoints::Boards
 
   # API Endpoint to get all boards
   get "/api/v1/boards" do |env|
-    user = ToCry.get_current_user_id(env)
-    # Get board names using the new BoardReference system
-    board_names = ToCry::BoardReference.accessible_to_user(user).map(&.board_name)
+    begin
+      user = ToCry.get_current_user_id(env)
 
-    ToCry::Endpoints::Helpers.success_response(env, board_names)
+      # Use NoteService to list all boards (handles all business logic)
+      result = ToCry::Services::NoteService.list_all_boards(user)
+
+      if result[:success]
+        ToCry::Endpoints::Helpers.success_response(env, result[:boards].map(&.["name"].as(String)))
+      else
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 500)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error listing boards" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to list boards", 500)
+    end
   end
 
   # API Endpoint to get board details including color scheme and complete lane state
@@ -86,46 +96,22 @@ module ToCry::Endpoints::Boards
   #   ]
   # }
   get "/api/v1/boards/:board_name" do |env|
-    user = ToCry.get_current_user_id(env)
-    board_name = env.params.url["board_name"].as(String)
-    board = ToCry.board_manager.get(board_name, user)
+    begin
+      user = ToCry.get_current_user_id(env)
+      board_name = env.params.url["board_name"].as(String)
 
-    unless board
-      next ToCry::Endpoints::Helpers.error_response(env, "Board not found", 404)
+      # Use NoteService to get board details (handles all validation and data transformation)
+      result = ToCry::Services::NoteService.get_board_with_details(board_name, user)
+
+      if result[:success]
+        ToCry::Endpoints::Helpers.success_response(env, result[:board])
+      else
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 404)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error getting board details" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to get board details", 500)
     end
-
-    # Build complete board representation with lanes and notes
-    lanes_data = board.lanes.map do |lane|
-      {
-        lane_id: lane.sepia_id,
-        name:    lane.name,
-        notes:   lane.notes.map do |note|
-          {
-            sepia_id:    note.sepia_id,
-            title:       note.title,
-            content:     note.content,
-            tags:        note.tags,
-            expanded:    note.expanded,
-            public:      note.public,
-            attachments: note.attachments,
-            start_date:  note.start_date,
-            end_date:    note.end_date,
-            priority:    note.priority.try(&.to_s),
-          }
-        end,
-      }
-    end
-
-    board_details = {
-      id:                 board.sepia_id,
-      name:               board.name,
-      color_scheme:       ToCry::ColorScheme.validate(board.color_scheme),
-      first_visible_lane: board.first_visible_lane,
-      public:             board.public,
-      lanes:              lanes_data,
-    }
-
-    ToCry::Endpoints::Helpers.success_response(env, board_details)
   end
 
   # API Endpoint to create a new board
@@ -149,14 +135,14 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created successfully."})
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating board" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to create board", 500)
     end
   end
 
@@ -203,10 +189,10 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         # Handle first_visible_lane update if provided (not handled by BoardService)
         if first_visible_lane = payload.first_visible_lane
-          final_board_name = result[:new_name]? || result[:old_name]
+          final_board_name = result.new_name.empty? ? result.old_name : result.new_name
           board = ToCry.board_manager.get(final_board_name, user)
           if board
             # Validate the first_visible_lane value
@@ -224,11 +210,11 @@ module ToCry::Endpoints::Boards
 
         ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating board '#{old_board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to update board", 500)
     end
   end
 
@@ -248,16 +234,14 @@ module ToCry::Endpoints::Boards
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+      if result.success
+        ToCry::Endpoints::Helpers.success_response(env, {success: result.message})
       else
-        # For delete operations, we want to return success even if board wasn't found (idempotent)
-        # This matches the original API behavior and test expectations
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to delete board", 500)
     end
   end
 
