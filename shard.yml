@@ -23,6 +23,8 @@ dependencies:
     github: ralsina/sepia
   crystar:
     github: naqvis/crystar
+  crest:
+    github: mamantoha/crest
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>

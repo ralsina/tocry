@@ -1,60 +1,45 @@
 require "json"
 require "../tool"
 require "../../services/note_service"
+require "../authenticated_tool"
 
 class DeleteNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_delete_note",
-      description: "Delete a note from a board",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "note_id" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("ID of the note to delete"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board containing the note"),
-          }),
-        }),
-        "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_delete_note"
+  @@tool_description = "Delete a note from a board"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "note_id" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("ID of the note to delete"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board containing the note"),
+      }),
+    }),
+    "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
     note_id = params["note_id"].as_s
     board_name = params["board_name"].as_s
 
     result = ToCry::Services::NoteService.delete_note(
-        board_name: board_name,
-        note_id: note_id,
-        user_id: user_id,
-        exclude_client_id: "mcp-client"
-      )
+      board_name: board_name,
+      note_id: note_id,
+      user_id: user_id,
+      exclude_client_id: "mcp-client"
+    )
 
-      # Check if the operation was successful
-      if result[:success]
-        return {
-          "success"    => JSON::Any.new(result[:success]),
-          "message"    => result[:message],
-          "id"         => result[:id],
-          "title"      => result[:title],
-          "lane_name"  => result[:lane_name],
-          "board_name" => JSON::Any.new(board_name),
-        }
-      else
-        return {
-          "error"   => JSON::Any.new(result[:error]),
-          "success" => JSON::Any.new(false),
-        }
-      end
+    {
+      "success" => result.success,
+      "message" => result.message,
+    }.to_json
   end
 end

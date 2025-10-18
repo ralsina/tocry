@@ -22,17 +22,17 @@ generate-spec:
 	crystal run src/openapi_manual.cr -- openapi.json
 
 # Generate TypeScript and Crystal clients from OpenAPI spec
-generate-clients:
+generate-clients: install
 	@echo "Generating API clients..."
 	./scripts/generate_clients.sh
 
 # Always regenerate clients before building to ensure latest changes are included
-generate-clients-force:
+generate-clients-force: install
 	@echo "Generating API clients (forced)..."
 	./scripts/generate_clients.sh
 
 # Main build target - regenerates clients
-build: generate-clients-force
+build: generate-clients-force install
 	@echo "Building ToCry..."
 	shards build --release
 

@@ -61,19 +61,23 @@ module ToCry::Endpoints::Notes
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        # Return the created note with its generated ID
+      if result.success
+        note = result.note
+        unless note
+          next ToCry::Endpoints::Helpers.error_response(env, "Note operation failed - no note data returned", 500)
+        end
+
         note_response = {
-          sepia_id:    result[:id],
-          title:       result[:title],
-          content:     result[:content],
-          tags:        result[:tags].map(&.as_s),
-          expanded:    false, # Not included in service response, default to false
-          public:      result[:public].as_bool,
-          attachments: [] of String, # Not included in service response, default to empty
-          start_date:  result[:start_date].as_s?,
-          end_date:    result[:end_date].as_s?,
-          priority:    result[:priority],
+          sepia_id:    note.sepia_id,
+          title:       note.title,
+          content:     note.content,
+          tags:        note.tags,
+          expanded:    note.expanded,
+          public:      note.public,
+          attachments: note.attachments,
+          start_date:  note.start_date,
+          end_date:    note.end_date,
+          priority:    note.priority.to_s,
         }
 
         ToCry::Endpoints::Helpers.created_response(env, {
@@ -81,11 +85,11 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating note in board '#{env.params.url["board_name"]}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to create note", 500)
     end
   end
 
@@ -137,44 +141,27 @@ module ToCry::Endpoints::Notes
         public: payload.note.public,
         expanded: payload.note.expanded,
         new_lane_name: new_lane_name,
+        position: payload.position.try(&.to_i32),
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        # Handle position changes if specified (NoteService doesn't handle position)
-        if payload.position && payload.position != 0
-          board = ToCry.board_manager.get(board_name, user)
-          if board
-            found_note_and_lane = board.note(note_id)
-            if found_note_and_lane
-              current_note, current_lane = found_note_and_lane
-              target_position = payload.position.not_nil!
-
-              # Remove from current position
-              current_lane.notes.delete(current_note)
-              # Insert at new position
-              if target_position >= current_lane.notes.size
-                current_lane.notes << current_note
-              else
-                current_lane.notes.insert(target_position, current_note)
-              end
-              board.save
-            end
-          end
+      if result.success
+        note = result.note
+        unless note
+          next ToCry::Endpoints::Helpers.error_response(env, "Note operation failed - no note data returned", 500)
         end
 
-        # Return the updated note
         note_response = {
-          sepia_id:    result[:id],
-          title:       result[:title],
-          content:     result[:content],
-          tags:        result[:tags].map(&.as_s),
+          sepia_id:    note.sepia_id,
+          title:       note.title,
+          content:     note.content,
+          tags:        note.tags,
           expanded:    payload.note.expanded, # Use the value from request
-          public:      result[:public].as_bool,
-          attachments: [] of String, # Not included in service response, default to empty
-          start_date:  result[:start_date].as_s?,
-          end_date:    result[:end_date].as_s?,
-          priority:    result[:priority],
+          public:      note.public,
+          attachments: note.attachments,
+          start_date:  note.start_date,
+          end_date:    note.end_date,
+          priority:    note.priority.to_s,
         }
 
         ToCry::Endpoints::Helpers.success_response(env, {
@@ -182,11 +169,11 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating note '#{note_id}' in board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to update note", 500)
     end
   end
 
@@ -198,26 +185,9 @@ module ToCry::Endpoints::Notes
     begin
       board_name = env.params.url["board_name"].as(String)
       note_id = env.params.url["note_id"].as(String)
-
       user = ToCry.get_current_user_id(env)
 
-      # Check if board exists to maintain idempotent behavior
-      board = ToCry.board_manager.get(board_name, user)
-      unless board
-        ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user}'" }
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
-        next
-      end
-
-      # Check if note exists to maintain idempotent behavior
-      found_note_and_lane = board.note(note_id)
-      unless found_note_and_lane
-        ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user}'" }
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
-        next
-      end
-
-      # Use NoteService to delete the note
+      # Use NoteService to delete the note (now handles all validation and idempotence)
       result = ToCry::Services::NoteService.delete_note(
         board_name: board_name,
         note_id: note_id,
@@ -225,16 +195,16 @@ module ToCry::Endpoints::Notes
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         ToCry::Endpoints::Helpers.success_response(env, {
-          success: "Note deleted successfully.",
+          success: result.message,
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting note '#{note_id}' from board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to delete note", 500)
     end
   end
 

@@ -1,27 +1,15 @@
 require "kemal"
 require "json"
 require "./tool"
-require "./tools/answer_to_life_tool"
-require "./tools/list_boards_tool"
-require "./tools/get_board_tool"
-require "./tools/search_notes_tool"
-require "./tools/create_note_tool"
-require "./tools/update_note_tool"
-require "./tools/get_note_tool"
+require "./tools/*"
 
 # Lightweight MCP 2024-11-05 Server Implementation
 class ToCryMCPServer
-  def initialize
-    # Register all ToCry MCP tools
-    @tools = {} of String => Tool
+  @tools : Hash(String, Tool)
 
-    @tools["answer_to_life"] = AnswerToLifeTool.new
-    @tools["tocry_list_boards"] = ListBoardsTool.new
-    @tools["tocry_get_board"] = GetBoardTool.new
-    @tools["tocry_search_notes"] = SearchNotesTool.new
-    @tools["tocry_create_note"] = CreateNoteTool.new
-    @tools["tocry_update_note"] = UpdateNoteTool.new
-    @tools["tocry_get_note"] = GetNoteTool.new
+  def initialize
+    # Get all registered tools from the Tool registry
+    @tools = Tool.registered_tools
   end
 
   # Handle MCP JSON-RPC requests via Kemal
@@ -136,7 +124,6 @@ class ToCryMCPServer
     response.to_json
   end
 
-  # ameba:disable Metrics/CyclomaticComplexity
   private def handle_tools_call(params, id, user_id : String)
     tool_name = params["name"]?.try(&.as_s)
 
@@ -153,26 +140,8 @@ class ToCryMCPServer
     arguments = params["arguments"]?.try(&.as_h) || params["params"]?.try(&.as_h) || {} of String => JSON::Any
 
     begin
-      # Check if this is one of our authenticated tools
-      result = case tool_name
-               when "answer_to_life"
-                 tool.as(AnswerToLifeTool).invoke_with_user(arguments, user_id)
-               when "tocry_list_boards"
-                 tool.as(ListBoardsTool).invoke_with_user(arguments, user_id)
-               when "tocry_get_board"
-                 tool.as(GetBoardTool).invoke_with_user(arguments, user_id)
-               when "tocry_search_notes"
-                 tool.as(SearchNotesTool).invoke_with_user(arguments, user_id)
-               when "tocry_create_note"
-                 tool.as(CreateNoteTool).invoke_with_user(arguments, user_id)
-               when "tocry_update_note"
-                 tool.as(UpdateNoteTool).invoke_with_user(arguments, user_id)
-               when "tocry_get_note"
-                 tool.as(GetNoteTool).invoke_with_user(arguments, user_id)
-               else
-                 # Fallback for tools that don't support authentication
-                 tool.invoke(arguments)
-               end
+      # All tools support authentication via AuthenticatedTool mixin
+      result = tool.invoke_with_user(arguments, user_id)
 
       response = {
         "jsonrpc" => "2.0",
@@ -181,7 +150,7 @@ class ToCryMCPServer
           "content" => [
             {
               "type" => "text",
-              "text" => result.to_json,
+              "text" => result,
             },
           ],
         },
