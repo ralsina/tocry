@@ -37,16 +37,9 @@ class DeleteNoteTool < Tool
       exclude_client_id: "mcp-client"
     )
 
-    if result[:success]
-      {
-        "success" => JSON::Any.new(true),
-        "message" => JSON::Any.new("Note deleted successfully."),
-      }
-    else
-      {
-        "error"   => JSON::Any.new(result[:error]),
-        "success" => JSON::Any.new(false),
-      }
-    end
+    {
+      "success" => JSON::Any.new(result[:success]),
+      "message" => JSON::Any.new(result[:message]),
+    }
   end
 end

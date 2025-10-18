@@ -189,10 +189,10 @@ module ToCry::Endpoints::Notes
 
       if result[:success]
         ToCry::Endpoints::Helpers.success_response(env, {
-          success: "Note deleted successfully.",
+          success: result[:message],
         })
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:message], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting note '#{note_id}' from board '#{board_name}'" }

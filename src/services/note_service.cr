@@ -6,6 +6,40 @@ module ToCry::Services
   # Service layer for note operations
   # Centralizes note CRUD logic, validation, and WebSocket notifications
   class NoteService
+    # Helper methods for consistent response building
+    private def self.success_response(message : String)
+      {
+        success: true,
+        message: message,
+      }
+    end
+
+    private def self.error_response(message : String)
+      {
+        success: false,
+        message: message,
+      }
+    end
+
+    private def self.broadcast_deletion(note_id : String, note_title : String, lane_name : String, board_name : String, user_id : String, exclude_client_id : String?)
+      # Prepare note data for WebSocket broadcast
+      note_data = {
+        "id"        => JSON::Any.new(note_id),
+        "title"     => JSON::Any.new(note_title),
+        "lane_name" => JSON::Any.new(lane_name),
+      }
+
+      # Broadcast WebSocket notification
+      WebSocketNotifier.broadcast_note_change(
+        WebSocketHandler::MessageType::NOTE_DELETED,
+        board_name,
+        note_data,
+        user_id,
+        exclude_client_id
+      )
+
+      ToCry::Log.info { "Note '#{note_title}' deleted from board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
+    end
     # Create a new note in a specific lane
     def self.create_note(
       board_name : String,
@@ -362,20 +396,7 @@ module ToCry::Services
       unless board
         # Idempotent: return success if board doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user_id}'" }
-        return {
-          success:    true,
-          error:      "",
-          id:         note_id,
-          title:      "",
-          content:    "",
-          lane_name:  "",
-          board_name: board_name,
-          tags:       [] of JSON::Any,
-          priority:   "",
-          start_date: JSON::Any.new(nil),
-          end_date:   JSON::Any.new(nil),
-          public:     JSON::Any.new(false),
-        }
+        return success_response("Note deleted successfully")
       end
 
       # Find the note
@@ -383,20 +404,7 @@ module ToCry::Services
       unless found_note_and_lane
         # Idempotent: return success if note doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user_id}'" }
-        return {
-          success:    true,
-          error:      "",
-          id:         note_id,
-          title:      "",
-          content:    "",
-          lane_name:  "",
-          board_name: board_name,
-          tags:       [] of JSON::Any,
-          priority:   "",
-          start_date: JSON::Any.new(nil),
-          end_date:   JSON::Any.new(nil),
-          public:     JSON::Any.new(false),
-        }
+        return success_response("Note deleted successfully")
       end
 
       note_to_delete, lane = found_note_and_lane
@@ -406,53 +414,12 @@ module ToCry::Services
       lane.notes.delete(note_to_delete)
       board.save
 
-      # Prepare note data for WebSocket broadcast
-      note_data = {
-        "id"        => JSON::Any.new(note_id),
-        "title"     => JSON::Any.new(note_title),
-        "lane_name" => JSON::Any.new(lane.name),
-      }
-
       # Broadcast WebSocket notification
-      WebSocketNotifier.broadcast_note_change(
-        WebSocketHandler::MessageType::NOTE_DELETED,
-        board_name,
-        note_data,
-        user_id,
-        exclude_client_id
-      )
+      broadcast_deletion(note_id, note_title, lane.name, board_name, user_id, exclude_client_id)
 
-      ToCry::Log.info { "Note '#{note_title}' deleted from board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
-
-      {
-        success:    true,
-        id:         note_id,
-        title:      note_title,
-        content:    "",
-        lane_name:  lane.name,
-        board_name: board_name,
-        tags:       [] of JSON::Any,
-        priority:   "",
-        start_date: JSON::Any.new(nil),
-        end_date:   JSON::Any.new(nil),
-        public:     JSON::Any.new(false),
-        error:      "",
-      }
+      success_response("Note deleted successfully")
     rescue ex
-      {
-        success:    false,
-        error:      "Failed to delete note: #{ex.message}",
-        id:         "",
-        title:      "",
-        content:    "",
-        lane_name:  "",
-        board_name: board_name,
-        tags:       [] of JSON::Any,
-        priority:   "",
-        start_date: JSON::Any.new(nil),
-        end_date:   JSON::Any.new(nil),
-        public:     JSON::Any.new(false),
-      }
+      error_response("Failed to delete note: #{ex.message}")
     end
 
     # Find a note by ID
