@@ -52,7 +52,7 @@ class CreateBoardTool < Tool
         "success"      => JSON::Any.new(true),
         "id"           => JSON::Any.new(result[:id]),
         "name"         => JSON::Any.new(result[:name]),
-        "public"       => result[:public],
+        "public"       => JSON::Any.new(result[:public]),
         "color_scheme" => result[:color_scheme],
         "lane_count"   => JSON::Any.new(result[:lane_count]),
         "total_notes"  => JSON::Any.new(result[:total_notes]),
