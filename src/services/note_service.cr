@@ -1,6 +1,7 @@
 require "../tocry"
 require "../websocket_handler"
 require "./websocket_notifier"
+require "./response_helpers"
 
 module ToCry::Services
   # Service layer for note operations
@@ -397,7 +398,7 @@ module ToCry::Services
       unless board
         # Idempotent: return success if board doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user_id}'" }
-        return success_response("Note deleted successfully")
+        return ResponseHelpers.success_response("Note deleted successfully")
       end
 
       # Find the note
@@ -405,7 +406,7 @@ module ToCry::Services
       unless found_note_and_lane
         # Idempotent: return success if note doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user_id}'" }
-        return success_response("Note deleted successfully")
+        return ResponseHelpers.success_response("Note deleted successfully")
       end
 
       note_to_delete, lane = found_note_and_lane
@@ -418,9 +419,9 @@ module ToCry::Services
       # Broadcast WebSocket notification
       broadcast_deletion(note_id, note_title, lane.name, board_name, user_id, exclude_client_id)
 
-      success_response("Note deleted successfully")
+      ResponseHelpers.success_response("Note deleted successfully")
     rescue ex
-      error_response("Failed to delete note: #{ex.message}")
+      ResponseHelpers.error_response("Failed to delete note: #{ex.message}")
     end
 
     # Find a note by ID

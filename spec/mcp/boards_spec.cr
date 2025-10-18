@@ -210,7 +210,7 @@ describe "MCP Board Management Tools" do
         lanes_data = [
           {"name" => "Todo"},
           {"name" => "In Progress"},
-          {"name" => "Done"}
+          {"name" => "Done"},
         ]
         lanes_json = lanes_data.map do |lane|
           JSON::Any.new(lane.transform_values { |v| JSON::Any.new(v) })
@@ -409,7 +409,7 @@ describe "MCP Board Management Tools" do
         update_tool = UpdateBoardTool.new
         lanes_data = [
           {"name" => "Todo"},
-          {"name" => "Done"}
+          {"name" => "Done"},
         ]
         lanes_json = lanes_data.map do |lane|
           JSON::Any.new(lane.transform_values { |v| JSON::Any.new(v) })

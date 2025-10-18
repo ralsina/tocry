@@ -1,26 +1,12 @@
 require "../tocry"
 require "../websocket_handler"
 require "./websocket_notifier"
+require "./response_helpers"
 
 module ToCry::Services
   # Service layer for board operations
   # Centralizes board CRUD logic, validation, and WebSocket notifications
   class BoardService
-    # Helper methods for consistent response building
-    private def self.success_response(message : String)
-      {
-        success: true,
-        message: message,
-      }
-    end
-
-    private def self.error_response(message : String)
-      {
-        success: false,
-        message: message,
-      }
-    end
-
     private def self.broadcast_deletion(board_id : String, board_name : String, user_id : String, exclude_client_id : String?)
       # Prepare board data for WebSocket broadcast
       board_data = {
@@ -265,7 +251,7 @@ module ToCry::Services
       unless board
         # Idempotent: return success if board doesn't exist (matches MCP tool behavior)
         ToCry::Log.info { "Board '#{board_name}' deletion skipped - board doesn't exist for user '#{user_id}'" }
-        return success_response("Board deleted successfully")
+        return ResponseHelpers.success_response("Board deleted successfully")
       end
 
       board_id = board.sepia_id
@@ -276,9 +262,9 @@ module ToCry::Services
       # Broadcast WebSocket notification
       broadcast_deletion(board_id, board_name, user_id, exclude_client_id)
 
-      success_response("Board deleted successfully")
+      ResponseHelpers.success_response("Board deleted successfully")
     rescue ex
-      error_response("Failed to delete board: #{ex.message}")
+      ResponseHelpers.error_response("Failed to delete board: #{ex.message}")
     end
 
     # Get a board by name
