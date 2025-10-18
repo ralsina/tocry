@@ -6,7 +6,18 @@ abstract class Tool
   getter description : String
   getter input_schema : Hash(String, JSON::Any)
 
-  def initialize(@name : String, @description : String, @input_schema : Hash(String, JSON::Any))
+  # Class properties that can be overridden by subclasses
+  class_property tool_name : String = "tool"
+  class_property tool_description : String = "A generic tool"
+  class_property tool_input_schema : Hash(String, JSON::Any) = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({} of String => JSON::Any),
+  }
+
+  def initialize
+    @name = @@tool_name
+    @description = @@tool_description
+    @input_schema = @@tool_input_schema
   end
 
   abstract def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)

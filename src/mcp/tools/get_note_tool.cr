@@ -2,26 +2,23 @@ require "json"
 require "../tool"
 
 class GetNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_get_note",
-      description: "Get detailed information about a specific note",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "note_id" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("ID of the note to retrieve"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board containing the note (optional - if not provided, searches all boards)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["note_id"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_get_note"
+  @@tool_description = "Get detailed information about a specific note"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "note_id" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("ID of the note to retrieve"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board containing the note (optional - if not provided, searches all boards)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["note_id"].map { |param| JSON::Any.new(param) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

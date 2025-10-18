@@ -3,38 +3,35 @@ require "../tool"
 require "../../services/board_service"
 
 class UpdateBoardTool < Tool
-  def initialize
-    super(
-      name: "tocry_update_board",
-      description: "Update a board's properties",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Current name of the board to update"),
-          }),
-          "new_board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New name for the board (optional)"),
-          }),
-          "public" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the board should be publicly accessible (optional)"),
-          }),
-          "color_scheme" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Color scheme for the board (optional)"),
-          }),
-          "lanes" => JSON::Any.new({
-            "type"        => JSON::Any.new("array"),
-            "description" => JSON::Any.new("Array of lanes with their names and positions (optional)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_update_board"
+  @@tool_description = "Update a board's properties"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Current name of the board to update"),
+      }),
+      "new_board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New name for the board (optional)"),
+      }),
+      "public" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the board should be publicly accessible (optional)"),
+      }),
+      "color_scheme" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Color scheme for the board (optional)"),
+      }),
+      "lanes" => JSON::Any.new({
+        "type"        => JSON::Any.new("array"),
+        "description" => JSON::Any.new("Array of lanes with their names and positions (optional)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

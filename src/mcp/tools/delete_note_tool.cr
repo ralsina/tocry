@@ -3,26 +3,23 @@ require "../tool"
 require "../../services/note_service"
 
 class DeleteNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_delete_note",
-      description: "Delete a note from a board",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "note_id" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("ID of the note to delete"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board containing the note"),
-          }),
-        }),
-        "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_delete_note"
+  @@tool_description = "Delete a note from a board"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "note_id" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("ID of the note to delete"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board containing the note"),
+      }),
+    }),
+    "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

@@ -3,62 +3,59 @@ require "../tool"
 require "../../services/note_service"
 
 class UpdateNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_update_note",
-      description: "Update an existing note's properties or move it to a different lane",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "note_id" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("ID of the note to update"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board containing the note"),
-          }),
-          "title" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New title for the note (optional)"),
-          }),
-          "content" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New content for the note (optional)"),
-          }),
-          "tags" => JSON::Any.new({
-            "type"        => JSON::Any.new("array"),
-            "description" => JSON::Any.new("New array of tags for the note (optional)"),
-          }),
-          "priority" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New priority level: high, medium, low (optional)"),
-          }),
-          "start_date" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New start date in YYYY-MM-DD format (optional)"),
-          }),
-          "end_date" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New end date in YYYY-MM-DD format (optional)"),
-          }),
-          "public" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
-          }),
-          "new_lane_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("New lane name to move the note to (optional)"),
-          }),
-          "expanded" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the note should be expanded (optional)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_update_note"
+  @@tool_description = "Update an existing note's properties or move it to a different lane"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "note_id" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("ID of the note to update"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board containing the note"),
+      }),
+      "title" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New title for the note (optional)"),
+      }),
+      "content" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New content for the note (optional)"),
+      }),
+      "tags" => JSON::Any.new({
+        "type"        => JSON::Any.new("array"),
+        "description" => JSON::Any.new("New array of tags for the note (optional)"),
+      }),
+      "priority" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New priority level: high, medium, low (optional)"),
+      }),
+      "start_date" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New start date in YYYY-MM-DD format (optional)"),
+      }),
+      "end_date" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New end date in YYYY-MM-DD format (optional)"),
+      }),
+      "public" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
+      }),
+      "new_lane_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("New lane name to move the note to (optional)"),
+      }),
+      "expanded" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the note should be expanded (optional)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

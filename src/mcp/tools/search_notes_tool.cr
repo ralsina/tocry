@@ -2,34 +2,31 @@ require "json"
 require "../tool"
 
 class SearchNotesTool < Tool
-  def initialize
-    super(
-      name: "tocry_search_notes",
-      description: "Search across all notes in all boards for matching content",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "query" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Search query - matches in title, content, and tags"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Optional: limit search to specific board"),
-          }),
-          "priority_filter" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Optional: filter by priority (high, medium, low)"),
-          }),
-          "limit" => JSON::Any.new({
-            "type"        => JSON::Any.new("integer"),
-            "description" => JSON::Any.new("Optional: maximum number of results to return"),
-          }),
-        }),
-        "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_search_notes"
+  @@tool_description = "Search across all notes in all boards for matching content"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "query" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Search query - matches in title, content, and tags"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Optional: limit search to specific board"),
+      }),
+      "priority_filter" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Optional: filter by priority (high, medium, low)"),
+      }),
+      "limit" => JSON::Any.new({
+        "type"        => JSON::Any.new("integer"),
+        "description" => JSON::Any.new("Optional: maximum number of results to return"),
+      }),
+    }),
+    "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

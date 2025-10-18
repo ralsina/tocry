@@ -2,16 +2,13 @@ require "json"
 require "../tool"
 
 class ListBoardsTool < Tool
-  def initialize
-    super(
-      name: "tocry_list_boards",
-      description: "List all accessible Kanban boards for the current user",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({} of String => JSON::Any),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_list_boards"
+  @@tool_description = "List all accessible Kanban boards for the current user"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({} of String => JSON::Any),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools

@@ -2,22 +2,19 @@ require "json"
 require "../tool"
 
 class GetBoardTool < Tool
-  def initialize
-    super(
-      name: "tocry_get_board",
-      description: "Get complete board structure with all lanes and notes",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board to retrieve"),
-          }),
-        }),
-        "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  # Tool metadata declaration
+  @@tool_name = "tocry_get_board"
+  @@tool_description = "Get complete board structure with all lanes and notes"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board to retrieve"),
+      }),
+    }),
+    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
   def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
     # Not used - authentication required for all tools
