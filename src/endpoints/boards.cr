@@ -235,11 +235,9 @@ module ToCry::Endpoints::Boards
       )
 
       if result[:success]
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+        ToCry::Endpoints::Helpers.success_response(env, {success: result[:message]})
       else
-        # For delete operations, we want to return success even if board wasn't found (idempotent)
-        # This matches the original API behavior and test expectations
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Board '#{board_name}' deleted."})
+        ToCry::Endpoints::Helpers.error_response(env, result[:message], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting board '#{board_name}'" }

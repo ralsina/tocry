@@ -6,6 +6,40 @@ module ToCry::Services
   # Service layer for board operations
   # Centralizes board CRUD logic, validation, and WebSocket notifications
   class BoardService
+    # Helper methods for consistent response building
+    private def self.success_response(message : String)
+      {
+        success: true,
+        message: message,
+      }
+    end
+
+    private def self.error_response(message : String)
+      {
+        success: false,
+        message: message,
+      }
+    end
+
+    private def self.broadcast_deletion(board_id : String, board_name : String, user_id : String, exclude_client_id : String?)
+      # Prepare board data for WebSocket broadcast
+      board_data = {
+        "id"   => JSON::Any.new(board_id),
+        "name" => JSON::Any.new(board_name),
+      }
+
+      # Broadcast WebSocket notification
+      WebSocketNotifier.broadcast_board_change(
+        WebSocketHandler::MessageType::BOARD_DELETED,
+        board_name,
+        board_data,
+        user_id,
+        exclude_client_id
+      )
+
+      ToCry::Log.info { "Board '#{board_name}' deleted by user '#{user_id}' with WebSocket broadcast" }
+    end
+
     # Create a new board
     def self.create_board(
       board_name : String,
@@ -227,16 +261,11 @@ module ToCry::Services
       user_id : String,
       exclude_client_id : String? = "mcp-client"
     )
-      # Check if board exists and user has access
       board = ToCry.board_manager.get(board_name, user_id)
       unless board
-        return {
-          success: false,
-          error:   "Board '#{board_name}' not found for user '#{user_id}'",
-          message: JSON::Any.new(""),
-          id:      JSON::Any.new(""),
-          name:    JSON::Any.new(board_name),
-        }
+        # Idempotent: return success if board doesn't exist (matches MCP tool behavior)
+        ToCry::Log.info { "Board '#{board_name}' deletion skipped - board doesn't exist for user '#{user_id}'" }
+        return success_response("Board deleted successfully")
       end
 
       board_id = board.sepia_id
@@ -244,38 +273,12 @@ module ToCry::Services
       # Delete the board
       ToCry.board_manager.delete(board_name, user_id)
 
-      # Prepare board data for WebSocket broadcast
-      board_data = {
-        "id"   => JSON::Any.new(board_id),
-        "name" => JSON::Any.new(board_name),
-      }
-
       # Broadcast WebSocket notification
-      WebSocketNotifier.broadcast_board_change(
-        WebSocketHandler::MessageType::BOARD_DELETED,
-        board_name,
-        board_data,
-        user_id,
-        exclude_client_id
-      )
+      broadcast_deletion(board_id, board_name, user_id, exclude_client_id)
 
-      ToCry::Log.info { "Board '#{board_name}' deleted by user '#{user_id}' with WebSocket broadcast" }
-
-      {
-        success: true,
-        message: JSON::Any.new("Board '#{board_name}' deleted successfully"),
-        id:      JSON::Any.new(board_id),
-        name:    JSON::Any.new(board_name),
-        error:   "",
-      }
+      success_response("Board deleted successfully")
     rescue ex
-      {
-        success: false,
-        error:   "Failed to delete board: #{ex.message}",
-        message: JSON::Any.new(""),
-        id:      JSON::Any.new(""),
-        name:    JSON::Any.new(board_name),
-      }
+      error_response("Failed to delete board: #{ex.message}")
     end
 
     # Get a board by name

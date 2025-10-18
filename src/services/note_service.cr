@@ -40,6 +40,7 @@ module ToCry::Services
 
       ToCry::Log.info { "Note '#{note_title}' deleted from board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
     end
+
     # Create a new note in a specific lane
     def self.create_note(
       board_name : String,

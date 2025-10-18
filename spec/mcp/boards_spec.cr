@@ -279,7 +279,6 @@ describe "MCP Board Management Tools" do
 
         MCPTestHelpers.assert_success_response(delete_result)
         delete_result["message"].as_s.should contain("deleted")
-        delete_result["name"].as_s.should eq(board_name)
 
         # Verify board is deleted
         final_get_result = get_tool.invoke_with_user(get_params, MCPTestHelpers::TEST_USER_ID)
