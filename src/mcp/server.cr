@@ -1,7 +1,6 @@
 require "kemal"
 require "json"
 require "./tool"
-require "./tools/answer_to_life_tool"
 require "./tools/list_boards_tool"
 require "./tools/get_board_tool"
 require "./tools/search_notes_tool"
@@ -15,7 +14,6 @@ class ToCryMCPServer
     # Register all ToCry MCP tools
     @tools = {} of String => Tool
 
-    @tools["answer_to_life"] = AnswerToLifeTool.new
     @tools["tocry_list_boards"] = ListBoardsTool.new
     @tools["tocry_get_board"] = GetBoardTool.new
     @tools["tocry_search_notes"] = SearchNotesTool.new
@@ -155,8 +153,6 @@ class ToCryMCPServer
     begin
       # Check if this is one of our authenticated tools
       result = case tool_name
-               when "answer_to_life"
-                 tool.as(AnswerToLifeTool).invoke_with_user(arguments, user_id)
                when "tocry_list_boards"
                  tool.as(ListBoardsTool).invoke_with_user(arguments, user_id)
                when "tocry_get_board"
