@@ -198,26 +198,9 @@ module ToCry::Endpoints::Notes
     begin
       board_name = env.params.url["board_name"].as(String)
       note_id = env.params.url["note_id"].as(String)
-
       user = ToCry.get_current_user_id(env)
 
-      # Check if board exists to maintain idempotent behavior
-      board = ToCry.board_manager.get(board_name, user)
-      unless board
-        ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user}'" }
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
-        next
-      end
-
-      # Check if note exists to maintain idempotent behavior
-      found_note_and_lane = board.note(note_id)
-      unless found_note_and_lane
-        ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user}'" }
-        ToCry::Endpoints::Helpers.success_response(env, {success: "Note deleted successfully."})
-        next
-      end
-
-      # Use NoteService to delete the note
+      # Use NoteService to delete the note (now handles all validation and idempotence)
       result = ToCry::Services::NoteService.delete_note(
         board_name: board_name,
         note_id: note_id,
