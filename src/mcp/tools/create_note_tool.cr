@@ -82,23 +82,25 @@ class CreateNoteTool < Tool
     )
 
     # Check if the operation was successful
-    if result[:success]
+    if result.success
+      # Extract note data from the response
+      note = result.note.not_nil!
       {
         "success"    => JSON::Any.new(true),
-        "id"         => JSON::Any.new(result[:id]),
-        "title"      => JSON::Any.new(result[:title]),
-        "content"    => JSON::Any.new(result[:content]),
-        "lane_name"  => JSON::Any.new(result[:lane_name]),
+        "id"         => JSON::Any.new(note.sepia_id),
+        "title"      => JSON::Any.new(note.title),
+        "content"    => JSON::Any.new(note.content),
+        "lane_name"  => JSON::Any.new(result.lane_name),
         "board_name" => JSON::Any.new(board_name),
-        "tags"       => JSON::Any.new(result[:tags]),
-        "priority"   => JSON::Any.new(result[:priority]),
-        "start_date" => result[:start_date],
-        "end_date"   => result[:end_date],
-        "public"     => result[:public],
+        "tags"       => JSON::Any.new(note.tags.map { |tag| JSON::Any.new(tag) }),
+        "priority"   => JSON::Any.new(note.priority.to_s),
+        "start_date" => JSON::Any.new(note.start_date),
+        "end_date"   => JSON::Any.new(note.end_date),
+        "public"     => JSON::Any.new(note.public),
       }
     else
       {
-        "error"   => JSON::Any.new(result[:error]),
+        "error"   => JSON::Any.new(result.message),
         "success" => JSON::Any.new(false),
       }
     end

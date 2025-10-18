@@ -61,19 +61,20 @@ module ToCry::Endpoints::Notes
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        # Return the created note with its generated ID
+      if result.success
+        # Extract note data from the response
+        note = result.note.not_nil!
         note_response = {
-          sepia_id:    result[:id],
-          title:       result[:title],
-          content:     result[:content],
-          tags:        result[:tags].map(&.as_s),
-          expanded:    false, # Not included in service response, default to false
-          public:      result[:public].as_bool,
-          attachments: [] of String, # Not included in service response, default to empty
-          start_date:  result[:start_date].as_s?,
-          end_date:    result[:end_date].as_s?,
-          priority:    result[:priority],
+          sepia_id:    note.sepia_id,
+          title:       note.title,
+          content:     note.content,
+          tags:        note.tags,
+          expanded:    note.expanded,
+          public:      note.public,
+          attachments: note.attachments,
+          start_date:  note.start_date,
+          end_date:    note.end_date,
+          priority:    note.priority.to_s,
         }
 
         ToCry::Endpoints::Helpers.created_response(env, {
@@ -81,7 +82,7 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating note in board '#{env.params.url["board_name"]}'" }
@@ -141,19 +142,20 @@ module ToCry::Endpoints::Notes
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
-        # Return the updated note
+      if result.success
+        # Extract note data from the response
+        note = result.note.not_nil!
         note_response = {
-          sepia_id:    result[:id],
-          title:       result[:title],
-          content:     result[:content],
-          tags:        result[:tags].map(&.as_s),
+          sepia_id:    note.sepia_id,
+          title:       note.title,
+          content:     note.content,
+          tags:        note.tags,
           expanded:    payload.note.expanded, # Use the value from request
-          public:      result[:public].as_bool,
-          attachments: [] of String, # Not included in service response, default to empty
-          start_date:  result[:start_date].as_s?,
-          end_date:    result[:end_date].as_s?,
-          priority:    result[:priority],
+          public:      note.public,
+          attachments: note.attachments,
+          start_date:  note.start_date,
+          end_date:    note.end_date,
+          priority:    note.priority.to_s,
         }
 
         ToCry::Endpoints::Helpers.success_response(env, {
@@ -161,7 +163,7 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating note '#{note_id}' in board '#{board_name}'" }
@@ -187,12 +189,12 @@ module ToCry::Endpoints::Notes
         exclude_client_id: ToCry::WebSocketHandler.extract_client_id(env)
       )
 
-      if result[:success]
+      if result.success
         ToCry::Endpoints::Helpers.success_response(env, {
-          success: result[:message],
+          success: result.message,
         })
       else
-        ToCry::Endpoints::Helpers.error_response(env, result[:message], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result.message, 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting note '#{note_id}' from board '#{board_name}'" }

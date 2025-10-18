@@ -7,19 +7,17 @@ module ToCry::Services
   # Service layer for note operations
   # Centralizes note CRUD logic, validation, and WebSocket notifications
   class NoteService
-    # Helper methods for consistent response building
-    private def self.success_response(message : String)
-      {
-        success: true,
-        message: message,
-      }
-    end
+    # Response struct for all note operations
+    # Provides a consistent return type with all possible fields
+    struct NoteResponse
+      property success : Bool = false
+      property message : String = ""
+      property note : ToCry::Note? = nil
+      property lane_name : String = ""
+      property board_name : String = ""
 
-    private def self.error_response(message : String)
-      {
-        success: false,
-        message: message,
-      }
+      def initialize(@success : Bool = false, @message : String = "", @note : ToCry::Note? = nil, @lane_name : String = "", @board_name : String = "")
+      end
     end
 
     private def self.broadcast_deletion(note_id : String, note_title : String, lane_name : String, board_name : String, user_id : String, exclude_client_id : String?)
@@ -60,39 +58,22 @@ module ToCry::Services
       begin
         board = ToCry.board_manager.get(board_name, user_id)
         unless board
-          return {
-            success:    false,
-            error:      "Board '#{board_name}' not found for user '#{user_id}'",
-            id:         "",
-            title:      "",
-            content:    "",
-            lane_name:  "",
-            board_name: board_name,
-            tags:       [] of JSON::Any,
-            priority:   "",
-            start_date: JSON::Any.new(nil),
-            end_date:   JSON::Any.new(nil),
-            public:     JSON::Any.new(false),
-          }
+          return NoteResponse.new(
+            success: false,
+            message: "Board '#{board_name}' not found for user '#{user_id}'",
+            board_name: board_name
+          )
         end
 
         # Find the target lane
         target_lane = board.lanes.find { |lane| lane.name == lane_name }
         unless target_lane
-          return {
-            success:    false,
-            error:      "Lane '#{lane_name}' not found in board '#{board_name}'",
-            id:         "",
-            title:      "",
-            content:    "",
-            lane_name:  lane_name,
-            board_name: board_name,
-            tags:       [] of JSON::Any,
-            priority:   "",
-            start_date: JSON::Any.new(nil),
-            end_date:   JSON::Any.new(nil),
-            public:     JSON::Any.new(false),
-          }
+          return NoteResponse.new(
+            success: false,
+            message: "Lane '#{lane_name}' not found in board '#{board_name}'",
+            lane_name: lane_name,
+            board_name: board_name
+          )
         end
 
         # Parse priority
@@ -146,35 +127,20 @@ module ToCry::Services
 
         ToCry::Log.info { "Note '#{title}' created in lane '#{lane_name}' on board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
 
-        {
-          success:    true,
-          id:         new_note.sepia_id,
-          title:      new_note.title,
-          content:    new_note.content,
-          lane_name:  lane_name,
-          board_name: board_name,
-          tags:       new_note.tags.map { |tag_name| JSON::Any.new(tag_name) },
-          priority:   new_note.priority.to_s,
-          start_date: new_note.start_date ? JSON::Any.new(new_note.start_date) : JSON::Any.new(nil),
-          end_date:   new_note.end_date ? JSON::Any.new(new_note.end_date) : JSON::Any.new(nil),
-          public:     JSON::Any.new(new_note.public),
-          error:      "",
-        }
+        NoteResponse.new(
+          success: true,
+          message: "Note created successfully",
+          note: new_note,
+          lane_name: lane_name,
+          board_name: board_name
+        )
       rescue ex
-        {
-          success:    false,
-          error:      "Failed to create note: #{ex.message}",
-          id:         "",
-          title:      "",
-          content:    "",
-          lane_name:  lane_name,
-          board_name: board_name,
-          tags:       [] of JSON::Any,
-          priority:   "",
-          start_date: JSON::Any.new(nil),
-          end_date:   JSON::Any.new(nil),
-          public:     JSON::Any.new(false),
-        }
+        NoteResponse.new(
+          success: false,
+          message: "Failed to create note: #{ex.message}",
+          lane_name: lane_name,
+          board_name: board_name
+        )
       end
     end
 
@@ -198,39 +164,21 @@ module ToCry::Services
       begin
         board = ToCry.board_manager.get(board_name, user_id)
         unless board
-          return {
-            success:    false,
-            error:      "Board '#{board_name}' not found for user '#{user_id}'",
-            id:         "",
-            title:      "",
-            content:    "",
-            lane_name:  "",
-            board_name: board_name,
-            tags:       [] of JSON::Any,
-            priority:   "",
-            start_date: JSON::Any.new(nil),
-            end_date:   JSON::Any.new(nil),
-            public:     JSON::Any.new(false),
-          }
+          return NoteResponse.new(
+            success: false,
+            message: "Board '#{board_name}' not found for user '#{user_id}'",
+            board_name: board_name
+          )
         end
 
         # Find the note
         found_note_and_lane = board.note(note_id)
         unless found_note_and_lane
-          return {
-            success:    false,
-            error:      "Note '#{note_id}' not found in board '#{board_name}'",
-            id:         "",
-            title:      "",
-            content:    "",
-            lane_name:  "",
-            board_name: board_name,
-            tags:       [] of JSON::Any,
-            priority:   "",
-            start_date: JSON::Any.new(nil),
-            end_date:   JSON::Any.new(nil),
-            public:     JSON::Any.new(false),
-          }
+          return NoteResponse.new(
+            success: false,
+            message: "Note '#{note_id}' not found in board '#{board_name}'",
+            board_name: board_name
+          )
         end
 
         current_note, current_lane = found_note_and_lane
@@ -280,20 +228,12 @@ module ToCry::Services
           # Find the target lane
           target_lane = board.lanes.find { |lane| lane.name == new_lane_name }
           unless target_lane
-            return {
-              success:    false,
-              error:      "Target lane '#{new_lane_name}' not found in board '#{board_name}'",
-              id:         "",
-              title:      "",
-              content:    "",
-              lane_name:  new_lane_name,
-              board_name: board_name,
-              tags:       [] of JSON::Any,
-              priority:   "",
-              start_date: JSON::Any.new(nil),
-              end_date:   JSON::Any.new(nil),
-              public:     JSON::Any.new(false),
-            }
+            return NoteResponse.new(
+              success: false,
+              message: "Target lane '#{new_lane_name}' not found in board '#{board_name}'",
+              lane_name: new_lane_name,
+              board_name: board_name
+            )
           end
 
           # Remove note from current lane
@@ -355,35 +295,19 @@ module ToCry::Services
 
         ToCry::Log.info { "Note '#{current_note.title}' updated in board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
 
-        {
-          success:    true,
-          id:         current_note.sepia_id,
-          title:      current_note.title,
-          content:    current_note.content,
-          lane_name:  final_lane_name,
-          board_name: board_name,
-          tags:       current_note.tags.map { |tag| JSON::Any.new(tag) },
-          priority:   current_note.priority.to_s,
-          start_date: current_note.start_date ? JSON::Any.new(current_note.start_date) : JSON::Any.new(nil),
-          end_date:   current_note.end_date ? JSON::Any.new(current_note.end_date) : JSON::Any.new(nil),
-          public:     JSON::Any.new(current_note.public),
-          error:      "",
-        }
+        NoteResponse.new(
+          success: true,
+          message: "Note updated successfully",
+          note: current_note,
+          lane_name: final_lane_name,
+          board_name: board_name
+        )
       rescue ex
-        {
-          success:    false,
-          error:      "Failed to update note: #{ex.message}",
-          id:         "",
-          title:      "",
-          content:    "",
-          lane_name:  "",
-          board_name: board_name,
-          tags:       [] of JSON::Any,
-          priority:   "",
-          start_date: JSON::Any.new(nil),
-          end_date:   JSON::Any.new(nil),
-          public:     JSON::Any.new(false),
-        }
+        NoteResponse.new(
+          success: false,
+          message: "Failed to update note: #{ex.message}",
+          board_name: board_name
+        )
       end
     end
 
@@ -398,7 +322,7 @@ module ToCry::Services
       unless board
         # Idempotent: return success if board doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user_id}'" }
-        return ResponseHelpers.success_response("Note deleted successfully")
+        return NoteResponse.new(success: true, message: "Note deleted successfully", board_name: board_name)
       end
 
       # Find the note
@@ -406,7 +330,7 @@ module ToCry::Services
       unless found_note_and_lane
         # Idempotent: return success if note doesn't exist (matches REST endpoint behavior)
         ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user_id}'" }
-        return ResponseHelpers.success_response("Note deleted successfully")
+        return NoteResponse.new(success: true, message: "Note deleted successfully", board_name: board_name)
       end
 
       note_to_delete, lane = found_note_and_lane
@@ -419,9 +343,9 @@ module ToCry::Services
       # Broadcast WebSocket notification
       broadcast_deletion(note_id, note_title, lane.name, board_name, user_id, exclude_client_id)
 
-      ResponseHelpers.success_response("Note deleted successfully")
+      NoteResponse.new(success: true, message: "Note deleted successfully", board_name: board_name)
     rescue ex
-      ResponseHelpers.error_response("Failed to delete note: #{ex.message}")
+      NoteResponse.new(success: false, message: "Failed to delete note: #{ex.message}", board_name: board_name)
     end
 
     # Find a note by ID

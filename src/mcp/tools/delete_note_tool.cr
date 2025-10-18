@@ -38,8 +38,8 @@ class DeleteNoteTool < Tool
     )
 
     {
-      "success" => JSON::Any.new(result[:success]),
-      "message" => JSON::Any.new(result[:message]),
+      "success" => JSON::Any.new(result.success),
+      "message" => JSON::Any.new(result.message),
     }
   end
 end
