@@ -1,40 +1,39 @@
 require "json"
 require "../tool"
+require "../authenticated_tool"
 
 class SearchNotesTool < Tool
-  def initialize
-    super(
-      name: "tocry_search_notes",
-      description: "Search across all notes in all boards for matching content",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "query" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Search query - matches in title, content, and tags"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Optional: limit search to specific board"),
-          }),
-          "priority_filter" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Optional: filter by priority (high, medium, low)"),
-          }),
-          "limit" => JSON::Any.new({
-            "type"        => JSON::Any.new("integer"),
-            "description" => JSON::Any.new("Optional: maximum number of results to return"),
-          }),
-        }),
-        "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_search_notes"
+  @@tool_description = "Search across all notes in all boards for matching content"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "query" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Search query - matches in title, content, and tags"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Optional: limit search to specific board"),
+      }),
+      "priority_filter" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Optional: filter by priority (high, medium, low)"),
+      }),
+      "limit" => JSON::Any.new({
+        "type"        => JSON::Any.new("integer"),
+        "description" => JSON::Any.new("Optional: maximum number of results to return"),
+      }),
+    }),
+    "required" => JSON::Any.new(["query"].map { |param_name| JSON::Any.new(param_name) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
+  # invoke() method is provided by AuthenticatedTool mixin
 
   # ameba:disable Metrics/CyclomaticComplexity
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
@@ -96,6 +95,7 @@ class SearchNotesTool < Tool
       end
 
       {
+        "success"         => JSON::Any.new(true),
         "results"         => JSON::Any.new(results.map { |result| JSON::Any.new(result) }),
         "count"           => JSON::Any.new(results.size),
         "query"           => JSON::Any.new(query),
@@ -103,9 +103,12 @@ class SearchNotesTool < Tool
       }
     rescue ex
       {
-        "error"   => JSON::Any.new("Search failed: #{ex.message}"),
-        "results" => JSON::Any.new([] of JSON::Any),
-        "count"   => JSON::Any.new(0),
+        "success"         => JSON::Any.new(false),
+        "error"           => JSON::Any.new("Search failed: #{ex.message}"),
+        "results"         => JSON::Any.new([] of JSON::Any),
+        "count"           => JSON::Any.new(0),
+        "query"           => JSON::Any.new(query),
+        "boards_searched" => JSON::Any.new(0),
       }
     end
   end

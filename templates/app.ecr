@@ -542,8 +542,12 @@
                       </div>
 
                       <!-- Completion Progress Bar -->
-                      <div x-show="calculateCompletion(note).total > 0" class="note-completion-progress">
-                        <progress :value="calculateCompletion(note).completed" :max="calculateCompletion(note).total"></progress>
+                      <div x-show="calculateCompletion(note).total > 0" class="note-completion-progress" x-transition>
+                        <progress
+                          :value="calculateCompletion(note).completed"
+                          :max="calculateCompletion(note).total"
+                          :class="{ 'progress-empty': calculateCompletion(note).percentage === 0 }"
+                        ></progress>
                         <span x-text="`${calculateCompletion(note).percentage}%`"></span>
                       </div>
                     </div>

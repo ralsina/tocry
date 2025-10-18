@@ -1,52 +1,51 @@
 require "json"
 require "../tool"
+require "../../services/note_service"
+require "../authenticated_tool"
 
 class ListBoardsTool < Tool
-  def initialize
-    super(
-      name: "tocry_list_boards",
-      description: "List all accessible Kanban boards for the current user",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({} of String => JSON::Any),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_list_boards"
+  @@tool_description = "List all accessible Kanban boards for the current user"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({} of String => JSON::Any),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
+  # invoke() method is provided by AuthenticatedTool mixin
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
-    # Get the board manager
-    board_manager = ToCry.board_manager
+    # Use NoteService to list all boards (handles all business logic)
+    result = ToCry::Services::NoteService.list_all_boards(user_id)
 
-    # Get all board references for the user to access user-specific board names
-    user_references = ToCry::BoardReference.accessible_to_user(user_id)
-
-    boards_data = user_references.compact_map do |reference|
-      board = board_manager.get_by_uuid(reference.board_uuid)
-      next unless board
+    if result[:success]
+      # Transform service response to match MCP tool format
+      boards_data = result[:boards].map do |board|
+        {
+          "id"           => JSON::Any.new(board["id"].as(String)),
+          "name"         => JSON::Any.new(board["name"].as(String)),
+          "lane_count"   => JSON::Any.new(board["lane_count"].as(Int32)),
+          "public"       => JSON::Any.new(board["public"].as(Bool)),
+          "color_scheme" => board["color_scheme"].nil? ? JSON::Any.new(nil) : JSON::Any.new(board["color_scheme"].as(String)),
+        }
+      end
 
       {
-        "id"           => JSON::Any.new(board.sepia_id),
-        "name"         => JSON::Any.new(reference.board_name), # Use user-specific name from BoardReference
-        "lane_count"   => JSON::Any.new(board.lanes.size),
-        "public"       => JSON::Any.new(board.public),
-        "color_scheme" => board.color_scheme ? JSON::Any.new(board.color_scheme) : JSON::Any.new(nil),
+        "success" => JSON::Any.new(true),
+        "boards"  => JSON::Any.new(boards_data.map { |board_data| JSON::Any.new(board_data) }),
+        "count"   => JSON::Any.new(boards_data.size),
+      }
+    else
+      {
+        "success" => JSON::Any.new(false),
+        "error"   => JSON::Any.new(result[:error]),
+        "boards"  => JSON::Any.new([] of JSON::Any),
+        "count"   => JSON::Any.new(0),
       }
     end
-
-    {
-      "boards" => JSON::Any.new(boards_data.map { |board_data| JSON::Any.new(board_data) }),
-      "count"  => JSON::Any.new(boards_data.size),
-    }
-  rescue ex
-    {
-      "error"  => JSON::Any.new("Failed to list boards: #{ex.message}"),
-      "boards" => JSON::Any.new([] of JSON::Any),
-      "count"  => JSON::Any.new(0),
-    }
   end
 end

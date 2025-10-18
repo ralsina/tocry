@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.24.0] - 2025-10-17
+
+### 🚀 Features
+
+- *(notes)* Display completion progress for tasks
+- *(frontend)* Improve note layout and increase lane width
+- *(migrations)* Implement data directory backup before migrations
+
+### 🐛 Bug Fixes
+
+- *(websockets)* Prevent board from hiding on WebSocket updates
+
+### 🚜 Refactor
+
+- *(mcp)* Implement lightweight MCP 2024-11-05 server without external dependency
+
 ## [0.23.0] - 2025-10-16
 
 ### 🚀 Features
@@ -11,6 +27,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - *(boards)* Correctly make boards private
+
+### 💼 Other
+
+- Release v0.23.0
 
 ### 🚜 Refactor
 

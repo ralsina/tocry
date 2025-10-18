@@ -1,138 +1,111 @@
 require "json"
 require "../tool"
+require "../../services/note_service"
+require "../authenticated_tool"
 
 class CreateNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_create_note",
-      description: "Create a new note in a specific lane on a board",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board where the note will be created"),
-          }),
-          "lane_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the lane where the note will be created"),
-          }),
-          "title" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Title of the note"),
-          }),
-          "content" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Content of the note (optional)"),
-          }),
-          "tags" => JSON::Any.new({
-            "type"        => JSON::Any.new("array"),
-            "description" => JSON::Any.new("Array of tags for the note (optional)"),
-          }),
-          "priority" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Priority level: high, medium, low (optional)"),
-          }),
-          "start_date" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Start date in YYYY-MM-DD format (optional)"),
-          }),
-          "end_date" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("End date in YYYY-MM-DD format (optional)"),
-          }),
-          "public" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["board_name", "lane_name", "title"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_create_note"
+  @@tool_description = "Create a new note in a specific lane on a board"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board where the note will be created"),
+      }),
+      "lane_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the lane where the note will be created"),
+      }),
+      "title" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Title of the note"),
+      }),
+      "content" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Content of the note (optional)"),
+      }),
+      "tags" => JSON::Any.new({
+        "type"        => JSON::Any.new("array"),
+        "description" => JSON::Any.new("Array of tags for the note (optional)"),
+      }),
+      "priority" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Priority level: high, medium, low (optional)"),
+      }),
+      "start_date" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Start date in YYYY-MM-DD format (optional)"),
+      }),
+      "end_date" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("End date in YYYY-MM-DD format (optional)"),
+      }),
+      "public" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["board_name", "lane_name", "title"].map { |param| JSON::Any.new(param) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     board_name = params["board_name"].as_s
     lane_name = params["lane_name"].as_s
     title = params["title"].as_s
 
-    begin
-      # Get the board manager
-      board_manager = ToCry.board_manager
+    # Extract optional parameters
+    content = params["content"]?.try(&.as_s)
+    tags = params["tags"]?.try(&.as_a.map(&.as_s))
+    priority = params["priority"]?.try(&.as_s)
+    start_date = params["start_date"]?.try(&.as_s)
+    end_date = params["end_date"]?.try(&.as_s)
+    public = params["public"]?.try(&.as_bool)
 
-      # Get the board
-      board = board_manager.get(board_name, user_id)
-      unless board
+    result = ToCry::Services::NoteService.create_note(
+      board_name: board_name,
+      lane_name: lane_name,
+      title: title,
+      user_id: user_id,
+      content: content,
+      tags: tags,
+      priority: priority,
+      start_date: start_date,
+      end_date: end_date,
+      public: public,
+      exclude_client_id: "mcp-client"
+    )
+
+    # Check if the operation was successful
+    if result.success
+      note = result.note
+      unless note
         return {
-          "error" => JSON::Any.new("Board '#{board_name}' not found for user '#{user_id}'"),
+          "error"   => JSON::Any.new("Note creation failed - no note data returned"),
+          "success" => JSON::Any.new(false),
         }
       end
-
-      # Find the target lane
-      target_lane = board.lanes.find { |lane| lane.name == lane_name }
-      unless target_lane
-        return {
-          "error" => JSON::Any.new("Lane '#{lane_name}' not found in board '#{board_name}'"),
-        }
-      end
-
-      # Parse optional parameters
-      content = params["content"]?.try(&.as_s) || ""
-      tags = params["tags"]?.try(&.as_a.map(&.as_s)) || [] of String
-      priority_str = params["priority"]?.try(&.as_s)
-      start_date = params["start_date"]?.try(&.as_s)
-      end_date = params["end_date"]?.try(&.as_s)
-      public = params["public"]?.try(&.as_bool) || false
-
-      # Parse priority
-      priority = case priority_str
-                 when "high"   then ToCry::Priority::High
-                 when "medium" then ToCry::Priority::Medium
-                 when "low"    then ToCry::Priority::Low
-                 else               nil
-                 end
-
-      # Create new note
-      new_note = ToCry::Note.new(
-        title: title,
-        tags: tags,
-        content: content,
-        expanded: false,
-        public: public,
-        attachments: [] of String,
-        start_date: start_date,
-        end_date: end_date,
-        priority: priority
-      )
-
-      # Add note to the lane
-      target_lane.notes << new_note
-      board.save
-
-      # Log the action
-      ToCry::Log.info { "Note '#{title}' created in lane '#{lane_name}' on board '#{board_name}' by user '#{user_id}'" }
-
       {
         "success"    => JSON::Any.new(true),
-        "id"         => JSON::Any.new(new_note.sepia_id),
-        "title"      => JSON::Any.new(new_note.title),
-        "content"    => JSON::Any.new(new_note.content),
-        "lane_name"  => JSON::Any.new(lane_name),
+        "id"         => JSON::Any.new(note.sepia_id),
+        "title"      => JSON::Any.new(note.title),
+        "content"    => JSON::Any.new(note.content),
+        "lane_name"  => JSON::Any.new(result.lane_name),
         "board_name" => JSON::Any.new(board_name),
-        "tags"       => JSON::Any.new(new_note.tags.map { |tag_name| JSON::Any.new(tag_name) }),
-        "priority"   => JSON::Any.new(new_note.priority.to_s),
-        "start_date" => new_note.start_date ? JSON::Any.new(new_note.start_date) : JSON::Any.new(nil),
-        "end_date"   => new_note.end_date ? JSON::Any.new(new_note.end_date) : JSON::Any.new(nil),
-        "public"     => JSON::Any.new(new_note.public),
+        "tags"       => JSON::Any.new(note.tags.map { |tag| JSON::Any.new(tag) }),
+        "priority"   => JSON::Any.new(note.priority.to_s),
+        "start_date" => JSON::Any.new(note.start_date),
+        "end_date"   => JSON::Any.new(note.end_date),
+        "public"     => JSON::Any.new(note.public),
       }
-    rescue ex
+    else
       {
-        "error"   => JSON::Any.new("Failed to create note: #{ex.message}"),
+        "error"   => JSON::Any.new(result.message),
         "success" => JSON::Any.new(false),
       }
     end

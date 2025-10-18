@@ -1,32 +1,31 @@
 require "json"
 require "../tool"
+require "../authenticated_tool"
 
 class GetNoteTool < Tool
-  def initialize
-    super(
-      name: "tocry_get_note",
-      description: "Get detailed information about a specific note",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "note_id" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("ID of the note to retrieve"),
-          }),
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the board containing the note (optional - if not provided, searches all boards)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["note_id"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_get_note"
+  @@tool_description = "Get detailed information about a specific note"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "note_id" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("ID of the note to retrieve"),
+      }),
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the board containing the note (optional - if not provided, searches all boards)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["note_id"].map { |param| JSON::Any.new(param) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
+
+  # invoke() method is provided by AuthenticatedTool mixin
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
     note_id = params["note_id"].as_s
@@ -68,7 +67,8 @@ class GetNoteTool < Tool
 
       unless note_result && found_board && found_lane
         return {
-          "error" => JSON::Any.new("Note '#{note_id}' not found for user '#{user_id}'"),
+          "success" => JSON::Any.new(false),
+          "error"   => JSON::Any.new("Note '#{note_id}' not found for user '#{user_id}'"),
         }
       end
 
