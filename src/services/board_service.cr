@@ -1,88 +1,79 @@
 require "../tocry"
 require "../websocket_handler"
 require "./websocket_notifier"
+require "./websocket_events"
+require "./response_helpers"
 
 module ToCry::Services
   # Service layer for board operations
   # Centralizes board CRUD logic, validation, and WebSocket notifications
   class BoardService
+    # Response struct for all board operations
+    # Provides a consistent return type with all possible fields
+    struct BoardResponse
+      # ameba:disable Naming/QueryBoolMethods
+      property success : Bool = false
+      property message : String = ""
+      property board : ToCry::Board? = nil
+      property old_name : String = ""
+      property new_name : String = ""
+
+      def initialize(@success : Bool = false, @message : String = "", @board : ToCry::Board? = nil, @old_name : String = "", @new_name : String = "")
+      end
+    end
+
+    private def self.broadcast_deletion(board_id : String, board_name : String, user_id : String, exclude_client_id : String?)
+      # Broadcast WebSocket notification using event pattern
+      event = BoardDeletedEvent.new(board_id, board_name, user_id, exclude_client_id)
+      WebSocketNotifier.broadcast(event)
+
+      ToCry::Log.info { "Board '#{board_name}' deleted by user '#{user_id}' with WebSocket broadcast" }
+    end
+
     # Create a new board
     def self.create_board(
       board_name : String,
       user_id : String,
       public : Bool? = false,
       color_scheme : String? = nil,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
-      begin
-        # Create the board
-        board = ToCry.board_manager.create(board_name, user_id)
-        unless board
-          return {
-            success:      false,
-            error:        "Failed to create board '#{board_name}'",
-            id:           "",
-            name:         board_name,
-            public:       false,
-            color_scheme: JSON::Any.new(nil),
-            lane_count:   0,
-            total_notes:  0,
-          }
-        end
-
-        # Set additional properties
-        board.public = public if public
-        board.color_scheme = color_scheme if color_scheme
-
-        # Save the board
-        board.save
-
-        # Prepare board data for WebSocket broadcast
-        board_data = {
-          "id"           => JSON::Any.new(board.sepia_id),
-          "name"         => JSON::Any.new(board_name),
-          "public"       => JSON::Any.new(board.public),
-          "color_scheme" => JSON::Any.new(board.color_scheme),
-          "lane_count"   => JSON::Any.new(board.lanes.size),
-          "total_notes"  => JSON::Any.new(board.lanes.sum(&.notes.size)),
-        }
-
-        # Broadcast WebSocket notification
-        WebSocketNotifier.broadcast_board_change(
-          WebSocketHandler::MessageType::BOARD_CREATED,
-          board_name,
-          board_data,
-          user_id,
-          exclude_client_id
+      # Create the board
+      board = ToCry.board_manager.create(board_name, user_id)
+      unless board
+        return BoardResponse.new(
+          success: false,
+          message: "Failed to create board '#{board_name}'"
         )
-
-        ToCry::Log.info { "Board '#{board_name}' created by user '#{user_id}' with WebSocket broadcast" }
-
-        {
-          success:      true,
-          id:           board.sepia_id,
-          name:         board_name,
-          public:       board.public,
-          color_scheme: board.color_scheme ? JSON::Any.new(board.color_scheme) : JSON::Any.new(nil),
-          lane_count:   board.lanes.size,
-          total_notes:  board.lanes.sum(&.notes.size),
-          error:        "",
-        }
-      rescue ex
-        {
-          success:      false,
-          error:        "Failed to create board: #{ex.message}",
-          id:           "",
-          name:         "",
-          public:       false,
-          color_scheme: JSON::Any.new(nil),
-          lane_count:   0,
-          total_notes:  0,
-        }
       end
+
+      # Set additional properties
+      board.public = public if public
+      board.color_scheme = color_scheme if color_scheme
+
+      # Save the board
+      board.save
+
+      # Broadcast WebSocket notification using event pattern
+      event = BoardCreatedEvent.new(board, user_id, exclude_client_id)
+      WebSocketNotifier.broadcast(event)
+
+      ToCry::Log.info { "Board '#{board_name}' created by user '#{user_id}' with WebSocket broadcast" }
+
+      BoardResponse.new(
+        success: true,
+        message: "Board created successfully",
+        board: board
+      )
+    rescue ex
+      BoardResponse.new(
+        success: false,
+        message: "Failed to create board: #{ex.message}"
+      )
     end
 
     # Update a board
+    # ameba:disable Metrics/CyclomaticComplexity
     def self.update_board(
       board_name : String,
       user_id : String,
@@ -90,22 +81,16 @@ module ToCry::Services
       public : Bool? = nil,
       color_scheme : String? = nil,
       lanes : Array(Hash(String, JSON::Any))? = nil,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
       begin
         board = ToCry.board_manager.get(board_name, user_id)
         unless board
-          return {
-            success:        false,
-            error:          "Board '#{board_name}' not found for user '#{user_id}'",
-            id:             "",
-            old_name:       board_name,
-            new_name:       "",
-            public:         false,
-            color_scheme:   JSON::Any.new(nil),
-            lane_count:     0,
-            total_notes:    0,
-          }
+          return BoardResponse.new(
+            success: false,
+            message: "Board '#{board_name}' not found for user '#{user_id}'",
+            old_name: board_name
+          )
         end
 
         old_board_name = board_name
@@ -117,17 +102,12 @@ module ToCry::Services
           # Check if new name already exists
           existing_board = ToCry.board_manager.get(new_board_name, user_id)
           if existing_board
-            return {
-              success:        false,
-              error:          "Board with name '#{new_board_name}' already exists",
-              id:             "",
-              old_name:       old_board_name,
-              new_name:       new_board_name,
-              public:         false,
-              color_scheme:   JSON::Any.new(nil),
-              lane_count:     0,
-              total_notes:    0,
-            }
+            return BoardResponse.new(
+              success: false,
+              message: "Board with name '#{new_board_name}' already exists",
+              old_name: old_board_name,
+              new_name: new_board_name
+            )
           end
 
           # Rename the board
@@ -137,8 +117,8 @@ module ToCry::Services
         end
 
         # Update board properties
-        if public != nil
-          board.public = public.not_nil!
+        unless public.nil?
+          board.public = public
           has_changes = true
         end
 
@@ -173,55 +153,30 @@ module ToCry::Services
           board.save
         end
 
-        # Prepare board data for WebSocket broadcast
-        board_data = {
-          "id"           => JSON::Any.new(board.sepia_id),
-          "name"         => JSON::Any.new(final_board_name),
-          "public"       => JSON::Any.new(board.public),
-          "color_scheme" => JSON::Any.new(board.color_scheme),
-          "lane_count"   => JSON::Any.new(board.lanes.size),
-          "total_notes"  => JSON::Any.new(board.lanes.sum(&.notes.size)),
-        }
-
+        # Broadcast WebSocket notification using event pattern
         # Determine message type based on whether board was renamed
-        message_type = old_board_name != final_board_name ?
-                        WebSocketHandler::MessageType::BOARD_UPDATED :
-                        WebSocketHandler::MessageType::LANE_UPDATED
-
-        # Broadcast WebSocket notification
-        WebSocketNotifier.broadcast_board_change(
-          message_type,
-          final_board_name,
-          board_data,
-          user_id,
-          exclude_client_id
-        )
+        if old_board_name != final_board_name
+          event = BoardUpdatedEvent.new(board, user_id, exclude_client_id)
+        else
+          event = LaneUpdatedEvent.new(board, user_id, exclude_client_id)
+        end
+        WebSocketNotifier.broadcast(event)
 
         ToCry::Log.info { "Board '#{old_board_name}' updated to '#{final_board_name}' by user '#{user_id}' with WebSocket broadcast" }
 
-        {
-          success:        true,
-          id:             board.sepia_id,
-          old_name:       old_board_name,
-          new_name:       final_board_name,
-          public:         board.public,
-          color_scheme:   board.color_scheme ? JSON::Any.new(board.color_scheme) : JSON::Any.new(nil),
-          lane_count:     board.lanes.size,
-          total_notes:    board.lanes.sum(&.notes.size),
-          error:          "",
-        }
+        BoardResponse.new(
+          success: true,
+          message: "Board updated successfully",
+          board: board,
+          old_name: old_board_name,
+          new_name: final_board_name
+        )
       rescue ex
-        {
-          success:        false,
-          error:          "Failed to update board: #{ex.message}",
-          id:             "",
-          old_name:       board_name,
-          new_name:       "",
-          public:         false,
-          color_scheme:   JSON::Any.new(nil),
-          lane_count:     0,
-          total_notes:    0,
-        }
+        BoardResponse.new(
+          success: false,
+          message: "Failed to update board: #{ex.message}",
+          old_name: board_name
+        )
       end
     end
 
@@ -229,112 +184,75 @@ module ToCry::Services
     def self.delete_board(
       board_name : String,
       user_id : String,
-      exclude_client_id : String? = "mcp-client"
+      exclude_client_id : String? = "mcp-client",
     )
-      begin
-        # Check if board exists and user has access
-        board = ToCry.board_manager.get(board_name, user_id)
-        unless board
-          return {
-            success: false,
-            error:   "Board '#{board_name}' not found for user '#{user_id}'",
-            message: JSON::Any.new(""),
-            id:      JSON::Any.new(""),
-            name:    JSON::Any.new(board_name),
-          }
-        end
-
-        board_id = board.sepia_id
-
-        # Delete the board
-        ToCry.board_manager.delete(board_name, user_id)
-
-        # Prepare board data for WebSocket broadcast
-        board_data = {
-          "id"   => JSON::Any.new(board_id),
-          "name" => JSON::Any.new(board_name),
-        }
-
-        # Broadcast WebSocket notification
-        WebSocketNotifier.broadcast_board_change(
-          WebSocketHandler::MessageType::BOARD_DELETED,
-          board_name,
-          board_data,
-          user_id,
-          exclude_client_id
-        )
-
-        ToCry::Log.info { "Board '#{board_name}' deleted by user '#{user_id}' with WebSocket broadcast" }
-
-        {
-          success: true,
-          message: JSON::Any.new("Board '#{board_name}' deleted successfully"),
-          id:      JSON::Any.new(board_id),
-          name:    JSON::Any.new(board_name),
-          error:   "",
-        }
-      rescue ex
-        {
-          success: false,
-          error:   "Failed to delete board: #{ex.message}",
-          message: JSON::Any.new(""),
-          id:      JSON::Any.new(""),
-          name:    JSON::Any.new(board_name),
-        }
+      board = ToCry.board_manager.get(board_name, user_id)
+      unless board
+        # Idempotent: return success if board doesn't exist (matches MCP tool behavior)
+        ToCry::Log.info { "Board '#{board_name}' deletion skipped - board doesn't exist for user '#{user_id}'" }
+        return BoardResponse.new(success: true, message: "Board deleted successfully")
       end
+
+      board_id = board.sepia_id
+
+      # Delete the board
+      ToCry.board_manager.delete(board_name, user_id)
+
+      # Broadcast WebSocket notification
+      broadcast_deletion(board_id, board_name, user_id, exclude_client_id)
+
+      BoardResponse.new(success: true, message: "Board deleted successfully")
+    rescue ex
+      BoardResponse.new(success: false, message: "Failed to delete board: #{ex.message}")
     end
 
     # Get a board by name
     def self.get_board(board_name : String, user_id : String)
-      begin
-        board = ToCry.board_manager.get(board_name, user_id)
-        return nil unless board
+      board = ToCry.board_manager.get(board_name, user_id)
+      return nil unless board
 
-        # Convert to hash format similar to what MCP tools return
-        {
-          id:           board.sepia_id,
-          name:         board_name,
-          lanes:        board.lanes.map { |lane| lane.to_hash },
-          public:       board.public,
-          color_scheme: board.color_scheme,
-          lane_count:   board.lanes.size,
-          total_notes:  board.lanes.sum(&.notes.size),
-        }
-      rescue ex
-        ToCry::Log.error(exception: ex) { "Error getting board '#{board_name}': #{ex.message}" }
-        nil
-      end
+      # Convert to hash format similar to what MCP tools return
+      {
+        id:           board.sepia_id,
+        name:         board_name,
+        lanes:        board.lanes.map(&.to_hash),
+        public:       board.public,
+        color_scheme: board.color_scheme,
+        lane_count:   board.lanes.size,
+        total_notes:  board.lanes.sum(&.notes.size),
+      }
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error getting board '#{board_name}': #{ex.message}" }
+      nil
     end
 
     # List boards accessible to a user
     def self.list_boards(user_id : String)
-      begin
-        user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
+      user_board_refs = ToCry::BoardReference.accessible_to_user(user_id)
 
-        boards_data = user_board_refs.compact_map do |reference|
-          board = ToCry.board_manager.get_by_uuid(reference.board_uuid)
-          next unless board
-
-          {
-            id:           board.sepia_id,
-            name:         reference.board_name,
-            lane_count:   board.lanes.size,
-            public:       board.public,
-            color_scheme: board.color_scheme,
-          }
-        end
+      boards_data = user_board_refs.compact_map do |reference|
+        board = ToCry.board_manager.get_by_uuid(reference.board_uuid)
+        next unless board
 
         {
-          boards: boards_data.map { |board_data| JSON::Any.new(board_data) },
-          count:  boards_data.size,
-        }
-      rescue ex
-        ToCry::Log.error(exception: ex) { "Error listing boards for user '#{user_id}': #{ex.message}" }
-        {
-          boards: JSON::Any.new([] of JSON::Any),
-          count:  JSON::Any.new(0),
+          id:           board.sepia_id,
+          name:         reference.board_name,
+          lane_count:   board.lanes.size,
+          public:       board.public,
+          color_scheme: board.color_scheme,
         }
       end
+
+      {
+        boards: boards_data.map { |board_data| JSON::Any.new(board_data) },
+        count:  boards_data.size,
+      }
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error listing boards for user '#{user_id}': #{ex.message}" }
+      {
+        boards: JSON::Any.new([] of JSON::Any),
+        count:  JSON::Any.new(0),
+      }
     end
   end
 end

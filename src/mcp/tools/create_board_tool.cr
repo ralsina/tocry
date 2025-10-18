@@ -1,39 +1,38 @@
 require "json"
 require "../tool"
 require "../../services/board_service"
+require "../authenticated_tool"
 
 class CreateBoardTool < Tool
-  def initialize
-    super(
-      name: "tocry_create_board",
-      description: "Create a new board",
-      input_schema: {
-        "type"       => JSON::Any.new("object"),
-        "properties" => JSON::Any.new({
-          "board_name" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Name of the new board"),
-          }),
-          "public" => JSON::Any.new({
-            "type"        => JSON::Any.new("boolean"),
-            "description" => JSON::Any.new("Whether the board should be publicly accessible (optional, default: false)"),
-          }),
-          "color_scheme" => JSON::Any.new({
-            "type"        => JSON::Any.new("string"),
-            "description" => JSON::Any.new("Color scheme for the board (optional)"),
-          }),
-        }),
-        "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-      },
-    )
-  end
+  include AuthenticatedTool
+  # Tool metadata declaration
+  @@tool_name = "tocry_create_board"
+  @@tool_description = "Create a new board"
+  @@tool_input_schema = {
+    "type"       => JSON::Any.new("object"),
+    "properties" => JSON::Any.new({
+      "board_name" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Name of the new board"),
+      }),
+      "public" => JSON::Any.new({
+        "type"        => JSON::Any.new("boolean"),
+        "description" => JSON::Any.new("Whether the board should be publicly accessible (optional, default: false)"),
+      }),
+      "color_scheme" => JSON::Any.new({
+        "type"        => JSON::Any.new("string"),
+        "description" => JSON::Any.new("Color scheme for the board (optional)"),
+      }),
+    }),
+    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
+  }
 
-  def invoke(params : Hash(String, JSON::Any)) : Hash(String, JSON::Any)
-    # Not used - authentication required for all tools
-    raise "Authentication required"
-  end
+  # Register this tool when the file is loaded
+  Tool.registered_tools[@@tool_name] = new
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any)
+  # invoke() method is provided by AuthenticatedTool mixin
+
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
     board_name = params["board_name"].as_s
     public = params["public"]?.try(&.as_bool)
     color_scheme = params["color_scheme"]?.try(&.as_s)
@@ -47,21 +46,29 @@ class CreateBoardTool < Tool
     )
 
     # Convert service result to MCP format
-    if result[:success]
+    if result.success
+      # Extract board data from the response
+      board = result.board
+      unless board
+        return {
+          "error"   => "Board creation failed - no board data returned",
+          "success" => false,
+        }.to_json
+      end
       {
-        "success"      => JSON::Any.new(true),
-        "id"           => JSON::Any.new(result[:id]),
-        "name"         => JSON::Any.new(result[:name]),
-        "public"       => result[:public],
-        "color_scheme" => result[:color_scheme],
-        "lane_count"   => JSON::Any.new(result[:lane_count]),
-        "total_notes"  => JSON::Any.new(result[:total_notes]),
-      }
+        "success"      => true,
+        "id"           => board.sepia_id,
+        "name"         => board.name,
+        "public"       => board.public,
+        "color_scheme" => board.color_scheme,
+        "lane_count"   => board.lanes.size,
+        "total_notes"  => board.lanes.sum(&.notes.size),
+      }.to_json
     else
       {
-        "error"   => JSON::Any.new(result[:error]),
-        "success" => JSON::Any.new(false),
-      }
+        "error"   => result.message,
+        "success" => false,
+      }.to_json
     end
   end
 end

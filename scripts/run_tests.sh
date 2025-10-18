@@ -15,5 +15,13 @@ rm -rf $TEST_DATA_DIR
 TOCRY_PID=$!
 sleep 2
 
-crystal spec --error-trace || kill $TOCRY_PID
-kill $TOCRY_PID
+# Run tests and capture exit status
+crystal spec --error-trace
+TEST_EXIT_CODE=$?
+
+# Clean up the server process
+kill $TOCRY_PID 2>/dev/null || true
+wait $TOCRY_PID 2>/dev/null || true
+
+# Exit with the test exit code
+exit $TEST_EXIT_CODE
