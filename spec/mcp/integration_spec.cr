@@ -158,7 +158,8 @@ describe "MCP Tools Integration" do
         list_result = list_boards.invoke_with_user({} of String => JSON::Any, user_id)
         MCPTestHelpers.assert_success_response(list_result)
         list_result["count"].as_i.should eq(1)
-        list_result["boards"].as_a.first.as_s.should eq(project_name)
+        board_summary = BoardSummary.from_json(list_result["boards"].as_a.first.to_json)
+        board_summary.name.should eq(project_name)
 
         # 10. Clean up - delete notes first, then board
         created_notes.each do |note_id|
@@ -269,7 +270,8 @@ describe "MCP Tools Integration" do
         list_result = list_boards.invoke_with_user({} of String => JSON::Any, user_id)
         MCPTestHelpers.assert_success_response(list_result)
         list_result["count"].as_i.should eq(2)
-        board_names = list_result["boards"].as_a.map(&.as_s)
+        board_summaries = list_result["boards"].as_a.map { |board_json| BoardSummary.from_json(board_json.to_json) }
+        board_names = board_summaries.map(&.name)
         board_names.should contain(frontend_board)
         board_names.should contain(backend_board)
       ensure

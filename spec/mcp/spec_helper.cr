@@ -6,6 +6,7 @@ require "../../src/lane"
 require "../../src/board"
 require "../../src/board_manager"
 require "../../src/initialization"
+require "../../src/tocry"
 require "../../src/note"
 
 # Stub out HTTP::Server::Context session method for MCP tests
@@ -38,6 +39,17 @@ module ToCry
   end
 end
 
+# Simple struct for deserializing board summaries from ListBoardsTool
+struct BoardSummary
+  include JSON::Serializable
+
+  property id : String
+  property name : String
+  property lane_count : Int32
+  property public : Bool
+  property color_scheme : String?
+end
+
 # MCP Test Helpers
 module MCPTestHelpers
   extend self
@@ -50,9 +62,16 @@ module MCPTestHelpers
     FileUtils.rm_rf(TEST_DATA_DIR) if Dir.exists?(TEST_DATA_DIR)
     FileUtils.mkdir_p(TEST_DATA_DIR)
 
-    # Initialize ToCry with test data directory
+    # Set up data environment the same way as unit tests
     ToCry.data_directory = TEST_DATA_DIR
-    ToCry.board_manager = ToCry::Initialization.setup_data_environment(TEST_DATA_DIR, false, true, false)
+    Sepia::Storage::INSTANCE.path = TEST_DATA_DIR
+
+    # Initialize BoardManager using Initialization module like the unit tests
+    board_manager = ToCry::Initialization.setup_data_environment(TEST_DATA_DIR, true, false)
+    ToCry.board_manager = board_manager
+
+    # Store the board manager reference for tools to use
+    @@board_manager = board_manager
   end
 
   def cleanup_test_environment
@@ -60,9 +79,14 @@ module MCPTestHelpers
     FileUtils.rm_rf(TEST_DATA_DIR) if Dir.exists?(TEST_DATA_DIR)
   end
 
+  @@board_manager : ToCry::BoardManager?
+
+  def self.board_manager
+    @@board_manager.not_nil!
+  end
+
   def create_test_board(name : String, color_scheme : String? = nil, public : Bool = false)
-    # Create BoardManager instance directly for testing
-    board_manager = ToCry::Initialization.setup_data_environment(TEST_DATA_DIR, false, true, false)
+    # Use the board manager that was set up in setup_test_environment
     board = board_manager.create(name, MCPTestHelpers::TEST_USER_ID)
 
     # Set additional properties if provided
@@ -134,6 +158,8 @@ module MCPTestHelpers
         params[key.to_s] = JSON::Any.new(value)
       when String
         params[key.to_s] = JSON::Any.new(value)
+      when Array(String)
+        params[key.to_s] = JSON::Any.new(value.map { |item| JSON::Any.new(item) })
       when Nil
         # Skip nil values
       else

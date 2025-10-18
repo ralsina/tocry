@@ -138,7 +138,7 @@ describe "MCP Board Management Tools" do
         board = MCPTestHelpers.create_test_board(original_name)
 
         tool = UpdateBoardTool.new
-        params = MCPTestHelpers.board_params(original_name, name: "updated_board")
+        params = MCPTestHelpers.board_params(original_name, new_board_name: "updated_board")
         result = tool.invoke_with_user(params, MCPTestHelpers::TEST_USER_ID)
 
         MCPTestHelpers.assert_success_response(result)
@@ -237,7 +237,7 @@ describe "MCP Board Management Tools" do
 
       begin
         tool = UpdateBoardTool.new
-        params = MCPTestHelpers.board_params("nonexistent_board", name: "new_name")
+        params = MCPTestHelpers.board_params("nonexistent_board", new_board_name: "new_name")
         result = tool.invoke_with_user(params, MCPTestHelpers::TEST_USER_ID)
 
         MCPTestHelpers.assert_error_response(result)
@@ -366,7 +366,8 @@ describe "MCP Board Management Tools" do
 
         MCPTestHelpers.assert_success_response(result)
         result["count"].as_i.should eq(3)
-        board_names = result["boards"].as_a.map(&.as_s)
+        board_summaries = result["boards"].as_a.map { |board_json| BoardSummary.from_json(board_json.to_json) }
+        board_names = board_summaries.map(&.name)
         board_names.should contain("board1")
         board_names.should contain("board2")
         board_names.should contain("board3")

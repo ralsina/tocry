@@ -39,14 +39,16 @@ class ListBoardsTool < Tool
     end
 
     {
-      "boards" => JSON::Any.new(boards_data.map { |board_data| JSON::Any.new(board_data) }),
-      "count"  => JSON::Any.new(boards_data.size),
+      "success" => JSON::Any.new(true),
+      "boards"  => JSON::Any.new(boards_data.map { |board_data| JSON::Any.new(board_data) }),
+      "count"   => JSON::Any.new(boards_data.size),
     }
   rescue ex
     {
-      "error"  => JSON::Any.new("Failed to list boards: #{ex.message}"),
-      "boards" => JSON::Any.new([] of JSON::Any),
-      "count"  => JSON::Any.new(0),
+      "success" => JSON::Any.new(false),
+      "error"   => JSON::Any.new("Failed to list boards: #{ex.message}"),
+      "boards"  => JSON::Any.new([] of JSON::Any),
+      "count"   => JSON::Any.new(0),
     }
   end
 end

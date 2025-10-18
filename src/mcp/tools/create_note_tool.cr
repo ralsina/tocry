@@ -71,39 +71,39 @@ class CreateNoteTool < Tool
     public = params["public"]?.try(&.as_bool)
 
     result = ToCry::Services::NoteService.create_note(
-        board_name: board_name,
-        lane_name: lane_name,
-        title: title,
-        user_id: user_id,
-        content: content,
-        tags: tags,
-        priority: priority,
-        start_date: start_date,
-        end_date: end_date,
-        public: public,
-        exclude_client_id: "mcp-client"
-      )
+      board_name: board_name,
+      lane_name: lane_name,
+      title: title,
+      user_id: user_id,
+      content: content,
+      tags: tags,
+      priority: priority,
+      start_date: start_date,
+      end_date: end_date,
+      public: public,
+      exclude_client_id: "mcp-client"
+    )
 
-      # Check if the operation was successful
-      if result[:success]
-        return {
-          "success"    => JSON::Any.new(true),
-          "id"         => JSON::Any.new(result[:id]),
-          "title"      => JSON::Any.new(result[:title]),
-          "content"    => JSON::Any.new(result[:content]),
-          "lane_name"  => JSON::Any.new(result[:lane_name]),
-          "board_name" => JSON::Any.new(board_name),
-          "tags"       => JSON::Any.new(result[:tags]),
-          "priority"   => JSON::Any.new(result[:priority]),
-          "start_date" => result[:start_date],
-          "end_date"   => result[:end_date],
-          "public"     => result[:public],
-        }
-      else
-        return {
-          "error"   => JSON::Any.new(result[:error]),
-          "success" => JSON::Any.new(false),
-        }
-      end
+    # Check if the operation was successful
+    if result[:success]
+      {
+        "success"    => JSON::Any.new(true),
+        "id"         => JSON::Any.new(result[:id]),
+        "title"      => JSON::Any.new(result[:title]),
+        "content"    => JSON::Any.new(result[:content]),
+        "lane_name"  => JSON::Any.new(result[:lane_name]),
+        "board_name" => JSON::Any.new(board_name),
+        "tags"       => JSON::Any.new(result[:tags]),
+        "priority"   => JSON::Any.new(result[:priority]),
+        "start_date" => result[:start_date],
+        "end_date"   => result[:end_date],
+        "public"     => result[:public],
+      }
+    else
+      {
+        "error"   => JSON::Any.new(result[:error]),
+        "success" => JSON::Any.new(false),
+      }
+    end
   end
 end

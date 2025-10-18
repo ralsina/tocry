@@ -152,11 +152,11 @@ module ToCry::Endpoints::Boards
       if result[:success]
         ToCry::Endpoints::Helpers.created_response(env, {success: "Board '#{new_board_name}' created successfully."})
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating board" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to create board", 500)
     end
   end
 
@@ -224,11 +224,11 @@ module ToCry::Endpoints::Boards
 
         ToCry::Endpoints::Helpers.success_response(env, {success: "Board updated successfully."})
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating board '#{old_board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to update board", 500)
     end
   end
 
@@ -257,7 +257,7 @@ module ToCry::Endpoints::Boards
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete board", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to delete board", 500)
     end
   end
 

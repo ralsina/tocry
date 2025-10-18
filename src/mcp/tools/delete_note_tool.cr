@@ -39,11 +39,11 @@ class DeleteNoteTool < Tool
       unless board
         ToCry::Log.info { "Note '#{note_id}' deletion skipped - board '#{board_name}' doesn't exist for user '#{user_id}'" }
         return {
-          "success" => JSON::Any.new(true),
-          "message" => JSON::Any.new("Note deleted successfully."),
-          "id"      => JSON::Any.new(note_id),
-          "title"   => JSON::Any.new(""),
-          "lane_name" => JSON::Any.new(""),
+          "success"    => JSON::Any.new(true),
+          "message"    => JSON::Any.new("Note deleted successfully."),
+          "id"         => JSON::Any.new(note_id),
+          "title"      => JSON::Any.new(""),
+          "lane_name"  => JSON::Any.new(""),
           "board_name" => JSON::Any.new(board_name),
         }
       end
@@ -53,41 +53,41 @@ class DeleteNoteTool < Tool
       unless found_note_and_lane
         ToCry::Log.info { "Note '#{note_id}' already deleted or never existed in board '#{board_name}' by user '#{user_id}'" }
         return {
-          "success" => JSON::Any.new(true),
-          "message" => JSON::Any.new("Note deleted successfully."),
-          "id"      => JSON::Any.new(note_id),
-          "title"   => JSON::Any.new(""),
-          "lane_name" => JSON::Any.new(""),
+          "success"    => JSON::Any.new(true),
+          "message"    => JSON::Any.new("Note deleted successfully."),
+          "id"         => JSON::Any.new(note_id),
+          "title"      => JSON::Any.new(""),
+          "lane_name"  => JSON::Any.new(""),
           "board_name" => JSON::Any.new(board_name),
         }
       end
 
       # Use NoteService to delete the note
       result = ToCry::Services::NoteService.delete_note(
-          board_name: board_name,
-          note_id: note_id,
-          user_id: user_id,
-          exclude_client_id: "mcp-client"
-        )
+        board_name: board_name,
+        note_id: note_id,
+        user_id: user_id,
+        exclude_client_id: "mcp-client"
+      )
 
-        # Check if the operation was successful
-        if result[:success]
-          return {
-            "success"    => JSON::Any.new(true),
-            "message"    => JSON::Any.new("Note deleted successfully."),
-            "id"         => JSON::Any.new(result[:id]),
-            "title"      => JSON::Any.new(result[:title]),
-            "lane_name"  => JSON::Any.new(result[:lane_name]),
-            "board_name" => JSON::Any.new(board_name),
-          }
-        else
-          return {
-            "error"   => JSON::Any.new(result[:error]),
-            "success" => JSON::Any.new(false),
-          }
-        end
+      # Check if the operation was successful
+      if result[:success]
+        {
+          "success"    => JSON::Any.new(true),
+          "message"    => JSON::Any.new("Note deleted successfully."),
+          "id"         => JSON::Any.new(result[:id]),
+          "title"      => JSON::Any.new(result[:title]),
+          "lane_name"  => JSON::Any.new(result[:lane_name]),
+          "board_name" => JSON::Any.new(board_name),
+        }
+      else
+        {
+          "error"   => JSON::Any.new(result[:error]),
+          "success" => JSON::Any.new(false),
+        }
+      end
     rescue ex
-      return {
+      {
         "error"   => JSON::Any.new("Failed to delete note: #{ex.message}"),
         "success" => JSON::Any.new(false),
       }

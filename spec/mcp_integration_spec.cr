@@ -22,7 +22,6 @@ describe "MCP Integration" do
   end
 
   describe "MCP Tools" do
-    
     it "list_boards_tool works with empty boards" do
       tool = ListBoardsTool.new
       result = tool.invoke_with_user({} of String => JSON::Any, test_user_id)

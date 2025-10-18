@@ -68,7 +68,8 @@ class GetNoteTool < Tool
 
       unless note_result && found_board && found_lane
         return {
-          "error" => JSON::Any.new("Note '#{note_id}' not found for user '#{user_id}'"),
+          "success" => JSON::Any.new(false),
+          "error"   => JSON::Any.new("Note '#{note_id}' not found for user '#{user_id}'"),
         }
       end
 

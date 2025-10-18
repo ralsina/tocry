@@ -53,7 +53,7 @@ module ToCry::Services
       ToCry::WebSocketHandler.broadcast_to_board(user_board_name, event_type, json_data, exclude_client_id)
     end
 
-      private def self.board_manager
+    private def self.board_manager
       ToCry.board_manager
     end
   end

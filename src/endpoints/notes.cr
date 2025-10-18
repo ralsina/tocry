@@ -81,11 +81,11 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error creating note in board '#{env.params.url["board_name"]}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to create note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to create note", 500)
     end
   end
 
@@ -182,11 +182,11 @@ module ToCry::Endpoints::Notes
           note:    note_response,
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error updating note '#{note_id}' in board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to update note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to update note", 500)
     end
   end
 
@@ -230,11 +230,11 @@ module ToCry::Endpoints::Notes
           success: "Note deleted successfully.",
         })
       else
-        next ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
+        ToCry::Endpoints::Helpers.error_response(env, result[:error], 400)
       end
     rescue ex
       ToCry::Log.error(exception: ex) { "Error deleting note '#{note_id}' from board '#{board_name}'" }
-      next ToCry::Endpoints::Helpers.error_response(env, "Failed to delete note", 500)
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to delete note", 500)
     end
   end
 

@@ -36,7 +36,8 @@ class GetBoardTool < Tool
 
       unless board
         return {
-          "error" => JSON::Any.new("Board '#{board_name}' not found for user '#{user_id}'"),
+          "success" => JSON::Any.new(false),
+          "error"   => JSON::Any.new("Board '#{board_name}' not found for user '#{user_id}'"),
         }
       end
 
@@ -65,6 +66,7 @@ class GetBoardTool < Tool
       end
 
       {
+        "success"      => JSON::Any.new(true),
         "id"           => JSON::Any.new(board.sepia_id),
         "name"         => JSON::Any.new(board_name), # Use the user-specific board name that was requested
         "lanes"        => JSON::Any.new(lanes_data.map { |lane_data| JSON::Any.new(lane_data) }),
@@ -75,7 +77,8 @@ class GetBoardTool < Tool
       }
     rescue ex
       {
-        "error" => JSON::Any.new("Failed to get board: #{ex.message}"),
+        "success" => JSON::Any.new(false),
+        "error"   => JSON::Any.new("Failed to get board: #{ex.message}"),
       }
     end
   end

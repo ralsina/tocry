@@ -389,7 +389,7 @@ describe "MCP Search Tools" do
         # Test 2: Search for API-related content
         api_params = MCPTestHelpers.search_params("api")
         api_result = tool.invoke_with_user(api_params, MCPTestHelpers::TEST_USER_ID)
-        api_result["count"].as_i.should eq(2) # documentation + dashboard (has charts/api)
+        api_result["count"].as_i.should eq(1) # only documentation matches "api"
 
         # Test 3: Search for learning-related items
         learning_params = MCPTestHelpers.search_params("learning")

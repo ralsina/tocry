@@ -96,6 +96,7 @@ class SearchNotesTool < Tool
       end
 
       {
+        "success"         => JSON::Any.new(true),
         "results"         => JSON::Any.new(results.map { |result| JSON::Any.new(result) }),
         "count"           => JSON::Any.new(results.size),
         "query"           => JSON::Any.new(query),
@@ -103,9 +104,12 @@ class SearchNotesTool < Tool
       }
     rescue ex
       {
-        "error"   => JSON::Any.new("Search failed: #{ex.message}"),
-        "results" => JSON::Any.new([] of JSON::Any),
-        "count"   => JSON::Any.new(0),
+        "success"         => JSON::Any.new(false),
+        "error"           => JSON::Any.new("Search failed: #{ex.message}"),
+        "results"         => JSON::Any.new([] of JSON::Any),
+        "count"           => JSON::Any.new(0),
+        "query"           => JSON::Any.new(query),
+        "boards_searched" => JSON::Any.new(0),
       }
     end
   end

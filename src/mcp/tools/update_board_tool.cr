@@ -68,14 +68,15 @@ class UpdateBoardTool < Tool
     # Convert service result to MCP format
     if result[:success]
       {
-        "success"        => JSON::Any.new(true),
-        "id"             => JSON::Any.new(result[:id]),
-        "old_name"       => JSON::Any.new(result[:old_name]),
-        "new_name"       => JSON::Any.new(result[:new_name]),
-        "public"         => JSON::Any.new(result[:public]),
-        "color_scheme"   => result[:color_scheme],
-        "lane_count"     => JSON::Any.new(result[:lane_count]),
-        "total_notes"    => JSON::Any.new(result[:total_notes]),
+        "success"      => JSON::Any.new(true),
+        "id"           => JSON::Any.new(result[:id]),
+        "name"         => JSON::Any.new(result[:new_name]),
+        "old_name"     => JSON::Any.new(result[:old_name]),
+        "new_name"     => JSON::Any.new(result[:new_name]),
+        "public"       => JSON::Any.new(result[:public]),
+        "color_scheme" => result[:color_scheme],
+        "lane_count"   => JSON::Any.new(result[:lane_count]),
+        "total_notes"  => JSON::Any.new(result[:total_notes]),
       }
     else
       {
