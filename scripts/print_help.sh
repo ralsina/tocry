@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "  make build           - Build the tocry binary (generates clients first)"
 echo "  make dev             - Build in development mode (faster)"
+echo "  make watch           - Watch for changes and auto-rebuild server on port 3000"
 echo "  make test            - Run all tests"
 echo "  make check           - Run linter and tests"
 echo ""

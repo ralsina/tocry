@@ -22,9 +22,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-  <!-- Generated TypeScript API Client (with adapter for compatibility) -->
-  <!-- Load as regular script (uses dynamic imports internally) -->
-  <!-- Explicit sequential loading: adapter -> store -> app -> Alpine -->
+  <!-- Bundled JavaScript (contains all frontend code) -->
+  <!-- Load as regular script with source maps for debugging -->
   <script>
     // Base path detection for script loading
     function getBasePath() {
@@ -36,89 +35,36 @@
       return match ? match[1] : ''
     }
 
-    // Load API client adapter first, then load other scripts in sequence
-    function loadScriptSequence() {
-      const basePath = getBasePath()
+    // Load bundled app.js which contains all dependencies
+    function loadApp() {
+      const basePath = getBasePath();
+      const appScript = document.createElement('script');
+      appScript.src = basePath + '/app.js?v=' + Date.now();
+      appScript.onload = () => {
+        console.log('✓ App (bundled) loaded');
+        loadAlpine();
+      };
+      appScript.onerror = () => console.error('✗ Failed to load app.js');
+      document.head.appendChild(appScript);
+    }
 
-      // Step 1: Load API client adapter
-      function loadApiClient() {
-        const apiScript = document.createElement('script');
-        apiScript.src = basePath + '/api-client-adapter.js?v=' + Date.now();
-        apiScript.onload = () => {
-          console.log('✓ API Client adapter loaded');
-          waitForApiClient();
-        };
-        apiScript.onerror = () => console.error('✗ Failed to load API client adapter');
-        document.head.appendChild(apiScript);
-      }
-
-      // Step 2: Wait for API client module to set window.ToCryApiClient
-      function waitForApiClient() {
-        if (window.ToCryApiClient) {
-          console.log('✓ API Client ready');
-          loadStore();
-        } else {
-          setTimeout(waitForApiClient, 10);
-        }
-      }
-
-      // Step 3: Load store.js
-      function loadStore() {
-        const storeScript = document.createElement('script');
-        storeScript.src = basePath + '/store.js?v=' + Date.now();
-        storeScript.onload = () => {
-          console.log('✓ Store loaded');
-          loadWebSocket();
-        };
-        storeScript.onerror = () => console.error('✗ Failed to load store.js');
-        document.head.appendChild(storeScript);
-      }
-
-      // Step 4: Load WebSocket client
-      function loadWebSocket() {
-        const wsScript = document.createElement('script');
-        wsScript.src = basePath + '/websocket-client.js?v=' + Date.now();
-        wsScript.onload = () => {
-          console.log('✓ WebSocket client loaded');
-          loadApp();
-        };
-        wsScript.onerror = () => console.error('✗ Failed to load WebSocket client');
-        document.head.appendChild(wsScript);
-      }
-
-      // Step 5: Load app.js
-      function loadApp() {
-        const appScript = document.createElement('script');
-        appScript.src = basePath + '/app.js?v=' + Date.now();
-        appScript.onload = () => {
-          console.log('✓ App loaded');
-          loadAlpine();
-        };
-        appScript.onerror = () => console.error('✗ Failed to load app.js');
-        document.head.appendChild(appScript);
-      }
-
-      // Step 6: Load Alpine.js last
-      function loadAlpine() {
-        const alpineScript = document.createElement('script');
-        alpineScript.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
-        alpineScript.defer = true;
-        alpineScript.onload = () => {
-          console.log('✓ Alpine.js loaded and initialized');
-        };
-        alpineScript.onerror = () => console.error('✗ Failed to load Alpine.js');
-        document.head.appendChild(alpineScript);
-      }
-
-      // Start the sequence
-      loadApiClient();
+    // Load Alpine.js last
+    function loadAlpine() {
+      const alpineScript = document.createElement('script');
+      alpineScript.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+      alpineScript.defer = true;
+      alpineScript.onload = () => {
+        console.log('✓ Alpine.js loaded and initialized');
+      };
+      alpineScript.onerror = () => console.error('✗ Failed to load Alpine.js');
+      document.head.appendChild(alpineScript);
     }
 
     // Start loading when DOM is ready
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loadScriptSequence);
+      document.addEventListener('DOMContentLoaded', loadApp);
     } else {
-      loadScriptSequence();
+      loadApp();
     }
   </script>
 

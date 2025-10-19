@@ -91,7 +91,7 @@ class ToCryWebSocketClient {
     }
 
     console.log(`Connecting to WebSocket for board: ${boardName}${clientId ? ` with client ID: ${clientId}` : ''}`)
-    this.socket = new (typeof window !== 'undefined' ? window.WebSocket : require('ws'))(wsUrl)
+    this.socket = new window.WebSocket(wsUrl)
 
     this.socket.onopen = () => {
       console.log(`WebSocket connected for board: ${boardName}`)
@@ -273,7 +273,7 @@ class ToCryWebSocketClient {
    * @returns {boolean}
    */
   isSocketConnected () {
-    return this.isConnected && this.socket && this.socket.readyState === (typeof window !== 'undefined' && window.WebSocket ? window.WebSocket.OPEN : 1)
+    return this.isConnected && this.socket && this.socket.readyState === window.WebSocket.OPEN
   }
 
   /**
@@ -416,6 +416,4 @@ if (typeof window !== 'undefined') {
 }
 
 // Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ToCryWebSocketClient
-}
+export default ToCryWebSocketClient

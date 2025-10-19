@@ -1,6 +1,12 @@
 // Alpine.js store for ToCry reactive app
 /* global toastui, history, marked, hljs, localStorage, sessionStorage, ResizeObserver */
 
+import ToCryWebSocketClient from './websocket-client.js'
+import BoardApiService from './services/api.js'
+
+// Create a global WebSocket instance for the app
+const webSocketClient = new ToCryWebSocketClient()
+
 // Utility function to generate a unique client ID
 const generateClientId = () => {
   // Check if we already have a client ID in session storage (persists across page reloads)
@@ -22,232 +28,7 @@ const generateClientId = () => {
 
   return clientId
 }
-
-// Modern API Service using generated ToCryApiClient
-class BoardApiService {
-  constructor (store) {
-    this.store = store
-    this.apiClient = new window.ToCryApiClient()
-    this.loadingStates = new Set()
-    this.requestQueue = new Map()
-  }
-
-  // Generic HTTP request helper with enhanced error handling and loading states
-  async request (apiCall, silent = false) {
-    const requestKey = apiCall.toString()
-
-    // Manage request deduplication
-    if (this.requestQueue.has(requestKey)) {
-      return this.requestQueue.get(requestKey)
-    }
-
-    // Set loading state
-    if (!silent) {
-      this.setLoading(requestKey, true)
-    }
-
-    const requestPromise = this.executeRequest(apiCall, silent, requestKey)
-    this.requestQueue.set(requestKey, requestPromise)
-
-    try {
-      const result = await requestPromise
-      return result
-    } finally {
-      this.requestQueue.delete(requestKey)
-      if (!silent) {
-        this.setLoading(requestKey, false)
-      }
-    }
-  }
-
-  async executeRequest (apiCall, silent, requestKey) {
-    try {
-      return await apiCall()
-    } catch (error) {
-      console.error(`API request failed: ${requestKey}`, error)
-
-      if (!silent && error.name !== 'TypeError') { // Don't show network errors twice
-        this.store.showError(`Request failed: ${error.message}`)
-      }
-      throw error
-    }
-  }
-
-  setLoading (requestKey, isLoading) {
-    if (isLoading) {
-      this.loadingStates.add(requestKey)
-    } else {
-      this.loadingStates.delete(requestKey)
-    }
-
-    // Update global loading state
-    this.store.apiLoading = this.loadingStates.size > 0
-  }
-
-  isLoading (requestKey) {
-    return this.loadingStates.has(requestKey)
-  }
-
-  // Board operations using generated API client
-  async getBoard (boardName) {
-    return this.request(() => this.apiClient.getBoard(boardName))
-  }
-
-  async updateBoard (boardName, updates) {
-    return this.request(() => this.apiClient.updateBoard(boardName, updates))
-  }
-
-  async createBoard (boardData) {
-    return this.request(() => this.apiClient.createBoard(boardData.name, boardData.color_scheme))
-  }
-
-  async deleteBoard (boardName) {
-    return this.request(() => this.apiClient.deleteBoard(boardName))
-  }
-
-  async getAllBoards () {
-    return this.request(() => this.apiClient.getBoards())
-  }
-
-  // State-based lane management
-  async updateBoardLanes (boardName, lanes) {
-    return this.updateBoard(boardName, { lanes })
-  }
-
-  // Note operations using generated API client
-  async createNote (boardName, laneName, noteData) {
-    return this.request(() => this.apiClient.createNote(boardName, laneName, noteData))
-  }
-
-  async updateNote (boardName, noteId, noteData, options = {}) {
-    return this.request(() => this.apiClient.updateNote(boardName, noteId, noteData, {
-      laneName: options.laneName,
-      position: options.position
-    }))
-  }
-
-  async deleteNote (boardName, noteId) {
-    return this.request(() => this.apiClient.deleteNote(boardName, noteId))
-  }
-
-  // File upload operations using generated API client
-  async uploadImage (file) {
-    return this.request(() => this.apiClient.uploadImage(file))
-  }
-
-  async uploadAttachment (boardName, noteId, file) {
-    return this.request(() => this.apiClient.attachFileToNote(boardName, noteId, file))
-  }
-
-  async deleteAttachment (boardName, noteId, attachment) {
-    return this.request(() => this.apiClient.deleteAttachment(boardName, noteId, attachment))
-  }
-
-  // Auth operations using generated API client
-  async getAuthMode () {
-    return this.request(() => this.apiClient.getAuthMode())
-  }
-
-  async getCurrentUser () {
-    // This endpoint doesn't exist in the generated client, keep manual fetch
-    const response = await fetch(this.resolvePath('/api/v1/me'))
-
-    if (!response.ok) {
-      throw new Error(`Failed to get current user: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
-
-  // Utility operations using generated API client
-  async shareBoard (boardName, email) {
-    return this.request(() => this.apiClient.shareBoard(boardName, email))
-  }
-
-  async updateColorScheme (boardName, colorScheme) {
-    return this.updateBoard(boardName, { color_scheme: colorScheme })
-  }
-
-  // Lane operations using generated API client
-  async createLane (boardName, laneName) {
-    const newLanes = [...this.store.currentBoard.lanes, { name: laneName.trim() }]
-    return this.updateBoard(boardName, { lanes: newLanes })
-  }
-
-  async updateLane (boardName, oldLaneName, laneData, position) {
-    const laneIndex = this.store.currentBoard.lanes.findIndex(l => l.name === oldLaneName)
-    if (laneIndex === -1) return this.store.showError('Lane not found')
-
-    const newLanes = [...this.store.currentBoard.lanes]
-    newLanes[laneIndex] = { name: laneData.name || oldLaneName, position: position || 0 }
-    return this.updateBoard(boardName, { lanes: newLanes })
-  }
-
-  async deleteLane (boardName, laneName) {
-    const confirmed = await this.store.showAlert(
-      'Delete Lane',
-      'Are you sure you want to delete this lane? All notes in it will be deleted.',
-      'Delete Anyway'
-    )
-    if (!confirmed) return
-
-    try {
-      // Find the lane index
-      const laneIndex = this.store.currentBoard.lanes.findIndex(l => l.name === laneName)
-      if (laneIndex === -1) return this.store.showError('Lane not found')
-
-      // Remove lane from lanes array
-      const newLanes = [...this.store.currentBoard.lanes.slice(0, laneIndex), ...this.store.currentBoard.lanes.slice(laneIndex + 1)]
-      return this.updateBoard(boardName, { lanes: newLanes })
-    } catch (error) {
-      this.store.showError('Failed to delete lane')
-    }
-  }
-
-  async reorderLanes (boardName, laneOrder) {
-    return this.updateBoard(boardName, { lanes: laneOrder })
-  }
-
-  // Optimistic update helper
-  async withOptimisticUpdate (updateFn, rollbackFn, errorMessage = 'Operation failed') {
-    const previousState = JSON.parse(JSON.stringify(this.store.currentBoard))
-
-    try {
-      // Apply optimistic update
-      updateFn()
-
-      // Execute API call
-      const result = await updateFn()
-      return result
-    } catch (error) {
-      // Rollback on error
-      if (rollbackFn) {
-        rollbackFn(previousState)
-      }
-
-      this.store.showError(`${errorMessage}: ${error.message}`)
-      throw error
-    }
-  }
-
-  // Debounced update helper
-  debouncedUpdate (fn, delay = 1000) {
-    let timeout
-    return (...args) => {
-      clearTimeout(timeout)
-      return new Promise((resolve) => {
-        timeout = setTimeout(async () => {
-          try {
-            const result = await fn(...args)
-            resolve(result)
-          } catch (error) {
-            resolve({ error })
-          }
-        }, delay)
-      })
-    }
-  }
-}
+// BoardApiService is now imported from './services/api.js'
 
 // eslint-disable-next-line no-unused-vars
 function createToCryStore () {
@@ -505,7 +286,7 @@ function createToCryStore () {
     // Initialize
     async init () {
       // Initialize API service
-      this.api = new BoardApiService(this)
+      this.api = new BoardApiService(this, this.resolvePath.bind(this))
 
       console.log('ToastUI available on init:', typeof window.ToastUI?.Editor !== 'undefined')
 
@@ -2698,30 +2479,30 @@ function createToCryStore () {
     // WebSocket methods
     initWebSocket (boardName) {
       // Ensure WebSocket client is available
-      if (!window.toCryWebSocket) {
+      if (!webSocketClient) {
         console.warn('WebSocket client not available')
         return
       }
 
       // Check if we're already connected to this board
-      if (window.toCryWebSocket.connectedBoard === boardName && window.toCryWebSocket.isConnected) {
+      if (webSocketClient.connectedBoard === boardName && webSocketClient.isConnected) {
         // Already connected to this board, no need to reconnect
         return
       }
 
       // Disconnect from any previous board
-      window.toCryWebSocket.disconnect()
+      webSocketClient.disconnect()
 
       // Connect to the new board
-      window.toCryWebSocket.connect(boardName)
+      webSocketClient.connect(boardName)
       this.webSocketConnected = true
 
       console.log(`WebSocket initialized for board: ${boardName}`)
     },
 
     disconnectWebSocket () {
-      if (window.toCryWebSocket) {
-        window.toCryWebSocket.disconnect()
+      if (webSocketClient) {
+        webSocketClient.disconnect()
         this.webSocketConnected = false
         console.log('WebSocket disconnected')
       }
@@ -3240,6 +3021,9 @@ This is a permanent action that cannot be easily undone.`
 
   }
 }
+
+// Export the createToCryStore function for use in app.js
+export { createToCryStore }
 
 // Note: Store is registered via Alpine.data('toCryApp') in app.js
 // This prevents race conditions and ensures single source of truth

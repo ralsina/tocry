@@ -1,6 +1,8 @@
 // Main entry point for ToCry Reactive UI
+/* global Alpine */
+import { createToCryStore } from './store.js'
+
 // Initialize Alpine.js with our store
-/* global Alpine, createToCryStore */
 document.addEventListener('alpine:init', () => {
   Alpine.data('toCryApp', () => createToCryStore())
 })
