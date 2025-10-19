@@ -12,6 +12,10 @@ shards:
     git: https://github.com/ralsina/baked_file_system.git
     version: 0.10.0+git.commit.beb373124c7a235cfb9cd94e36849d8168eaa04b
 
+  crest:
+    git: https://github.com/mamantoha/crest.git
+    version: 1.5.1
+
   crystar:
     git: https://github.com/naqvis/crystar.git
     version: 0.4.0
@@ -27,6 +31,14 @@ shards:
   html_builder:
     git: https://github.com/crystal-lang/html_builder.git
     version: 0.2.2
+
+  http-client-digest_auth:
+    git: https://github.com/mamantoha/http-client-digest_auth.git
+    version: 0.6.0
+
+  http_proxy:
+    git: https://github.com/mamantoha/http_proxy.git
+    version: 0.13.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
