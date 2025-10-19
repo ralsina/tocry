@@ -49,3 +49,22 @@ find src/assets/api_client_ts_dist -name "*.js" -type f -exec sed -i "s|from '\.
 find src/assets/api_client_ts_dist -name "*.js" -type f -exec sed -i "s|from '\.\./\([^']*\)';|from '../\1.js';|g" {} \;
 
 echo "ESM build copied and fixed at: src/assets/api_client_ts_dist/"
+
+# Build the main JavaScript application with Parcel
+echo "Building main JavaScript application with Parcel..."
+cd src/js
+
+# Check if node_modules exists, if not install dependencies
+if [ ! -d "node_modules" ]; then
+    echo "Installing JavaScript dependencies..."
+    npm install
+fi
+
+# Build the application
+echo "Bundling JavaScript with Parcel..."
+npm run build
+
+cd ../..
+
+echo "JavaScript application built successfully!"
+echo "Bundled application available at: src/assets/app.js"

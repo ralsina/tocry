@@ -29,7 +29,11 @@
       "mcp__kanban__tocry_get_board",
       "mcp__kanban__tocry_update_note",
       "mcp__kanban__tocry_search_notes",
-      "mcp__kanban__tocry_get_note"
+      "mcp__kanban__tocry_get_note",
+      "Bash(parcel:*)",
+      "Bash(npm run build:*)",
+      "Bash(gzip:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

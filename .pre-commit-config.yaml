@@ -6,6 +6,7 @@ repos:
     rev: v17.1.2
     hooks:
       - id: standard
+        exclude: "^src/assets/.*\\.js$"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
