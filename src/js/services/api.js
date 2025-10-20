@@ -348,7 +348,7 @@ export class BoardApiService {
 
   /**
    * Execute an operation with optimistic updates
-   * @param {Function} updateFn - Function that performs the update
+   * @param {Function} updateFn - Function that performs the update and returns API call promise
    * @param {Function} rollbackFn - Function to rollback on error
    * @param {string} errorMessage - Error message to show on failure
    * @returns {Promise} Operation result
@@ -357,10 +357,7 @@ export class BoardApiService {
     const previousState = JSON.parse(JSON.stringify(this.store.currentBoard))
 
     try {
-      // Apply optimistic update
-      updateFn()
-
-      // Execute API call
+      // Apply optimistic update and execute API call
       const result = await updateFn()
       return result
     } catch (error) {

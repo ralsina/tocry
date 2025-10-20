@@ -34,6 +34,7 @@ Options:
   --demo                        Enable demo mode (in-memory storage with sample data).
   --no-mcp                      Disable MCP (Model Context Protocol) support.
   --unix-socket=PATH            Use Unix socket at specified path instead of TCP.
+  --ai-model=MODEL              AI model to use for AI features [default: glm-4.5-flash]. See https://docs.z.ai/guides/overview/pricing for available models.
 DOCOPT
 
 class Assets
@@ -69,6 +70,7 @@ def main
   safe_mode = !!args["--safe-mode"] # Safely parse --safe-mode argument as boolean
   demo_mode = !!args["--demo"]      # Parse --demo argument as boolean
   disable_mcp = !!args["--no-mcp"]  # Parse --no-mcp argument as boolean
+  ai_model = args["--ai-model"].as(String) # Parse --ai-model argument
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
@@ -87,6 +89,10 @@ def main
   else
     ToCry::Log.info { "MCP (Model Context Protocol) support enabled" }
   end
+
+  # Set AI model and log
+  ToCry.ai_model = ai_model
+  ToCry::Log.info { "AI model configured: #{ai_model}" }
 
   # Check for Unix socket option first
   unix_socket_path = args["--unix-socket"]?.as?(String)

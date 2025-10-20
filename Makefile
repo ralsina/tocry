@@ -69,7 +69,7 @@ watch:
 # Run all tests (Crystal and JavaScript)
 test: generate-clients-force test-js
 	@echo "Running all tests..."
-	./scripts/run_tests.sh
+	SKIP_JS_TESTS=true ./scripts/run_tests.sh
 
 # Run tests with coverage
 test-coverage: test-js-coverage
