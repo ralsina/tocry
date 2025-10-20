@@ -1684,7 +1684,20 @@ function createToCryStore () {
             this.showError('Please enter an instruction or select a predefined action')
             return
           }
-          generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, originalText)
+          generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText)
+        })
+
+        // Add Enter key functionality to prompt input
+        customPrompt.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault() // Prevent form submission
+            const prompt = customPrompt.value.trim()
+            if (!prompt) {
+              this.showError('Please enter an instruction or select a predefined action')
+              return
+            }
+            generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText)
+          }
         })
 
         // Create collapsible suggestions section
@@ -1758,7 +1771,7 @@ function createToCryStore () {
           button.addEventListener('click', () => {
             customPrompt.value = prompt
             // Auto-generate when clicking suggestion
-            generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, originalText)
+            generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText)
           })
 
           promptButtonsContainer.appendChild(button)
@@ -1803,7 +1816,7 @@ function createToCryStore () {
               </div>
               <div style="padding: 12px; display: flex; flex-direction: column;">
                 <h5 style="margin: 0 0 8px 0; font-size: 13px; color: var(--pico-muted-color, #666); font-weight: 600; flex-shrink: 0;">Modified:</h5>
-                <div class="modified-text" style="background: var(--pico-primary-background, #e3f2fd); padding: 12px; border-radius: var(--pico-border-radius, 4px); font-size: 14px; color: var(--pico-color, #333); overflow-y: auto; flex: 1; min-height: 250px; max-height: 400px; border: 1px solid var(--pico-primary-border, #bbdefb); line-height: 1.5;"><em style="color: var(--pico-muted-color, #666);">AI response will appear here after you click "Generate"...</em></div>
+                <div class="modified-text" style="background: var(--pico-background-color, #f8f9fa); background-image: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.08) 100%); padding: 12px; border-radius: var(--pico-border-radius, 4px); font-size: 14px; color: var(--pico-color, #333); overflow-y: auto; flex: 1; min-height: 250px; max-height: 400px; border: 1px solid var(--pico-border-color, #dee2e6); line-height: 1.5;"><em style="color: var(--pico-muted-color, #666);">AI response will appear here after you click "Generate"...</em></div>
               </div>
             </div>
           </div>
@@ -1823,6 +1836,26 @@ function createToCryStore () {
           justify-content: flex-end;
           flex-shrink: 0;
         `
+
+        // Refine Further button (initially disabled)
+        const refineFurtherButton = document.createElement('button')
+        refineFurtherButton.textContent = 'Refine Further'
+        refineFurtherButton.className = 'refine-further-button'
+        refineFurtherButton.style.cssText = `
+          padding: 8px 16px;
+          border: 1px solid var(--pico-secondary, #6c757d);
+          background: var(--pico-secondary, #6c757d);
+          color: white;
+          border-radius: var(--pico-border-radius, 0.25rem);
+          cursor: not-allowed;
+          opacity: 0.6;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          margin-right: auto;
+        `
+        refineFurtherButton.disabled = true
+        refineFurtherButton.title = 'Use this text as the new original for further refinement'
+        buttonContainer.appendChild(refineFurtherButton)
 
         // Apply button (initially disabled)
         const applyButton = document.createElement('button')
@@ -1871,6 +1904,53 @@ function createToCryStore () {
         // Attach close event
         closeButton.addEventListener('click', closeModal)
 
+        // Attach refine further event
+        refineFurtherButton.addEventListener('click', () => {
+          const resultsContainer = document.querySelector('.ai-results-container')
+          if (!resultsContainer) return
+
+          const modifiedTextEl = resultsContainer.querySelector('.modified-text')
+          if (modifiedTextEl) {
+            const currentModifiedText = modifiedTextEl.textContent || modifiedTextEl.innerText
+            if (currentModifiedText && !currentModifiedText.includes('AI response will appear here') && !currentModifiedText.includes('No changes needed')) {
+              // Update the original text side with the current modified text
+              const originalTextEl = resultsContainer.querySelector('.original-text')
+              if (originalTextEl) {
+                originalTextEl.innerHTML = marked.parse(currentModifiedText)
+
+                // Update the original text header
+                const originalHeader = resultsContainer.querySelector('.comparison-container h5:first-child')
+                if (originalHeader) {
+                  originalHeader.textContent = 'Current Base:'
+                }
+              }
+
+              // Clear the modified text side
+              modifiedTextEl.innerHTML = '<em style="color: var(--pico-muted-color, #666);">AI response will appear here after you click "Generate"...</em>'
+
+              // Update the modified text header
+              const modifiedHeader = resultsContainer.querySelector('.comparison-container h5:last-child')
+              if (modifiedHeader) {
+                modifiedHeader.textContent = 'Refined:'
+              }
+
+              // Disable refine further button until new response is generated
+              refineFurtherButton.disabled = true
+              refineFurtherButton.style.cursor = 'not-allowed'
+              refineFurtherButton.style.opacity = '0.6'
+
+              // Also disable apply button since there's no new response yet
+              applyButton.disabled = true
+              applyButton.style.cursor = 'not-allowed'
+              applyButton.style.opacity = '0.6'
+
+              // Clear the custom prompt input for new instruction
+              customPrompt.value = ''
+              customPrompt.focus()
+            }
+          }
+        })
+
         // Add main content and button containers to modal
         modal.appendChild(mainContentContainer)
         modal.appendChild(buttonContainer)
@@ -1895,7 +1975,7 @@ function createToCryStore () {
         return overlay
       }
 
-      const generateWithAI = (prompt, closeModal, hasSelection, selection, applyButton, originalText) => {
+      const generateWithAI = (prompt, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText) => {
         // Show loading state in modified text area
         const resultsEl = document.querySelector('.ai-results-container')
         if (resultsEl) {
@@ -1920,7 +2000,7 @@ function createToCryStore () {
           .then((response) => response.json())
           .then((data) => {
             if (data.choices && data.choices.length > 0) {
-              displayAIResults(data.choices, closeModal, hasSelection, selection, applyButton, originalText)
+              displayAIResults(data.choices, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText)
             } else {
               this.showError('No response received from AI')
               // Reset modified text area but keep comparison visible
@@ -1947,7 +2027,7 @@ function createToCryStore () {
           })
       }
 
-      const displayAIResults = (choices, closeModal, hasSelection, selection, applyButton, originalText) => {
+      const displayAIResults = (choices, closeModal, hasSelection, selection, applyButton, refineFurtherButton, originalText) => {
         const resultsEl = document.querySelector('.ai-results-container')
         if (!resultsEl) return
 
@@ -1983,6 +2063,14 @@ function createToCryStore () {
             applyButton.style.borderColor = 'var(--pico-secondary, #6c757d)'
             applyButton.style.color = 'white'
 
+            // Enable refine further button for iterative editing
+            refineFurtherButton.disabled = false
+            refineFurtherButton.style.cursor = 'pointer'
+            refineFurtherButton.style.opacity = '1'
+            refineFurtherButton.style.background = 'var(--pico-secondary, #6c757d)'
+            refineFurtherButton.style.borderColor = 'var(--pico-secondary, #6c757d)'
+            refineFurtherButton.style.color = 'white'
+
             // Update button action to just close modal
             applyButton.onclick = () => {
               closeModal()
@@ -2009,6 +2097,14 @@ function createToCryStore () {
             applyButton.style.background = 'var(--pico-primary, #007bff)'
             applyButton.style.borderColor = 'var(--pico-primary, #007bff)'
             applyButton.style.color = 'white'
+
+            // Enable refine further button for iterative editing
+            refineFurtherButton.disabled = false
+            refineFurtherButton.style.cursor = 'pointer'
+            refineFurtherButton.style.opacity = '1'
+            refineFurtherButton.style.background = 'var(--pico-secondary, #6c757d)'
+            refineFurtherButton.style.borderColor = 'var(--pico-secondary, #6c757d)'
+            refineFurtherButton.style.color = 'white'
 
             // Restore normal click handler
             applyButton.onclick = () => {
