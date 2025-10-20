@@ -2,21 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.24.0] - 2025-10-17
+## [0.24.0] - 2025-10-20
 
 ### 🚀 Features
 
 - *(notes)* Display completion progress for tasks
 - *(frontend)* Improve note layout and increase lane width
 - *(migrations)* Implement data directory backup before migrations
+- *(mcp)* Add WebSocket notifications to MCP tools for real-time updates
+- Modernize frontend with ES modules and Parcel bundler
+- AI integration in the note editor
+- *(ai)* Add iterative AI editing with "Refine Further" button
+- *(config)* Add dotenv support for environment variable management
 
 ### 🐛 Bug Fixes
 
 - *(websockets)* Prevent board from hiding on WebSocket updates
+- *(mcp)* Fix JSON-RPC 2.0 compliance in error responses
+- *(mcp)* Fix board names in MCP tools to use user-specific names
+- *(progress-bar)* Prevent infinite spinning when progress is 0%
 
 ### 🚜 Refactor
 
 - *(mcp)* Implement lightweight MCP 2024-11-05 server without external dependency
+- Massive backend code cleanup
 
 ## [0.23.0] - 2025-10-16
 
