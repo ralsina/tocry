@@ -1,4 +1,4 @@
-require "dotenv"            # Load environment variables from .env file
+require "dotenv" # Load environment variables from .env file
 # Load .env file if it exists, otherwise continue silently
 Dotenv.load? # The ? makes it return nil instead of raising if file doesn't exist
 
@@ -71,9 +71,9 @@ def main
       data_path = File.join(home_dir, ".local", "share", "tocry")
     end
   end
-  safe_mode = !!args["--safe-mode"] # Safely parse --safe-mode argument as boolean
-  demo_mode = !!args["--demo"]      # Parse --demo argument as boolean
-  disable_mcp = !!args["--no-mcp"]  # Parse --no-mcp argument as boolean
+  safe_mode = !!args["--safe-mode"]        # Safely parse --safe-mode argument as boolean
+  demo_mode = !!args["--demo"]             # Parse --demo argument as boolean
+  disable_mcp = !!args["--no-mcp"]         # Parse --no-mcp argument as boolean
   ai_model = args["--ai-model"].as(String) # Parse --ai-model argument
 
   # Initialize data environment using the helper
