@@ -18,8 +18,8 @@ module ToCry
   # A class variable to store the configured data directory.
   # It's initialized with a default, but will be set by `main.cr` at startup.
   @@data_directory : String = "data"
-  @@safe_mode_enabled : Bool = false # New class variable for safe mode
-  @@mcp_enabled : Bool = true        # MCP support toggle
+  @@safe_mode_enabled : Bool = false    # New class variable for safe mode
+  @@mcp_enabled : Bool = true           # MCP support toggle
   @@ai_model : String = "glm-4.5-flash" # AI model for AI features
 
   # Getter for the globally configured data directory.
