@@ -36,7 +36,9 @@ jobs:
         npm install -g esbuild
 
     - name: Install dependencies
-      run: shards install
+      run: |
+        shards install
+        cd src/js && npm install
 
     - name: Generate API clients
       run: make generate-clients
