@@ -1,3 +1,7 @@
+require "dotenv"            # Load environment variables from .env file
+# Load .env file if it exists, otherwise continue silently
+Dotenv.load? # The ? makes it return nil instead of raising if file doesn't exist
+
 require "./initialization" # Import the initialization helper - API testing
 require "./tocry"
 require "baked_file_handler"

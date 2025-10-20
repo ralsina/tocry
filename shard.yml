@@ -25,6 +25,9 @@ dependencies:
     github: naqvis/crystar
   crest:
     github: mamantoha/crest
+  dotenv:
+    github: gdotdesign/cr-dotenv
+    version: ~> 1.0
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>

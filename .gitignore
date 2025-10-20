@@ -32,3 +32,8 @@ src/assets/api_client_ts_dist/
 # Generated JavaScript application (built from src/js/)
 src/assets/app.js
 src/assets/app.js.map
+
+# Environment variables
+.env
+.env.local
+.env.*.local
