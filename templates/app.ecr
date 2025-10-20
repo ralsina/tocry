@@ -803,6 +803,14 @@
               </svg>
             </button>
 
+            <!-- AI Assistant button -->
+            <button @click="showAIModal()"
+                    class="edit-note-btn"
+                    style="opacity: 1; transform: scale(1);"
+                    title="AI Assistant - enhance your text">
+              🤖
+            </button>
+
             <!-- Share button (when private) -->
             <button x-show="!noteEdit.public"
                     @click="updateNotePublic(noteEdit.sepiaId, true)"

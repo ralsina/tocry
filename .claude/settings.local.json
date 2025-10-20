@@ -33,7 +33,12 @@
       "Bash(parcel:*)",
       "Bash(npm run build:*)",
       "Bash(gzip:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm test:*)",
+      "Bash(npm install:*)",
+      "Bash(npx update-browserslist-db@latest:*)",
+      "WebFetch(domain:docs.z.ai)"
     ],
     "deny": [],
     "ask": []

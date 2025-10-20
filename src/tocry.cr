@@ -20,6 +20,7 @@ module ToCry
   @@data_directory : String = "data"
   @@safe_mode_enabled : Bool = false # New class variable for safe mode
   @@mcp_enabled : Bool = true        # MCP support toggle
+  @@ai_model : String = "glm-4.5-flash" # AI model for AI features
 
   # Getter for the globally configured data directory.
   def self.data_directory
@@ -44,6 +45,16 @@ module ToCry
   # Setter for MCP enabled status.
   def self.mcp_enabled=(enabled : Bool)
     @@mcp_enabled = enabled
+  end
+
+  # Getter for AI model.
+  def self.ai_model : String
+    @@ai_model
+  end
+
+  # Setter for AI model.
+  def self.ai_model=(model : String)
+    @@ai_model = model
   end
 
   @@_board_manager : BoardManager? = nil

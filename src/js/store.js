@@ -1318,6 +1318,7 @@ function createToCryStore () {
       if (typeof toastui !== 'undefined' && toastui.Editor) {
         try {
           const editorContainer = document.querySelector('#editor')
+
           this.editor = new toastui.Editor({
             el: editorContainer,
             height: '300px',
@@ -1362,6 +1363,7 @@ function createToCryStore () {
               }
             }
           })
+
           this.editorInitialized = true
           console.log('ToastUI Editor initialized successfully')
         } catch (error) {
@@ -1400,6 +1402,724 @@ function createToCryStore () {
           this.noteEdit.content = e.target.value
         })
       }
+    },
+
+    // Prompt user to select from multiple AI response choices
+    async promptUserForChoice (choices, onChoice) {
+      const createChoiceModal = () => {
+        // Create modal overlay
+        const overlay = document.createElement('div')
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        `
+
+        // Create modal content
+        const modal = document.createElement('div')
+        modal.style.cssText = `
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow-y: auto;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        `
+
+        // Create title
+        const title = document.createElement('h3')
+        title.textContent = 'Multiple responses available'
+        title.style.cssText = `
+          margin: 0 0 15px 0;
+          color: #333;
+          font-size: 18px;
+        `
+        modal.appendChild(title)
+
+        // Create subtitle
+        const subtitle = document.createElement('p')
+        subtitle.textContent = 'Please choose which response you\'d like to use:'
+        subtitle.style.cssText = `
+          margin: 0 0 20px 0;
+          color: var(--pico-muted-color, #666);
+          font-size: 14px;
+        `
+        modal.appendChild(subtitle)
+
+        // Create choice buttons
+        choices.forEach((choice, index) => {
+          const choiceContent = choice.message.content
+          const preview = choiceContent.length > 200
+            ? choiceContent.substring(0, 200) + '...'
+            : choiceContent
+
+          const choiceButton = document.createElement('button')
+          choiceButton.style.cssText = `
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          `
+
+          choiceButton.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px; color: var(--pico-color, #333);">
+              Option ${index + 1}
+            </div>
+            <div style="color: var(--pico-muted-color, #666); line-height: 1.4;">
+              ${preview.replace(/\n/g, ' ')}
+            </div>
+          `
+
+          choiceButton.addEventListener('mouseenter', () => {
+            choiceButton.style.background = 'var(--pico-background-color, #f5f5f5)'
+            choiceButton.style.borderColor = 'var(--pico-primary, #007bff)'
+          })
+
+          choiceButton.addEventListener('mouseleave', () => {
+            choiceButton.style.background = 'var(--pico-background-color, white)'
+            choiceButton.style.borderColor = 'var(--pico-border-color, #ddd)'
+          })
+
+          choiceButton.addEventListener('click', () => {
+            onChoice(index)
+            document.body.removeChild(overlay)
+          })
+
+          modal.appendChild(choiceButton)
+        })
+
+        // Add cancel button
+        const cancelButton = document.createElement('button')
+        cancelButton.textContent = 'Cancel'
+        cancelButton.style.cssText = `
+          padding: 8px 16px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: white;
+          cursor: pointer;
+          margin-top: 10px;
+        `
+        cancelButton.addEventListener('click', () => {
+          document.body.removeChild(overlay)
+        })
+        modal.appendChild(cancelButton)
+
+        overlay.appendChild(modal)
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            document.body.removeChild(overlay)
+          }
+        })
+
+        return overlay
+      }
+
+      const modal = createChoiceModal()
+      document.body.appendChild(modal)
+    },
+
+    // Show AI Modal for interacting with z.ai
+    showAIModal () {
+      const selection = this.editor.getSelection()
+      let text = this.editor.getSelectedText(selection)
+      const hasSelection = text && text.trim().length > 0
+
+      if (!text) {
+        text = this.editor.getMarkdown()
+      }
+
+      if (!text) {
+        this.showError('No text to process. Please enter some text or select text to enhance.')
+        return
+      }
+
+      // Store original text for comparison
+      const originalText = text
+
+      // Capture current noteEdit state to ensure we have the note data
+      const currentNoteEdit = { ...this.noteEdit }
+
+      const createAIModal = () => {
+        // Create modal overlay
+        const overlay = document.createElement('div')
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+          padding: 20px;
+          box-sizing: border-box;
+        `
+
+        // Create modal content
+        const modal = document.createElement('div')
+        modal.className = 'modal'
+        modal.style.cssText = `
+          background: var(--pico-background-color, white);
+          border-radius: var(--pico-border-radius, 0.25rem);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          max-width: 800px;
+          max-height: 90vh;
+          width: 90%;
+          display: flex;
+          flex-direction: column;
+        `
+
+        // Create main content container (scrollable)
+        const mainContentContainer = document.createElement('div')
+        mainContentContainer.className = 'ai-main-content'
+        mainContentContainer.style.cssText = `
+          flex: 1;
+          overflow-y: auto;
+          padding: 2rem;
+          min-height: 0;
+        `
+
+        // Create title
+        const title = document.createElement('h2')
+        title.textContent = '🤖 AI Assistant'
+        title.style.cssText = `
+          margin: 0 0 20px 0;
+          color: var(--pico-color, #333);
+          font-size: 24px;
+          font-weight: 600;
+        `
+        mainContentContainer.appendChild(title)
+
+        // Create prompt section
+        const promptSection = document.createElement('div')
+        promptSection.style.cssText = `
+          margin: 20px 0;
+        `
+
+        const promptLabel = document.createElement('h3')
+        promptLabel.textContent = 'Choose an action:'
+        promptLabel.style.cssText = `
+          margin: 0 0 12px 0;
+          font-size: 16px;
+          color: var(--pico-color, #333);
+        `
+        promptSection.appendChild(promptLabel)
+
+        // Predefined prompts
+        const predefinedPrompts = [
+          'Summarize this text',
+          'Rewrite this text as an action list',
+          'Make this text more professional',
+          'Fix spelling and grammar',
+          'Improve this text',
+          'Explain this in simple terms'
+        ]
+
+        // Custom prompt input (moved to top)
+        const customPromptContainer = document.createElement('div')
+        customPromptContainer.style.cssText = `
+          margin-top: 16px;
+          display: flex;
+          align-items: flex-end;
+        `
+
+        const customPrompt = document.createElement('input')
+        customPrompt.type = 'text'
+        customPrompt.placeholder = 'Enter your instruction...'
+        customPrompt.style.cssText = `
+          flex: 1;
+          padding: 8px 12px;
+          border: 1px solid var(--pico-border-color, #ddd);
+          border-radius: 4px;
+          font-family: inherit;
+          font-size: 14px;
+          height: 38px;
+          box-sizing: border-box;
+          margin: 0;
+        `
+        // Generate button with robot emoji
+        const generateButton = document.createElement('button')
+        generateButton.textContent = '🤖'
+        generateButton.style.cssText = `
+          padding: 8px 16px;
+          background: var(--pico-primary, #007bff);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+          margin-left: 8px;
+          height: 38px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `
+        generateButton.title = 'Generate AI response'
+
+        customPromptContainer.appendChild(customPrompt)
+        customPromptContainer.appendChild(generateButton)
+        promptSection.appendChild(customPromptContainer)
+
+        generateButton.addEventListener('click', () => {
+          const prompt = customPrompt.value.trim()
+          if (!prompt) {
+            this.showError('Please enter an instruction or select a predefined action')
+            return
+          }
+          generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, originalText)
+        })
+
+        // Create collapsible suggestions section
+        const suggestionsContainer = document.createElement('div')
+        suggestionsContainer.style.cssText = `
+          margin-top: 16px;
+        `
+
+        // Suggestions header (collapsible)
+        const suggestionsHeader = document.createElement('div')
+        suggestionsHeader.style.cssText = `
+          padding: 12px 16px;
+          background: var(--pico-background-color, #f8f9fa);
+          border-bottom: 1px solid var(--pico-border-color, #ddd);
+          border-radius: 4px;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          user-select: none;
+        `
+        suggestionsHeader.innerHTML = `
+          <span style="font-size: 14px; font-weight: 600; color: var(--pico-color, #333);">💡 Suggestions</span>
+          <span style="font-size: 12px; color: var(--pico-muted-color, #666); transition: transform 0.2s ease;">▼</span>
+        `
+
+        // Suggestions content (collapsible)
+        const suggestionsContent = document.createElement('div')
+        suggestionsContent.style.cssText = `
+          display: none;
+          padding: 16px;
+        `
+
+        // Create suggestion buttons
+        const promptButtonsContainer = document.createElement('div')
+        promptButtonsContainer.style.cssText = `
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 8px;
+        `
+
+        predefinedPrompts.forEach((prompt) => {
+          const button = document.createElement('button')
+          button.textContent = prompt
+          button.style.cssText = `
+            padding: 12px 16px;
+            border: 1px solid var(--pico-border-color, #ddd);
+            border-radius: var(--pico-border-radius, 4px);
+            background: var(--pico-background-color, white);
+            color: var(--pico-color, #333);
+            cursor: pointer;
+            font-size: 14px;
+            text-align: left;
+            transition: all 0.2s ease;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+          `
+
+          button.addEventListener('mouseenter', () => {
+            button.style.background = 'var(--pico-background-color, #f5f5f5)'
+            button.style.borderColor = 'var(--pico-primary, #007bff)'
+          })
+
+          button.addEventListener('mouseleave', () => {
+            button.style.background = 'var(--pico-background-color, white)'
+            button.style.borderColor = 'var(--pico-border-color, #ddd)'
+          })
+
+          button.addEventListener('click', () => {
+            customPrompt.value = prompt
+            // Auto-generate when clicking suggestion
+            generateWithAI(prompt, closeModal, hasSelection, selection, applyButton, originalText)
+          })
+
+          promptButtonsContainer.appendChild(button)
+        })
+
+        suggestionsContent.appendChild(promptButtonsContainer)
+        suggestionsContainer.appendChild(suggestionsHeader)
+        suggestionsContainer.appendChild(suggestionsContent)
+
+        // Toggle collapsible behavior
+        let isExpanded = false
+        suggestionsHeader.addEventListener('click', () => {
+          isExpanded = !isExpanded
+          if (isExpanded) {
+            suggestionsContent.style.display = 'block'
+            suggestionsHeader.querySelector('span:last-child').textContent = '▲'
+          } else {
+            suggestionsContent.style.display = 'none'
+            suggestionsHeader.querySelector('span:last-child').textContent = '▼'
+          }
+        })
+
+        promptSection.appendChild(suggestionsContainer)
+
+        mainContentContainer.appendChild(promptSection)
+
+        // Results container - initialize with comparison view
+        const resultsContainer = document.createElement('div')
+        resultsContainer.className = 'ai-results-container'
+        resultsContainer.style.cssText = `
+          margin-top: 20px;
+          min-height: 50px;
+        `
+
+        // Initialize with comparison view showing original text
+        resultsContainer.innerHTML = `
+          <div class="comparison-container" style="display: block; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 300px;">
+              <div style="padding: 12px; border-right: 1px solid var(--pico-border-color, #dee2e6); display: flex; flex-direction: column;">
+                <h5 style="margin: 0 0 8px 0; font-size: 13px; color: var(--pico-muted-color, #666); font-weight: 600; flex-shrink: 0;">Original:</h5>
+                <div class="original-text" style="background: var(--pico-background-color, #f8f9fa); padding: 12px; border-radius: var(--pico-border-radius, 4px); font-size: 14px; color: var(--pico-color, #333); overflow-y: auto; flex: 1; min-height: 250px; max-height: 400px; border: 1px solid var(--pico-border-color, #e9eef); line-height: 1.5;">${marked.parse(text)}</div>
+              </div>
+              <div style="padding: 12px; display: flex; flex-direction: column;">
+                <h5 style="margin: 0 0 8px 0; font-size: 13px; color: var(--pico-muted-color, #666); font-weight: 600; flex-shrink: 0;">Modified:</h5>
+                <div class="modified-text" style="background: var(--pico-primary-background, #e3f2fd); padding: 12px; border-radius: var(--pico-border-radius, 4px); font-size: 14px; color: var(--pico-color, #333); overflow-y: auto; flex: 1; min-height: 250px; max-height: 400px; border: 1px solid var(--pico-primary-border, #bbdefb); line-height: 1.5;"><em style="color: var(--pico-muted-color, #666);">AI response will appear here after you click "Generate"...</em></div>
+              </div>
+            </div>
+          </div>
+        `
+
+        mainContentContainer.appendChild(resultsContainer)
+
+        // Persistent button container (fixed at bottom)
+        const buttonContainer = document.createElement('div')
+        buttonContainer.className = 'ai-button-container'
+        buttonContainer.style.cssText = `
+          background: var(--pico-background-color, white);
+          display: flex;
+          gap: 12px;
+          padding: 20px;
+          border-top: 1px solid var(--pico-border-color, #dee2e6);
+          justify-content: flex-end;
+          flex-shrink: 0;
+        `
+
+        // Apply button (initially disabled)
+        const applyButton = document.createElement('button')
+        applyButton.textContent = 'Apply'
+        applyButton.className = 'apply-button'
+        applyButton.style.cssText = `
+          padding: 8px 16px;
+          border: 1px solid var(--pico-primary, #007bff);
+          background: var(--pico-primary, #007bff);
+          color: white;
+          border-radius: var(--pico-border-radius, 0.25rem);
+          cursor: not-allowed;
+          opacity: 0.6;
+          font-size: 14px;
+          transition: all 0.2s ease;
+        `
+        applyButton.disabled = true
+        buttonContainer.appendChild(applyButton)
+
+        // Close button
+        const closeButton = document.createElement('button')
+        closeButton.textContent = 'Close'
+        closeButton.className = 'secondary'
+        closeButton.style.cssText = `
+          padding: 8px 16px;
+          border: 1px solid var(--pico-muted-border-color, #ced4da);
+          background: var(--pico-background-color, #fff);
+          color: var(--pico-color, #333);
+          border-radius: var(--pico-border-radius, 0.25rem);
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.2s ease;
+        `
+        buttonContainer.appendChild(closeButton)
+
+        modal.appendChild(buttonContainer)
+
+        // Unified close function
+        const closeModal = () => {
+          if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay)
+          }
+          document.removeEventListener('keydown', handleEscape)
+        }
+
+        // Attach close event
+        closeButton.addEventListener('click', closeModal)
+
+        // Add main content and button containers to modal
+        modal.appendChild(mainContentContainer)
+        modal.appendChild(buttonContainer)
+
+        overlay.appendChild(modal)
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            closeModal()
+          }
+        })
+
+        // Close on escape key
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            closeModal()
+          }
+        }
+        document.addEventListener('keydown', handleEscape)
+
+        return overlay
+      }
+
+      const generateWithAI = (prompt, closeModal, hasSelection, selection, applyButton, originalText) => {
+        // Show loading state in modified text area
+        const resultsEl = document.querySelector('.ai-results-container')
+        if (resultsEl) {
+          const modifiedTextEl = resultsEl.querySelector('.modified-text')
+          if (modifiedTextEl) {
+            modifiedTextEl.innerHTML = `
+              <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: var(--pico-muted-color, #666);">
+                <div style="margin-bottom: 10px;">🤖 Processing...</div>
+                <div style="font-size: 12px;">Robot is thinking...</div>
+              </div>
+            `
+          }
+        }
+
+        fetch('/api/v1/z-ai/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt, text })
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.choices && data.choices.length > 0) {
+              displayAIResults(data.choices, closeModal, hasSelection, selection, applyButton, originalText)
+            } else {
+              this.showError('No response received from AI')
+              // Reset modified text area but keep comparison visible
+              const resultsEl = document.querySelector('.ai-results-container')
+              if (resultsEl) {
+                const modifiedTextEl = resultsEl.querySelector('.modified-text')
+                if (modifiedTextEl) {
+                  modifiedTextEl.innerHTML = '<em style="color: var(--pico-muted-color, #666);">AI response will appear here...</em>'
+                }
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('Error calling z.ai API:', error)
+            this.showError('AI Error: ' + error.message)
+            // Reset modified text area but keep comparison visible
+            const resultsEl = document.querySelector('.ai-results-container')
+            if (resultsEl) {
+              const modifiedTextEl = resultsEl.querySelector('.modified-text')
+              if (modifiedTextEl) {
+                modifiedTextEl.innerHTML = '<em style="color: var(--pico-muted-color, #666);">AI response will appear here...</em>'
+              }
+            }
+          })
+      }
+
+      const displayAIResults = (choices, closeModal, hasSelection, selection, applyButton, originalText) => {
+        const resultsEl = document.querySelector('.ai-results-container')
+        if (!resultsEl) return
+
+        // Update the header to show scroll instruction
+        const comparisonHeader = resultsEl.querySelector('.comparison-container div div:last-child')
+        if (comparisonHeader) {
+          comparisonHeader.textContent = 'Scroll to compare full text'
+        }
+
+        // Update only the modified text area, keep comparison container visible
+        const modifiedTextEl = resultsEl.querySelector('.modified-text')
+        if (modifiedTextEl) {
+          modifiedTextEl.innerHTML = '<em style="color: var(--pico-muted-color, #666);">AI response will appear here...</em>'
+        }
+
+        // Store the current selected AI response
+        let currentAIResponse = null
+
+        // Function to enable apply button
+        const enableApplyButton = (response) => {
+          currentAIResponse = response
+
+          // Check if no changes were made
+          const isNoChanges = response.trim() === originalText.trim()
+
+          if (isNoChanges) {
+            // No changes needed - show success in modified text area, keep comparison visible
+            applyButton.textContent = 'Got it!'
+            applyButton.disabled = false
+            applyButton.style.cursor = 'pointer'
+            applyButton.style.opacity = '1'
+            applyButton.style.background = 'var(--pico-secondary, #6c757d)'
+            applyButton.style.borderColor = 'var(--pico-secondary, #6c757d)'
+            applyButton.style.color = 'white'
+
+            // Update button action to just close modal
+            applyButton.onclick = () => {
+              closeModal()
+              this.showSuccess('No changes needed - your text is already perfect!')
+            }
+
+            // Update modified text area to show no changes message, keep comparison visible
+            const modifiedTextEl = resultsEl.querySelector('.modified-text')
+            if (modifiedTextEl) {
+              modifiedTextEl.innerHTML = `
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: var(--pico-ins-color, #28a745); background: var(--pico-ins-background, #d4edda); border-radius: var(--pico-border-radius, 4px); border: 1px solid var(--pico-ins-border, #c3e6cb); padding: 20px;">
+                  <div style="font-size: 18px; margin-bottom: 8px;">✓</div>
+                  <div style="font-weight: 600;">No changes needed</div>
+                  <div style="font-size: 14px; opacity: 0.8;">Your text is already perfect!</div>
+                </div>
+              `
+            }
+          } else {
+            // Changes were made - normal behavior
+            applyButton.textContent = 'Apply'
+            applyButton.disabled = false
+            applyButton.style.cursor = 'pointer'
+            applyButton.style.opacity = '1'
+            applyButton.style.background = 'var(--pico-primary, #007bff)'
+            applyButton.style.borderColor = 'var(--pico-primary, #007bff)'
+            applyButton.style.color = 'white'
+
+            // Restore normal click handler
+            applyButton.onclick = () => {
+              if (currentAIResponse) {
+                // Capture selection state before applying
+                const currentHasSelection = hasSelection
+                const currentSelection = selection
+
+                applyAIResponse(currentAIResponse, closeModal, currentHasSelection, currentSelection)
+              }
+            }
+
+            // Show comparison view with full text
+            const comparisonContainer = resultsEl.querySelector('.comparison-container')
+            const originalTextEl = resultsEl.querySelector('.original-text')
+            const modifiedTextEl = resultsEl.querySelector('.modified-text')
+
+            if (comparisonContainer && originalTextEl && modifiedTextEl) {
+              // Update both sides with rendered markdown
+              originalTextEl.innerHTML = marked.parse(originalText)
+              modifiedTextEl.innerHTML = marked.parse(response)
+
+              // Scroll both containers to top for fresh comparison
+              originalTextEl.scrollTop = 0
+              modifiedTextEl.scrollTop = 0
+
+              // Add synchronized scrolling for better comparison
+              const syncScroll = (source, target) => {
+                const scrollRatio = source.scrollTop / (source.scrollHeight - source.clientHeight)
+                target.scrollTop = scrollRatio * (target.scrollHeight - target.clientHeight)
+              }
+
+              // Remove existing listeners to prevent duplicates
+              const newOriginalTextEl = originalTextEl.cloneNode(true)
+              const newModifiedTextEl = modifiedTextEl.cloneNode(true)
+              originalTextEl.parentNode.replaceChild(newOriginalTextEl, originalTextEl)
+              modifiedTextEl.parentNode.replaceChild(newModifiedTextEl, modifiedTextEl)
+
+              // Add synchronized scroll listeners
+              newOriginalTextEl.addEventListener('scroll', () => {
+                syncScroll(newOriginalTextEl, newModifiedTextEl)
+              })
+
+              newModifiedTextEl.addEventListener('scroll', () => {
+                syncScroll(newModifiedTextEl, newOriginalTextEl)
+              })
+            }
+          }
+        }
+
+        // Auto-select the first choice and enable apply button
+        if (choices.length > 0) {
+          enableApplyButton(choices[0].message.content)
+        }
+      }
+
+      const applyAIResponse = (newText, closeModal, hasSelection, selection) => {
+        try {
+          // Use the captured noteEdit state to ensure we have the note data
+          console.log('AI apply - captured noteEdit:', currentNoteEdit)
+          console.log('AI apply - current noteEdit:', this.noteEdit)
+
+          // Ensure we have a valid noteEdit object
+          if (!currentNoteEdit || !currentNoteEdit.sepiaId) {
+            throw new Error('Note information is missing - cannot save changes')
+          }
+
+          // Preserve all note properties and only update content
+          this.noteEdit = {
+            ...currentNoteEdit,
+            content: newText
+          }
+
+          // Save the note to persist changes
+          this.saveNote().then(() => {
+            closeModal()
+            this.showSuccess('Text updated successfully')
+          }).catch((error) => {
+            console.error('SaveNote error:', error)
+            this.showError('Failed to save changes: ' + error.message)
+            closeModal()
+          })
+        } catch (error) {
+          console.error('Error applying AI response:', error)
+          this.showError('Failed to apply AI response: ' + error.message)
+          closeModal()
+        }
+      }
+
+      const modal = createAIModal()
+
+      // Add CSS styles for better markdown rendering in comparison
+      const style = document.createElement('style')
+      style.textContent = `
+        .ai-modal .original-text h1, .ai-modal .modified-text h1 { font-size: 1.5em; margin: 0.67em 0; font-weight: 600; }
+        .ai-modal .original-text h2, .ai-modal .modified-text h2 { font-size: 1.3em; margin: 0.83em 0; font-weight: 600; }
+        .ai-modal .original-text h3, .ai-modal .modified-text h3 { font-size: 1.1em; margin: 1em 0; font-weight: 600; }
+        .ai-modal .original-text p, .ai-modal .modified-text p { margin: 0.5em 0; }
+        .ai-modal .original-text ul, .ai-modal .modified-text ul { margin: 0.5em 0; padding-left: 1.5em; }
+        .ai-modal .original-text ol, .ai-modal .modified-text ol { margin: 0.5em 0; padding-left: 1.5em; }
+        .ai-modal .original-text li, .ai-modal .modified-text li { margin: 0.25em 0; }
+        .ai-modal .original-text code, .ai-modal .modified-text code { background: rgba(0,0,0,0.1); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+        .ai-modal .original-text pre, .ai-modal .modified-text pre { background: rgba(0,0,0,0.05); padding: 1em; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
+        .ai-modal .original-text pre code, .ai-modal .modified-text pre code { background: none; padding: 0; }
+        .ai-modal .original-text blockquote, .ai-modal .modified-text blockquote { border-left: 4px solid var(--pico-muted-color, #666); padding-left: 1em; margin: 0.5em 0; color: var(--pico-muted-color, #666); font-style: italic; }
+        .ai-modal .original-text strong, .ai-modal .modified-text strong { font-weight: 600; }
+        .ai-modal .original-text em, .ai-modal .modified-text em { font-style: italic; }
+      `
+      document.head.appendChild(style)
+
+      document.body.appendChild(modal)
     },
 
     // Save note
