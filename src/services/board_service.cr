@@ -133,10 +133,21 @@ module ToCry::Services
 
           lanes.each do |lane_data|
             lane_name = lane_data["name"]?.try(&.as_s)
+            lane_id = lane_data["laneId"]?.try(&.as_s)
+
             if lane_name
-              # Find existing lane or create new one
-              existing_lane = board.lanes.find { |lane| lane.name == lane_name }
+              # Find existing lane by ID first, then by name as fallback
+              existing_lane = nil
+              if lane_id
+                existing_lane = board.lanes.find { |lane| lane.sepia_id == lane_id }
+              end
+
+              # Fallback to name matching if no ID match (for backward compatibility)
+              existing_lane ||= board.lanes.find { |lane| lane.name == lane_name }
+
               if existing_lane
+                # Update lane name if it changed
+                existing_lane.name = lane_name
                 new_lanes << existing_lane
               else
                 new_lanes << ToCry::Lane.new(lane_name)

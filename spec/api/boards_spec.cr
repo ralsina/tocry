@@ -103,6 +103,73 @@ describe "Boards API using Generated Client" do
       lane_names.should eq(["Todo", "In Progress", "Done"])
     end
 
+    it "should preserve notes when renaming lanes" do
+      # Create a test board first
+      board_name = "#{TEST_BOARD_PREFIX}_lane_rename_#{Time.utc.to_unix}"
+      create_request = OpenAPIClient::BoardCreateRequest.new(board_name, nil)
+      APITestHelpers.boards_api.create_board(create_request)
+
+      # Add initial lanes
+      lanes = [
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Todo"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Done"),
+      ]
+      update_request = OpenAPIClient::BoardUpdateRequest.new(
+        nil, nil, nil, nil, lanes
+      )
+      APITestHelpers.boards_api.update_board(board_name, update_request)
+
+      # Get the board with lanes to capture lane IDs
+      board = APITestHelpers.boards_api.get_board_details(board_name)
+      board.lanes.not_nil!.size.should eq(2)
+
+      todo_lane = board.lanes.not_nil!.find { |lane| lane.name == "Todo" }
+      todo_lane.should_not be_nil
+      original_lane_id = todo_lane.not_nil!.lane_id
+
+      # Add some notes using the Notes API
+      note = OpenAPIClient::NoteData.new(
+        "Test note",
+        "Test content",
+        ["test"],
+        nil, nil, nil, nil, nil, nil
+      )
+      note_request = OpenAPIClient::NoteCreateRequest.new("Todo", note)
+      note_response = APITestHelpers.notes_api.create_note(board_name, note_request)
+      note_response.success.should_not be_nil
+
+      # Verify note was created
+      board_with_notes = APITestHelpers.boards_api.get_board_details(board_name)
+      todo_lane_with_notes = board_with_notes.lanes.not_nil!.find { |lane| lane.name == "Todo" }
+      todo_lane_with_notes.should_not be_nil
+      todo_lane_with_notes.not_nil!.notes.not_nil!.size.should eq(1)
+
+      # Now rename the lane, preserving the lane ID
+      renamed_lanes = [
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(original_lane_id, "In Progress"),
+        OpenAPIClient::BoardUpdateRequestLanesInner.new(nil, "Done"),
+      ]
+      rename_request = OpenAPIClient::BoardUpdateRequest.new(
+        nil, nil, nil, nil, renamed_lanes
+      )
+      rename_response = APITestHelpers.boards_api.update_board(board_name, rename_request)
+      rename_response.success.should_not be_nil
+
+      # Verify the lane was renamed but notes are preserved
+      final_board = APITestHelpers.boards_api.get_board_details(board_name)
+      final_board.lanes.not_nil!.size.should eq(2)
+
+      renamed_lane = final_board.lanes.not_nil!.find { |lane| lane.name == "In Progress" }
+      renamed_lane.should_not be_nil
+      renamed_lane.not_nil!.lane_id.should eq(original_lane_id) # Lane ID should be preserved
+      renamed_lane.not_nil!.notes.not_nil!.size.should eq(1)   # Note should still be there
+      renamed_lane.not_nil!.notes.not_nil!.first.title.should eq("Test note")
+
+      # Verify the old lane name no longer exists
+      old_lane = final_board.lanes.not_nil!.find { |lane| lane.name == "Todo" }
+      old_lane.should be_nil
+    end
+
     it "should update board color scheme" do
       update_request = OpenAPIClient::BoardUpdateRequest.new(
         nil, nil, "orange", nil, nil

@@ -172,9 +172,14 @@ module ToCry::Endpoints::Boards
       # Convert lanes to the format expected by BoardService
       lanes_data = payload.lanes.try do |lanes|
         lanes.map do |lane|
-          {
+          lane_hash = {
             "name" => JSON::Any.new(lane.name),
           }
+          # Only include laneId if it's not nil
+          if lane_id = lane.lane_id
+            lane_hash["laneId"] = JSON::Any.new(lane_id)
+          end
+          lane_hash
         end
       end
 

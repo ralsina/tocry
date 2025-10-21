@@ -7,11 +7,6 @@ data/
 test_data/
 uploads/
 .crystal/
-integration-test/data
-integration-test/node_modules
-integration-test/test-results/
-integration-test/testdata/
-testdata-api-test/
 .test-server.log
 .test-server.pid
 .last-run.json
@@ -37,3 +32,13 @@ src/assets/app.js.map
 .env
 .env.local
 .env.*.local
+.parcel-cache/
+
+# Node.js and frontend assets
+assets/
+node_modules/
+package-lock.json
+package.json
+
+src/js/playwright-report/
+src/js/test-results/

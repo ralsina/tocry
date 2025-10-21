@@ -40,7 +40,22 @@
       "Bash(npx update-browserslist-db@latest:*)",
       "WebFetch(domain:docs.z.ai)",
       "Bash(npm test)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx standard --fix)",
+      "Bash(npx playwright install:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(npm run)",
+      "Bash(npx playwright test:*)",
+      "Bash(awk:*)",
+      "Bash(npx standard:*)",
+      "Bash(for:*)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Bash(xargs:*)",
+      "Bash(pre-commit run:*)",
+      "Read(//tmp/**)",
+      "Bash(netstat:*)",
+      "Read(//home/ralsina/code/**)"
     ],
     "deny": [],
     "ask": []

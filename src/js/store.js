@@ -1,8 +1,11 @@
 // Alpine.js store for ToCry reactive app
-/* global toastui, history, marked, hljs, localStorage, sessionStorage, ResizeObserver */
+/* global toastui, history, marked, hljs, sessionStorage, ResizeObserver */
 
 import ToCryWebSocketClient from './websocket-client.js'
 import BoardApiService from './services/api.js'
+import { ModalManager } from './services/ModalManager.js'
+import { ThemeManager } from './services/ThemeManager.js'
+import { SearchManager } from './services/SearchManager.js'
 
 // Create a global WebSocket instance for the app
 const webSocketClient = new ToCryWebSocketClient()
@@ -36,6 +39,15 @@ function createToCryStore () {
     // Client identification for echo prevention
     clientId: generateClientId(),
 
+    // Modal Manager - handles all modal states and operations
+    modalManager: new ModalManager(),
+
+    // Theme Manager - handles theme and color scheme management
+    themeManager: null, // Will be initialized in init() after store is fully created
+
+    // Search Manager - handles search functionality
+    searchManager: null, // Will be initialized in init() after store is fully created
+
     // State
     boards: [],
     currentBoardName: '',
@@ -50,20 +62,13 @@ function createToCryStore () {
     loadingBoardName: null,
 
     // UI State
-    showAddLane: false,
     newLaneName: '',
-    showNewBoardModal: false,
     newBoardName: '',
-    showBoardMenu: false,
-    editingNote: false,
     noteEdit: {},
     noteEditTagsString: '',
     // Store the note being edited for uploads (persists even if modal is closed)
     currentEditingNoteId: null,
     editor: null,
-    showAttachmentModal: false,
-    // Store the note data for attachments modal (separate from noteEdit)
-    attachmentNote: null,
 
     // Drag and Drop
     draggedNote: null,
@@ -79,121 +84,18 @@ function createToCryStore () {
     editingLane: null,
     editingLaneName: '',
 
-    // Note Title Editing
-    editingNoteTitle: null, // Store note ID being edited
-    editingNoteTitleText: '',
-
     // WebSocket State
     webSocketConnected: false,
-
-    // Note Title Editing Lane Context
-    editingNoteTitleLane: null, // Store lane name for context
-
-    // Note Tag Editing
-    editingNoteTags: null, // Store note ID being edited
-    editingNoteTagsText: '',
-    editingNoteTagsLane: null, // Store lane name for context
-    addingNewTag: false,
 
     // Scrolling
     canScrollLeft: false,
     canScrollRight: false,
 
-    // Modal state
-    showModal: false,
-    modalType: '', // 'alert', 'prompt', or 'public-warning'
-    modalTitle: '',
-    modalMessage: '',
-    modalInput: '',
-    modalConfirmText: 'OK',
-    modalCancelText: 'Cancel',
-    modalResolve: null,
+    // Public board controls (now handled by ModalManager)
+    // showingPublicWarning and publicWarningType moved to ModalManager
 
-    // Public board controls
-    showingPublicWarning: false,
-    publicWarningType: 'make-public', // 'make-public' or 'make-private'
-
-    // Theme and color scheme
-    isDarkMode: false,
-    showColorSelector: false,
-    colorSchemes: {
-      amber: {
-        light: { 'primary-rgb': '255, 193, 7' },
-        dark: { 'primary-rgb': '255, 202, 44' }
-      },
-      blue: {
-        light: { 'primary-rgb': '0, 123, 255' },
-        dark: { 'primary-rgb': '55, 125, 255' }
-      },
-      cyan: {
-        light: { 'primary-rgb': '23, 162, 184' },
-        dark: { 'primary-rgb': '79, 195, 214' }
-      },
-      fuchsia: {
-        light: { 'primary-rgb': '255, 0, 255' },
-        dark: { 'primary-rgb': '255, 102, 255' }
-      },
-      grey: {
-        light: { 'primary-rgb': '115, 130, 144' },
-        dark: { 'primary-rgb': '161, 172, 184' }
-      },
-      green: {
-        light: { 'primary-rgb': '56, 142, 60' },
-        dark: { 'primary-rgb': '102, 187, 106' }
-      },
-      indigo: {
-        light: { 'primary-rgb': '102, 16, 242' },
-        dark: { 'primary-rgb': '154, 104, 247' }
-      },
-      jade: {
-        light: { 'primary-rgb': '0, 168, 107' },
-        dark: { 'primary-rgb': '0, 200, 130' }
-      },
-      lime: {
-        light: { 'primary-rgb': '205, 220, 57' },
-        dark: { 'primary-rgb': '220, 231, 117' }
-      },
-      orange: {
-        light: { 'primary-rgb': '255, 152, 0' },
-        dark: { 'primary-rgb': '255, 183, 77' }
-      },
-      pink: {
-        light: { 'primary-rgb': '233, 30, 99' },
-        dark: { 'primary-rgb': '244, 143, 177' }
-      },
-      pumpkin: {
-        light: { 'primary-rgb': '255, 112, 0' },
-        dark: { 'primary-rgb': '255, 144, 51' }
-      },
-      purple: {
-        light: { 'primary-rgb': '156, 39, 176' },
-        dark: { 'primary-rgb': '186, 104, 200' }
-      },
-      red: {
-        light: { 'primary-rgb': '211, 47, 47' },
-        dark: { 'primary-rgb': '255, 82, 82' }
-      },
-      sand: {
-        light: { 'primary-rgb': '215, 194, 169' },
-        dark: { 'primary-rgb': '227, 211, 189' }
-      },
-      slate: {
-        light: { 'primary-rgb': '82, 105, 129' },
-        dark: { 'primary-rgb': '132, 151, 171' }
-      },
-      violet: {
-        light: { 'primary-rgb': '126, 87, 194' },
-        dark: { 'primary-rgb': '179, 157, 219' }
-      },
-      yellow: {
-        light: { 'primary-rgb': '255, 235, 59' },
-        dark: { 'primary-rgb': '255, 241, 118' }
-      },
-      zinc: {
-        light: { 'primary-rgb': '112, 112, 112' },
-        dark: { 'primary-rgb': '144, 144, 144' }
-      }
-    },
+    // Theme and color scheme (now handled by ThemeManager)
+    // isDarkMode, showColorSelector, colorSchemes moved to ThemeManager
 
     // Base Path Detection and Resolution for Reverse Proxy Support
     getBasePath () {
@@ -259,9 +161,8 @@ function createToCryStore () {
       this._cachedBasePath = null
     },
 
-    // Search functionality
-    searchQuery: '',
-    searchResults: [],
+    // Search functionality (now handled by SearchManager)
+    // searchQuery, searchResults moved to SearchManager
 
     // Computed Properties
     get currentColorScheme () {
@@ -290,33 +191,15 @@ function createToCryStore () {
 
       console.log('ToastUI available on init:', typeof window.ToastUI?.Editor !== 'undefined')
 
-      // Add keyboard shortcut for search
-      document.addEventListener('keydown', (e) => {
-        // "/" key to focus search (when not typing in an input, textarea, or contenteditable)
-        const activeElement = document.activeElement
-        const isEditable = activeElement?.tagName === 'INPUT' ||
-                          activeElement?.tagName === 'TEXTAREA' ||
-                          activeElement?.contentEditable === 'true' ||
-                          activeElement?.closest('.ToastUI__editor') ||
-                          activeElement?.closest('[contenteditable="true"]')
+      // Initialize ThemeManager (after store is fully created)
+      this.themeManager = new ThemeManager(
+        this,
+        this.showSuccess.bind(this),
+        this.showError.bind(this)
+      )
 
-        if (e.key === '/' && !isEditable) {
-          e.preventDefault()
-          this.$nextTick(() => {
-            this.$refs.searchInput?.focus()
-          })
-        }
-      })
-
-      // Initialize theme
-      const savedTheme = localStorage.getItem('theme')
-      if (savedTheme) {
-        this.isDarkMode = savedTheme === 'dark'
-        document.documentElement.setAttribute('data-theme', savedTheme)
-      }
-
-      // Color scheme is now handled reactively based on board data
-      // No need for separate initialization
+      // Initialize SearchManager (after store is fully created)
+      this.searchManager = new SearchManager(this)
 
       // Check if we're loading a specific board from URL
       const pathParts = window.location.pathname.split('/')
@@ -355,7 +238,7 @@ function createToCryStore () {
         if (newScheme && newScheme !== oldScheme) {
           // Delay color scheme application for smooth transition
           setTimeout(() => {
-            this.updateColorScheme(true) // Save to backend for manual changes
+            this.themeManager.updateColorScheme(true) // Save to backend for manual changes
           }, 500)
         }
       }, { deep: true })
@@ -384,23 +267,17 @@ function createToCryStore () {
 
         // Escape key: cancel any ongoing editing
         if (e.key === 'Escape') {
-          if (this.editingNoteTitle) {
-            this.cancelNoteTitleEdit()
-            e.preventDefault()
-          } else if (this.editingNoteTags) {
-            this.cancelNoteTagsEdit()
+          // Use ModalManager's escape handler first
+          if (this.modalManager.handleEscapeKey()) {
+            // ModalManager handled the escape, update store state accordingly
+            if (this.modalManager.isEditingNoteTitle()) {
+              this.cancelNoteTitleEdit()
+            } else if (this.modalManager.isEditingNoteTags()) {
+              this.cancelNoteTagsEdit()
+            }
             e.preventDefault()
           } else if (this.editingLane) {
             this.cancelLaneRename()
-            e.preventDefault()
-          } else if (this.showNewBoardModal) {
-            this.showNewBoardModal = false
-            e.preventDefault()
-          } else if (this.showAddLane) {
-            this.showAddLane = false
-            e.preventDefault()
-          } else if (this.editingNote) {
-            this.cancelEditNote()
             e.preventDefault()
           }
         }
@@ -420,10 +297,10 @@ function createToCryStore () {
 
         // Ctrl/Cmd + Enter: save current edit
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-          if (this.editingNoteTags) {
+          if (this.modalManager.isEditingNoteTags()) {
             this.saveNoteTags()
             e.preventDefault()
-          } else if (this.editingNoteTitle) {
+          } else if (this.modalManager.isEditingNoteTitle()) {
             this.confirmNoteTitleEdit()
             e.preventDefault()
           } else if (this.editingLane) {
@@ -461,160 +338,19 @@ function createToCryStore () {
         // Ctrl/Cmd + L: new lane
         if ((e.ctrlKey || e.metaKey) && e.key === 'l' && !isEditable) {
           e.preventDefault()
-          this.showAddLane = true
+          this.modalManager.openAddLaneModal()
         }
 
         // Ctrl/Cmd + B: new board
         if ((e.ctrlKey || e.metaKey) && e.key === 'b' && !isEditable) {
           e.preventDefault()
-          this.showNewBoardModal = true
+          this.modalManager.openNewBoardModal()
         }
       })
     },
 
-    // Theme and color scheme methods
-    toggleTheme () {
-      this.isDarkMode = !this.isDarkMode
-      document.documentElement.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light')
-      localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light')
-
-      // Re-apply color scheme to get correct theme variant
-      this.updateColorScheme()
-
-      // Show toast notification
-      this.showSuccess(`Switched to ${this.isDarkMode ? 'dark' : 'light'} theme`)
-    },
-    // Validate and normalize color scheme
-    validateColorScheme (colorScheme) {
-      if (!colorScheme) {
-        return 'blue'
-      }
-
-      // Normalize to lowercase for comparison
-      const normalized = colorScheme.toLowerCase()
-
-      // Check if it's a valid scheme
-      if (this.colorSchemes[normalized]) {
-        return normalized
-      }
-
-      // Invalid scheme - log warning and return blue
-      console.warn(`Invalid color scheme "${colorScheme}" - falling back to blue`)
-      return 'blue'
-    },
-
-    async updateColorScheme (saveToBackend = true) {
-      // Update the Pico.css stylesheet link
-      const picoThemeLink = document.querySelector(
-        'link[href*="pico.min.css"], link[href*="pico."][href*=".min.css"]'
-      )
-
-      if (picoThemeLink) {
-        const cssFileName = `pico.${this.currentColorScheme.toLowerCase()}.min.css`
-        picoThemeLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${cssFileName}`
-      }
-
-      // Update the --primary-rgb variable for custom styles
-      const scheme = this.colorSchemes[this.currentColorScheme]
-      if (scheme) {
-        const currentTheme = this.isDarkMode ? 'dark' : 'light'
-        const colors = scheme[currentTheme] || scheme.light
-
-        // Set the primary-rgb variable
-        const primaryRgb = colors['primary-rgb']
-        if (primaryRgb) {
-          document.documentElement.style.setProperty('--primary-rgb', primaryRgb)
-        }
-
-        localStorage.setItem('colorScheme', this.currentColorScheme)
-
-        // Save to backend only if requested and we have a current board
-        if (saveToBackend && this.currentBoardName && this.currentBoardName !== '') {
-          try {
-            await this.api.updateBoard(this.currentBoardName, { colorScheme: this.currentColorScheme })
-          } catch (error) {
-            console.error('Error saving color scheme:', error)
-            this.showError('Failed to save color scheme')
-          }
-        }
-      }
-    },
-    // Helper to convert hex to RGB
-    hexToRgb (hex) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-      return result
-        ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-          }
-        : null
-    },
-    // Search functionality
-    performSearch () {
-      const query = this.searchQuery.toLowerCase().trim()
-
-      // If no search query, show all notes
-      if (!query) {
-        // Reset all notes to visible
-        if (this.currentBoard && this.currentBoard.lanes) {
-          this.currentBoard.lanes.forEach(lane => {
-            if (lane.notes && Array.isArray(lane.notes)) {
-              lane.notes.forEach(note => {
-                if (note) note._hidden = false
-              })
-            }
-          })
-        }
-        return
-      }
-
-      // Check if this is a tag search (starts with #)
-      const isTagSearch = query.startsWith('#')
-      const searchTag = isTagSearch ? query.substring(1) : query
-
-      // Hide/show notes based on search
-      if (this.currentBoard && this.currentBoard.lanes) {
-        this.currentBoard.lanes.forEach(lane => {
-          if (lane.notes && Array.isArray(lane.notes)) {
-            lane.notes.forEach(note => {
-              if (note) {
-                let matches = false
-
-                if (isTagSearch) {
-                  // Tag search: match notes with tags that start with the search term
-                  matches = note.tags && Array.isArray(note.tags) &&
-                    note.tags.some(tag => tag && tag.toLowerCase().startsWith(searchTag))
-                } else {
-                  // Regular search: match title, content, or tags containing the query
-                  matches =
-                    (note.title && note.title.toLowerCase().includes(query)) ||
-                    (note.content && note.content.toLowerCase().includes(query)) ||
-                    (note.tags && Array.isArray(note.tags) && note.tags.some(tag => tag && tag.toLowerCase().includes(query)))
-                }
-
-                note._hidden = !matches
-              }
-            })
-          }
-        })
-      }
-
-      // Force reactivity
-      this.currentBoard = { ...this.currentBoard }
-    },
-
-    // Search by tag (sets search query to #tag)
-    searchByTag (tag) {
-      this.searchQuery = `#${tag}`
-      this.performSearch()
-      // Focus the search input so user can see the search query
-      this.$nextTick(() => {
-        if (this.$refs.searchInput) {
-          this.$refs.searchInput.focus()
-        }
-      })
-    },
+    // Search functionality (now handled by SearchManager)
+    // performSearch() and searchByTag() moved to SearchManager
 
     // Load all boards
     async loadBoards () {
@@ -663,7 +399,7 @@ function createToCryStore () {
           console.log('Loaded board data:', boardData)
 
           // Validate color scheme early
-          const validatedColorScheme = this.validateColorScheme(boardData.colorScheme)
+          const validatedColorScheme = this.themeManager.validateColorScheme(boardData.colorScheme)
 
           this.currentBoard = {
             id: boardData.id,
@@ -678,7 +414,7 @@ function createToCryStore () {
           console.log('Current board public field after assignment:', this.currentBoard.public)
 
           // Apply color scheme immediately to ensure lane borders are visible (don't save to backend)
-          this.updateColorScheme(false)
+          this.themeManager.updateColorScheme(false)
 
           this.currentBoardName = boardName
           this.boardNotFound = false
@@ -1025,19 +761,18 @@ function createToCryStore () {
     },
 
     async confirmNoteTitleEdit () {
-      if (!this.editingNoteTitle || !this.editingNoteTitleText.trim()) {
-        this.cancelNoteTitleEdit()
+      const editData = this.modalManager.finishEditingNoteTitle()
+      if (!editData) {
         return
       }
 
-      const newTitle = this.editingNoteTitleText.trim()
+      const { noteId, newTitle, laneName } = editData
 
       // Find the current note to get its full data
-      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTitleLane)
-      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteTitle)
+      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+      const note = lane?.notes.find(n => n.sepiaId === noteId)
 
       if (!note || note.title === newTitle) {
-        this.cancelNoteTitleEdit()
         return
       }
 
@@ -1051,7 +786,7 @@ function createToCryStore () {
         this.showInfo('Updating note title...')
 
         // Use API service to update the note
-        await this.api.updateNote(this.currentBoardName, this.editingNoteTitle, {
+        await this.api.updateNote(this.currentBoardName, noteId, {
           title: newTitle,
           tags: note.tags || [],
           content: note.content || '',
@@ -1062,7 +797,7 @@ function createToCryStore () {
           priority: note.priority || null,
           attachments: note.attachments || []
         }, {
-          laneName: this.editingNoteTitleLane
+          laneName
         })
 
         this.showSuccess('Note title updated')
@@ -1073,22 +808,16 @@ function createToCryStore () {
         }
         console.error('Error updating note title:', error)
         this.showError('Failed to update note title')
-      } finally {
-        this.cancelNoteTitleEdit()
       }
     },
 
     cancelNoteTitleEdit () {
-      this.editingNoteTitle = null
-      this.editingNoteTitleText = ''
-      this.editingNoteTitleLane = null
+      this.modalManager.cancelEditingNoteTitle()
     },
 
     // Note Tag Editing Functions
     startEditingNoteTags (noteId, laneName, currentTags) {
-      this.editingNoteTags = noteId
-      this.editingNoteTagsText = currentTags ? currentTags.join(', ') : ''
-      this.editingNoteTagsLane = laneName
+      this.modalManager.startEditingNoteTags(noteId, currentTags, laneName)
       // Focus the input field after it becomes visible
       this.$nextTick(() => {
         const input = this.$refs[`noteTagsInput-${noteId}`]
@@ -1101,30 +830,30 @@ function createToCryStore () {
     },
 
     async saveNoteTags () {
-      if (!this.editingNoteTags) {
-        this.cancelNoteTagsEdit()
+      const editData = this.modalManager.finishEditingNoteTags()
+      if (!editData) {
         return
       }
 
+      const { noteId, newTags: newTagsText, laneName } = editData
+
       // Parse tags from comma-separated text
-      const newTags = this.editingNoteTagsText
+      const newTags = newTagsText
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
 
       // Find the current note to get its full data
-      const lane = this.currentBoard.lanes.find(l => l.name === this.editingNoteTagsLane)
-      const note = lane?.notes.find(n => n.sepiaId === this.editingNoteTags)
+      const lane = this.currentBoard.lanes.find(l => l.name === laneName)
+      const note = lane?.notes.find(n => n.sepiaId === noteId)
 
       if (!note) {
-        this.cancelNoteTagsEdit()
         return
       }
 
       // Check if tags actually changed
       const currentTags = note.tags || []
       if (JSON.stringify(currentTags.sort()) === JSON.stringify(newTags.sort())) {
-        this.cancelNoteTagsEdit()
         return
       }
 
@@ -1138,7 +867,7 @@ function createToCryStore () {
         this.showInfo('Updating note tags...')
 
         // Use API service to update the note - no need for separate saveBoard() call
-        await this.api.updateNote(this.currentBoardName, this.editingNoteTags, {
+        await this.api.updateNote(this.currentBoardName, noteId, {
           title: note.title,
           tags: newTags,
           content: note.content || '',
@@ -1149,7 +878,7 @@ function createToCryStore () {
           priority: note.priority || null,
           attachments: note.attachments || []
         }, {
-          laneName: this.editingNoteTagsLane
+          laneName
         })
 
         this.showSuccess('Note tags updated')
@@ -1160,16 +889,11 @@ function createToCryStore () {
         }
         console.error('Error updating note tags:', error)
         this.showError('Failed to update note tags')
-      } finally {
-        this.cancelNoteTagsEdit()
       }
     },
 
     cancelNoteTagsEdit () {
-      this.editingNoteTags = null
-      this.editingNoteTagsText = ''
-      this.editingNoteTagsLane = null
-      this.addingNewTag = false
+      this.modalManager.cancelEditingNoteTags()
     },
 
     // Generic function to update note tags
@@ -1287,8 +1011,8 @@ function createToCryStore () {
       // Store the lane name for reference
       this.draggedFromLane = laneName
 
-      // Show the inline modal
-      this.editingNote = true
+      // Show the inline modal using ModalManager
+      this.modalManager.openEditNoteModal(note, laneName)
       this.noteEdit = { ...note, currentLane: laneName }
       // Store the note ID for uploads (persists even if modal is closed)
       this.currentEditingNoteId = note.sepiaId
@@ -2305,7 +2029,8 @@ function createToCryStore () {
         this.editor = null
       }
 
-      this.editingNote = false
+      // Close modal using ModalManager
+      this.modalManager.closeEditNoteModal()
       this.noteEdit = {}
       this.noteEditTagsString = ''
       this.currentEditingNoteId = null
@@ -2358,7 +2083,7 @@ function createToCryStore () {
         await this.api.createLane(this.currentBoardName, this.newLaneName.trim())
 
         this.newLaneName = ''
-        this.showAddLane = false // Close the modal
+        this.modalManager.closeAddLaneModal() // Close the modal
         await this.loadBoard(this.currentBoardName)
       } catch (error) {
         console.error('Error adding lane:', error)
@@ -3124,6 +2849,34 @@ function createToCryStore () {
       board.scrollTo({ left: targetScrollPosition, behavior: 'smooth' })
     },
 
+    // Scroll for separator navigation - scrolls by exact step size
+    scrollBoardForSeparator (direction) {
+      if (!this.$refs.kanbanBoard) return
+
+      const board = this.$refs.kanbanBoard
+      const currentScrollLeft = board.scrollLeft
+
+      // Get the same step size as separator positioning
+      const calculatedWidth = this.calculateDynamicLaneWidth()
+      const boardStyle = window.getComputedStyle(board)
+      const gapValue = boardStyle.gap || '0.75rem'
+      const laneGap = parseInt(gapValue) || 12
+      const stepSize = calculatedWidth + laneGap + 40 // Same as separator step
+
+      let targetScrollPosition
+      if (direction === 'left') {
+        targetScrollPosition = currentScrollLeft - stepSize
+      } else {
+        targetScrollPosition = currentScrollLeft + stepSize
+      }
+
+      // Ensure we don't scroll beyond boundaries
+      targetScrollPosition = Math.max(0, Math.min(targetScrollPosition, board.scrollWidth - board.clientWidth))
+
+      // Scroll to the target position with smooth behavior
+      board.scrollTo({ left: targetScrollPosition, behavior: 'smooth' })
+    },
+
     // Update kanban board padding to ensure sufficient scrollable space for hidden lanes
     updateKanbanPadding () {
       const kanbanBoard = document.querySelector('.kanban-board')
@@ -3186,7 +2939,7 @@ function createToCryStore () {
       kanbanBoard.style.paddingRight = `${rightPadding}px`
     },
 
-    // Calculate dynamic lane width based on available space and visible lanes
+    // Calculate dynamic lane width based on available space and total lanes
     calculateDynamicLaneWidth () {
       if (!this.currentBoard || !this.currentBoard.lanes) return 280
 
@@ -3199,17 +2952,16 @@ function createToCryStore () {
       const availableWidth = boardContainer.offsetWidth - 120 // Subtract space for scroll buttons
       const gap = 12 // 0.75rem in pixels
 
-      // Calculate visible lanes (excluding hidden ones)
+      // Calculate width based on TOTAL lanes in the board, not just visible ones
+      // This ensures lane widths remain consistent when separator moves
       const totalLanes = this.currentBoard.lanes.length
-      const firstVisible = this.currentBoard.firstVisibleLane || 0
-      const visibleLanes = totalLanes - firstVisible
 
-      if (visibleLanes <= 0) return 280
+      if (totalLanes <= 0) return 280
 
-      // Calculate ideal width
-      const totalGapWidth = (visibleLanes - 1) * gap
+      // Calculate ideal width based on total lanes
+      const totalGapWidth = (totalLanes - 1) * gap
       const availableLaneWidth = availableWidth - totalGapWidth
-      const idealLaneWidth = availableLaneWidth / visibleLanes
+      const idealLaneWidth = availableLaneWidth / totalLanes
 
       // Apply constraints
       const MIN_LANE_WIDTH = 250
@@ -3326,61 +3078,39 @@ function createToCryStore () {
 
     // Modal methods
     showAlert (title, message, buttonText = 'OK') {
-      return new Promise((resolve) => {
-        this.modalType = 'alert'
-        this.modalTitle = title
-        this.modalMessage = message
-        this.modalConfirmText = buttonText
-        // Set cancel text for confirmation dialogs (when buttonText is not 'OK')
-        this.modalCancelText = buttonText === 'OK' ? '' : 'Cancel'
-        this.modalResolve = resolve
-        this.showModal = true
-      })
+      return this.modalManager.showAlert(title, message, buttonText)
     },
 
     showPrompt (title, message, defaultValue = '', confirmText = 'OK', cancelText = 'Cancel') {
-      return new Promise((resolve) => {
-        this.modalType = 'prompt'
-        this.modalTitle = title
-        this.modalMessage = message
-        this.modalInput = defaultValue
-        this.modalConfirmText = confirmText
-        this.modalCancelText = cancelText
-        this.modalResolve = resolve
-        this.showModal = true
+      const promise = this.modalManager.showPrompt(title, message, defaultValue, confirmText, cancelText)
 
-        // Focus input after modal is shown
-        this.$nextTick(() => {
-          if (this.$refs.modalInputRef) {
-            this.$refs.modalInputRef.focus()
-            this.$refs.modalInputRef.select()
-          }
-        })
+      // Focus input after modal is shown
+      this.$nextTick(() => {
+        if (this.$refs.modalInputRef) {
+          this.$refs.modalInputRef.focus()
+          this.$refs.modalInputRef.select()
+        }
       })
+
+      return promise
     },
 
     confirmModal () {
-      if (this.modalResolve) {
-        if (this.modalType === 'prompt') {
-          this.modalResolve(this.modalInput)
-        } else if (this.modalType === 'public-warning') {
-          this.modalResolve(true)
-          this.showingPublicWarning = false
+      if (this.modalManager.modalResolve) {
+        if (this.modalManager.modalType === 'prompt') {
+          this.modalManager.closeCurrentModal(this.modalManager.modalInput)
+        } else if (this.modalManager.modalType === 'public-warning') {
+          this.modalManager.closeCurrentModal(true)
         } else {
-          this.modalResolve(true)
+          this.modalManager.closeCurrentModal(true)
         }
+      } else {
+        this.modalManager.closeCurrentModal(true)
       }
-      this.closeModal()
     },
 
     closeModal () {
-      this.showModal = false
-      this.modalType = ''
-      this.modalTitle = ''
-      this.modalMessage = ''
-      this.modalInput = ''
-      this.modalResolve = null
-      this.showingPublicWarning = false
+      this.modalManager.closeCurrentModal()
     },
 
     // Helper methods to replace prompt and alert
@@ -3499,20 +3229,12 @@ function createToCryStore () {
         const boardStyle = window.getComputedStyle(kanbanBoard)
         const gapValue = boardStyle.gap || '0.75rem'
         const laneGap = parseInt(gapValue) || 12
+        const separatorWidth = 12 // Separator width matches the gap
 
-        // For hidden lanes, use standard width; for visible lanes, use dynamic width
-        let position = 0
-        for (let i = 0; i < laneIndex; i++) {
-          const laneWidth = this.isLaneHidden(i) ? 280 : calculatedWidth
-          position += laneWidth + laneGap
-        }
-
-        // Position separator with its RIGHT EDGE at the LEFT EDGE of the first visible lane
-        return position - laneGap
+        // Position separator
+        const position = laneIndex * (calculatedWidth + laneGap + 40)
+        return position - separatorWidth
       }
-
-      // Fallback calculation
-      return laneIndex * (280 + 12) - 12 // Standard width + gap
     },
 
     isLaneHidden (index) {
@@ -3724,28 +3446,7 @@ function createToCryStore () {
 
     // Show public board warning modal
     showPublicWarning (type) {
-      this.publicWarningType = type
-      this.showingPublicWarning = true
-      this.modalType = 'public-warning'
-      this.showModal = true
-
-      if (type === 'make-public') {
-        this.modalTitle = '⚠️ Make Board Public?'
-        this.modalMessage = `Making this board public will expose:
-
-• ALL notes on this board (including private notes)
-• All attachments and files
-• All note content and metadata
-
-Anyone with the link will be able to view everything.
-This is a permanent action that cannot be easily undone.`
-        this.modalConfirmText = 'Make Public Anyway'
-        this.modalCancelText = 'Cancel'
-      }
-
-      return new Promise((resolve) => {
-        this.modalResolve = resolve
-      })
+      return this.modalManager.showPublicWarning(type)
     },
 
     // Make board public
