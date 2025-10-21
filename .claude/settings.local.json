@@ -39,7 +39,8 @@
       "Bash(npm install:*)",
       "Bash(npx update-browserslist-db@latest:*)",
       "WebFetch(domain:docs.z.ai)",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
