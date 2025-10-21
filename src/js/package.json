@@ -6,11 +6,22 @@
   "scripts": {
     "build": "parcel build app.js --dist-dir ../assets",
     "watch": "parcel watch app.js --dist-dir ../assets",
-    "test": "node --require ./tests/setup.node.js --test tests/**/*.test.node.js",
-    "test:watch": "node --require ./tests/setup.node.js --test --watch tests/**/*.test.node.js",
-    "test:coverage": "node --require ./tests/setup.node.js --test --experimental-test-coverage tests/**/*.test.node.js"
+    "test": "node --require ./tests/setup.node.js --test tests/**/*.test.js",
+    "test:watch": "node --require ./tests/setup.node.js --test --watch tests/**/*.test.js",
+    "test:coverage": "node --require ./tests/setup.node.js --test --experimental-test-coverage tests/**/*.test.js",
+    "test:e2e": "playwright test --reporter=list",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:install": "playwright install",
+    "test:e2e:html": "playwright test --reporter=html"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.28.3"
+    "@babel/preset-env": "^7.28.3",
+    "@playwright/test": "^1.48.0"
+  },
+  "standard": {
+    "ignore": [
+      "tests/e2e/helpers/test-data-setup.js"
+    ]
   }
 }
