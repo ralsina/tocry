@@ -994,6 +994,9 @@ function createToCryStore () {
         }
 
         this.showSuccess('Note added successfully')
+
+        // Open the newly created note in the editor
+        this.editNote(createdNote.note, laneName)
       } catch (error) {
         // Revert optimistic update on error
         const lane = this.currentBoard.lanes.find(l => l.name === laneName)
