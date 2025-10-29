@@ -1,38 +1,33 @@
 require "json"
-require "../tool"
-require "../../services/board_service"
+require "mcp"
 require "../authenticated_tool"
+require "../../services/board_service"
 
-class CreateBoardTool < Tool
+class CreateBoardTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_create_board"
   @@tool_description = "Create a new board"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({
-      "board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Name of the new board"),
-      }),
-      "public" => JSON::Any.new({
-        "type"        => JSON::Any.new("boolean"),
-        "description" => JSON::Any.new("Whether the board should be publicly accessible (optional, default: false)"),
-      }),
-      "color_scheme" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Color scheme for the board (optional)"),
-      }),
-    }),
-    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-  }
+    "type"       => "object",
+    "properties" => {
+      "board_name" => {
+        "type"        => "string",
+        "description" => "Name of the new board",
+      },
+      "public" => {
+        "type"        => "boolean",
+        "description" => "Whether the board should be publicly accessible (optional, default: false)",
+      },
+      "color_scheme" => {
+        "type"        => "string",
+        "description" => "Color scheme for the board (optional)",
+      },
+    },
+    "required" => ["board_name"],
+  }.to_json
 
-  # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
-
-  # invoke() method is provided by AuthenticatedTool mixin
-
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     board_name = params["board_name"].as_s
     public = params["public"]?.try(&.as_bool)
     color_scheme = params["color_scheme"]?.try(&.as_s)
@@ -53,7 +48,7 @@ class CreateBoardTool < Tool
         return {
           "error"   => "Board creation failed - no board data returned",
           "success" => false,
-        }.to_json
+        }
       end
       {
         "success"      => true,
@@ -63,12 +58,12 @@ class CreateBoardTool < Tool
         "color_scheme" => board.color_scheme,
         "lane_count"   => board.lanes.size,
         "total_notes"  => board.lanes.sum(&.notes.size),
-      }.to_json
+      }
     else
       {
         "error"   => result.message,
         "success" => false,
-      }.to_json
+      }
     end
   end
 end

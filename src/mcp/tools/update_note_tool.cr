@@ -1,70 +1,67 @@
 require "json"
-require "../tool"
+require "mcp"
 require "../../services/note_service"
-require "../authenticated_tool"
 
-class UpdateNoteTool < Tool
+class UpdateNoteTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_update_note"
   @@tool_description = "Update an existing note's properties or move it to a different lane"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({
-      "note_id" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("ID of the note to update"),
-      }),
-      "board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Name of the board containing the note"),
-      }),
-      "title" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New title for the note (optional)"),
-      }),
-      "content" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New content for the note (optional)"),
-      }),
-      "tags" => JSON::Any.new({
-        "type"        => JSON::Any.new("array"),
-        "description" => JSON::Any.new("New array of tags for the note (optional)"),
-      }),
-      "priority" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New priority level: high, medium, low (optional)"),
-      }),
-      "start_date" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New start date in YYYY-MM-DD format (optional)"),
-      }),
-      "end_date" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New end date in YYYY-MM-DD format (optional)"),
-      }),
-      "public" => JSON::Any.new({
-        "type"        => JSON::Any.new("boolean"),
-        "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
-      }),
-      "new_lane_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New lane name to move the note to (optional)"),
-      }),
-      "expanded" => JSON::Any.new({
-        "type"        => JSON::Any.new("boolean"),
-        "description" => JSON::Any.new("Whether the note should be expanded (optional)"),
-      }),
-    }),
-    "required" => JSON::Any.new(["note_id", "board_name"].map { |param| JSON::Any.new(param) }),
-  }
+    "type"       => "object",
+    "properties" => {
+      "note_id" => {
+        "type"        => "string",
+        "description" => "ID of the note to update",
+      },
+      "board_name" => {
+        "type"        => "string",
+        "description" => "Name of the board containing the note",
+      },
+      "title" => {
+        "type"        => "string",
+        "description" => "New title for the note (optional)",
+      },
+      "content" => {
+        "type"        => "string",
+        "description" => "New content for the note (optional)",
+      },
+      "tags" => {
+        "type"        => "array",
+        "description" => "New array of tags for the note (optional)",
+      },
+      "priority" => {
+        "type"        => "string",
+        "description" => "New priority level: high, medium, low (optional)",
+      },
+      "start_date" => {
+        "type"        => "string",
+        "description" => "New start date in YYYY-MM-DD format (optional)",
+      },
+      "end_date" => {
+        "type"        => "string",
+        "description" => "New end date in YYYY-MM-DD format (optional)",
+      },
+      "public" => {
+        "type"        => "boolean",
+        "description" => "Whether the note is publicly accessible (optional)",
+      },
+      "new_lane_name" => {
+        "type"        => "string",
+        "description" => "New lane name to move the note to (optional)",
+      },
+      "expanded" => {
+        "type"        => "boolean",
+        "description" => "Whether the note should be expanded (optional)",
+      },
+    },
+    "required" => ["note_id", "board_name"],
+}.to_json
 
   # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
 
-  # invoke() method is provided by AuthenticatedTool mixin
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any) | Hash(String, Array(JSON::Any))
     note_id = params["note_id"].as_s
     board_name = params["board_name"].as_s
 
@@ -101,28 +98,28 @@ class UpdateNoteTool < Tool
       note = result.note
       unless note
         return {
-          "error"   => "Note update failed - no note data returned",
-          "success" => false,
-        }.to_json
+          "error"   => JSON::Any.new("Note update failed - no note data returned"),
+          "success" => JSON::Any.new(false),
+        }
       end
       {
-        "success"    => true,
-        "id"         => note.sepia_id,
-        "title"      => note.title,
-        "content"    => note.content,
-        "lane_name"  => result.lane_name,
-        "board_name" => board_name,
-        "tags"       => note.tags.map { |tag| tag },
-        "priority"   => note.priority.to_s,
-        "start_date" => note.start_date,
-        "end_date"   => note.end_date,
-        "public"     => note.public,
-      }.to_json
+        "success"    => JSON::Any.new(true),
+        "id"         => JSON::Any.new(note.sepia_id),
+        "title"      => JSON::Any.new(note.title),
+        "content"    => JSON::Any.new(note.content),
+        "lane_name"  => JSON::Any.new(result.lane_name),
+        "board_name" => JSON::Any.new(board_name),
+        "tags"       => JSON::Any.new(note.tags.map { |tag| JSON::Any.new(tag) }),
+        "priority"   => JSON::Any.new(note.priority.to_s),
+        "start_date" => JSON::Any.new(note.start_date),
+        "end_date"   => JSON::Any.new(note.end_date),
+        "public"     => JSON::Any.new(note.public),
+      }
     else
       {
-        "error"   => result.message,
-        "success" => false,
-      }.to_json
+        "error"   => JSON::Any.new(result.message),
+        "success" => JSON::Any.new(false),
+      }
     end
   end
 end

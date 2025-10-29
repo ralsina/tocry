@@ -1,30 +1,27 @@
 require "json"
-require "../tool"
+require "mcp"
 require "../../services/board_service"
-require "../authenticated_tool"
 
-class DeleteBoardTool < Tool
+class DeleteBoardTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_delete_board"
   @@tool_description = "Delete a board"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({
-      "board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Name of the board to delete"),
-      }),
-    }),
-    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-  }
+    "type"       => "object",
+    "properties" => {
+      "board_name" => {
+        "type"        => "string",
+        "description" => "Name of the board to delete",
+      },
+    },
+    "required" => ["board_name"],
+  }.to_json
 
   # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
 
-  # invoke() method is provided by AuthenticatedTool mixin
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     board_name = params["board_name"].as_s
 
     result = ToCry::Services::BoardService.delete_board(
@@ -36,6 +33,6 @@ class DeleteBoardTool < Tool
     {
       "success" => result.success,
       "message" => result.message,
-    }.to_json
+    }
   end
 end

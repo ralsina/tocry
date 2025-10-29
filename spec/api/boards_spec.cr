@@ -162,7 +162,7 @@ describe "Boards API using Generated Client" do
       renamed_lane = final_board.lanes.not_nil!.find { |lane| lane.name == "In Progress" }
       renamed_lane.should_not be_nil
       renamed_lane.not_nil!.lane_id.should eq(original_lane_id) # Lane ID should be preserved
-      renamed_lane.not_nil!.notes.not_nil!.size.should eq(1)   # Note should still be there
+      renamed_lane.not_nil!.notes.not_nil!.size.should eq(1)    # Note should still be there
       renamed_lane.not_nil!.notes.not_nil!.first.title.should eq("Test note")
 
       # Verify the old lane name no longer exists

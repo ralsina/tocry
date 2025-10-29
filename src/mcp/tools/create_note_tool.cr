@@ -1,60 +1,58 @@
 require "json"
-require "../tool"
+require "mcp"
 require "../../services/note_service"
-require "../authenticated_tool"
 
-class CreateNoteTool < Tool
+class CreateNoteTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_create_note"
   @@tool_description = "Create a new note in a specific lane on a board"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({
-      "board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Name of the board where the note will be created"),
-      }),
-      "lane_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Name of the lane where the note will be created"),
-      }),
-      "title" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Title of the note"),
-      }),
-      "content" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Content of the note (optional)"),
-      }),
-      "tags" => JSON::Any.new({
-        "type"        => JSON::Any.new("array"),
-        "description" => JSON::Any.new("Array of tags for the note (optional)"),
-      }),
-      "priority" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Priority level: high, medium, low (optional)"),
-      }),
-      "start_date" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Start date in YYYY-MM-DD format (optional)"),
-      }),
-      "end_date" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("End date in YYYY-MM-DD format (optional)"),
-      }),
-      "public" => JSON::Any.new({
-        "type"        => JSON::Any.new("boolean"),
-        "description" => JSON::Any.new("Whether the note is publicly accessible (optional)"),
-      }),
-    }),
-    "required" => JSON::Any.new(["board_name", "lane_name", "title"].map { |param| JSON::Any.new(param) }),
-  }
+    "type"       => "object",
+    "properties" => {
+      "board_name" => {
+        "type"        => "string",
+        "description" => "Name of the board where the note will be created",
+      },
+      "lane_name" => {
+        "type"        => "string",
+        "description" => "Name of the lane where the note will be created",
+      },
+      "title" => {
+        "type"        => "string",
+        "description" => "Title of the note",
+      },
+      "content" => {
+        "type"        => "string",
+        "description" => "Content of the note (optional)",
+      },
+      "tags" => {
+        "type"        => "array",
+        "description" => "Array of tags for the note (optional)",
+      },
+      "priority" => {
+        "type"        => "string",
+        "description" => "Priority level: high, medium, low (optional)",
+      },
+      "start_date" => {
+        "type"        => "string",
+        "description" => "Start date in YYYY-MM-DD format (optional)",
+      },
+      "end_date" => {
+        "type"        => "string",
+        "description" => "End date in YYYY-MM-DD format (optional)",
+      },
+      "public" => {
+        "type"        => "boolean",
+        "description" => "Whether the note is publicly accessible (optional)",
+      },
+    },
+    "required" => ["board_name", "lane_name", "title"],
+  }.to_json
 
   # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     board_name = params["board_name"].as_s
     lane_name = params["lane_name"].as_s
     title = params["title"].as_s
@@ -88,7 +86,7 @@ class CreateNoteTool < Tool
         return {
           "error"   => "Note creation failed - no note data returned",
           "success" => false,
-        }.to_json
+        }
       end
       {
         "success"    => true,
@@ -102,12 +100,12 @@ class CreateNoteTool < Tool
         "start_date" => note.start_date,
         "end_date"   => note.end_date,
         "public"     => note.public,
-      }.to_json
+      }
     else
       {
         "error"   => result.message,
         "success" => false,
-      }.to_json
+      }
     end
   end
 end

@@ -1,24 +1,21 @@
 require "json"
-require "../tool"
+require "mcp"
 require "../../services/note_service"
 require "../authenticated_tool"
 
-class ListBoardsTool < Tool
+class ListBoardsTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_list_boards"
   @@tool_description = "List all accessible Kanban boards for the current user"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({} of String => JSON::Any),
-  }
-
-  # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
+    "type"       => "object",
+    "properties" => {} of String => String,
+  }.to_json
 
   # invoke() method is provided by AuthenticatedTool mixin
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     # Use NoteService to list all boards (handles all business logic)
     result = ToCry::Services::NoteService.list_all_boards(user_id)
 
@@ -38,14 +35,14 @@ class ListBoardsTool < Tool
         "success" => true,
         "boards"  => boards_data,
         "count"   => boards_data.size,
-      }.to_json
+      }
     else
       {
         "success" => false,
         "error"   => result[:error],
         "boards"  => [] of Hash(String, String | Int32 | Bool | Nil),
         "count"   => 0,
-      }.to_json
+      }
     end
   end
 end

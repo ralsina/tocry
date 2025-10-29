@@ -28,6 +28,8 @@ dependencies:
   dotenv:
     github: gdotdesign/cr-dotenv
     version: ~> 1.0
+  mcp:
+    github: ralsina/mcp
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>
