@@ -1,46 +1,46 @@
 require "json"
-require "../tool"
+require "mcp"
 require "../../services/board_service"
 require "../authenticated_tool"
 
-class UpdateBoardTool < Tool
+class UpdateBoardTool < MCP::AbstractTool
   include AuthenticatedTool
   # Tool metadata declaration
   @@tool_name = "tocry_update_board"
   @@tool_description = "Update a board's properties"
   @@tool_input_schema = {
-    "type"       => JSON::Any.new("object"),
-    "properties" => JSON::Any.new({
-      "board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Current name of the board to update"),
-      }),
-      "new_board_name" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("New name for the board (optional)"),
-      }),
-      "public" => JSON::Any.new({
-        "type"        => JSON::Any.new("boolean"),
-        "description" => JSON::Any.new("Whether the board should be publicly accessible (optional)"),
-      }),
-      "color_scheme" => JSON::Any.new({
-        "type"        => JSON::Any.new("string"),
-        "description" => JSON::Any.new("Color scheme for the board (optional)"),
-      }),
-      "lanes" => JSON::Any.new({
-        "type"        => JSON::Any.new("array"),
-        "description" => JSON::Any.new("Array of lanes with their names and positions (optional)"),
-      }),
-    }),
-    "required" => JSON::Any.new(["board_name"].map { |param| JSON::Any.new(param) }),
-  }
-
-  # Register this tool when the file is loaded
-  Tool.registered_tools[@@tool_name] = new
+    "type"       => "object",
+    "properties" => {
+      "board_name" => {
+        "type"        => "string",
+        "description" => "Current name of the board to update",
+      },
+      "new_board_name" => {
+        "type"        => "string",
+        "description" => "New name for the board (optional)",
+      },
+      "public" => {
+        "type"        => "boolean",
+        "description" => "Whether the board should be publicly accessible (optional)",
+      },
+      "color_scheme" => {
+        "type"        => "string",
+        "description" => "Color scheme for the board (optional)",
+      },
+      "lanes" => {
+        "type"        => "array",
+        "description" => "Array of lanes with their names and positions (optional)",
+      },
+    },
+    "required" => ["board_name"],
+  }.to_json
 
   # invoke() method is provided by AuthenticatedTool mixin
 
-  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : String
+  # Register this tool when the file is loaded
+
+
+  def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     board_name = params["board_name"].as_s
 
     # Extract optional parameters
@@ -72,7 +72,7 @@ class UpdateBoardTool < Tool
         return {
           "error"   => "Board update failed - no board data returned",
           "success" => false,
-        }.to_json
+        }
       end
       {
         "success"      => true,
@@ -84,12 +84,12 @@ class UpdateBoardTool < Tool
         "color_scheme" => board.color_scheme,
         "lane_count"   => board.lanes.size,
         "total_notes"  => board.lanes.sum(&.notes.size),
-      }.to_json
+      }
     else
       {
         "error"   => result.message,
         "success" => false,
-      }.to_json
+      }
     end
   end
 end

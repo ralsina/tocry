@@ -1,15 +1,15 @@
 require "kemal"
 require "json"
-require "./tool"
+require "mcp"
 require "./tools/*"
 
 # Lightweight MCP 2024-11-05 Server Implementation
 class ToCryMCPServer
-  @tools : Hash(String, Tool)
+  @tools : Hash(String, MCP::AbstractTool)
 
   def initialize
-    # Get all registered tools from the Tool registry
-    @tools = Tool.registered_tools
+    # Get all registered tools from the MCP registry
+    @tools = MCP.registered_tools
   end
 
   # Handle MCP JSON-RPC requests via Kemal

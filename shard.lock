@@ -42,7 +42,11 @@ shards:
 
   http_proxy:
     git: https://github.com/mamantoha/http_proxy.git
-    version: 0.13.0
+    version: 0.13.1
+
+  inotify:
+    git: https://github.com/petoem/inotify.cr.git
+    version: 1.1.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
@@ -56,6 +60,10 @@ shards:
     git: https://github.com/kemalcr/kemal-session.git
     version: 1.3.0
 
+  mcp:
+    git: https://github.com/ralsina/mcp.git
+    version: 0.1.0+git.commit.d1c2df68b968e6d5b922c9fd3c8fbfbadaf64561
+
   multi_auth:
     git: https://github.com/msa7/multi_auth.git
     version: 1.1.1
@@ -66,4 +74,5 @@ shards:
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.1.0+git.commit.c958631f569a52a902f1c0c2e7779339d3a06e65
+    version: 0.1.0+git.commit.ddf8ac654b51e083c61ce7e980c0675194cc198e
+
