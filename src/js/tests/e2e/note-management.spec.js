@@ -13,6 +13,47 @@ test.describe('Note Management', () => {
     }
   })
 
+  // Shared helper function to create a note in a specific lane
+  async function createNoteInLane (page, lane, title) {
+    const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
+    await expect(addNoteButton).toBeVisible()
+
+    // Click to open the modal dialog
+    await addNoteButton.click({ force: true })
+
+    // Wait for the modal to appear
+    await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
+
+    // Fill in the prompt input field
+    const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
+    await expect(modalInput).toBeVisible()
+    await modalInput.fill(title)
+
+    // Click the confirm button (within the modal)
+    const modal = page.locator('div[x-show="modalManager.showModal"]')
+    const confirmButton = modal.locator('button:has-text("OK")')
+    await expect(confirmButton).toBeVisible()
+    await confirmButton.click()
+
+    // Wait for modal to close
+    await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
+
+    // NEW: Editor now opens automatically - wait for it and close it
+    await expect(page.locator('div[x-show="modalManager.editingNote"]')).toBeVisible({ timeout: 3000 })
+    await page.waitForTimeout(500) // Brief pause for editor to initialize
+    const editModal = page.locator('div[x-show="modalManager.editingNote"]')
+    const cancelButton = editModal.locator('button:has-text("Cancel")')
+    await expect(cancelButton).toBeVisible()
+    await cancelButton.click()
+
+    // Wait for editor modal to close and note to be created
+    await expect(page.locator('div[x-show="modalManager.editingNote"]')).not.toBeVisible({ timeout: 2000 })
+    await page.waitForTimeout(2000) // Wait longer for WebSocket update and UI refresh
+
+    // Verify the note was created
+    await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
+  }
+
   async function setupNoteManagementBoard (page, boardName = 'note-management-test') {
     // Start a fresh server for this test
     serverInfo = await startTestServer({
@@ -74,55 +115,25 @@ test.describe('Note Management', () => {
     await expect(laneB.locator('.note-card')).toHaveCount(0)
     await expect(laneC.locator('.note-card')).toHaveCount(0)
 
-    // Helper function to create a note in a specific lane
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-
-      // Click to open the modal dialog
-      await addNoteButton.click({ force: true })
-
-      // Wait for the modal to appear
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-
-      // Fill in the prompt input field
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      // Click the confirm button (within the modal)
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      // Wait for modal to close and note to be created
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000) // Wait longer for WebSocket update and UI refresh
-
-      // Verify the note was created
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
-
     // Create 1 note in lane A
-    await createNoteInLane(laneA, 'Note A1')
+    await createNoteInLane(page, laneA, 'Note A1')
     await expect(laneA.locator('.note-card')).toHaveCount(1)
 
     // Create 2 notes in lane B
-    await createNoteInLane(laneB, 'Note B1')
+    await createNoteInLane(page, laneB, 'Note B1')
     await expect(laneB.locator('.note-card')).toHaveCount(1)
 
-    await createNoteInLane(laneB, 'Note B2')
+    await createNoteInLane(page, laneB, 'Note B2')
     await expect(laneB.locator('.note-card')).toHaveCount(2)
 
     // Create 3 notes in lane C
-    await createNoteInLane(laneC, 'Note C1')
+    await createNoteInLane(page, laneC, 'Note C1')
     await expect(laneC.locator('.note-card')).toHaveCount(1)
 
-    await createNoteInLane(laneC, 'Note C2')
+    await createNoteInLane(page, laneC, 'Note C2')
     await expect(laneC.locator('.note-card')).toHaveCount(2)
 
-    await createNoteInLane(laneC, 'Note C3')
+    await createNoteInLane(page, laneC, 'Note C3')
     await expect(laneC.locator('.note-card')).toHaveCount(3)
 
     // Verify final distribution
@@ -147,25 +158,6 @@ test.describe('Note Management', () => {
     await setupNoteManagementBoard(page)
 
     // Create initial notes: 1 in A, 2 in B, 3 in C
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-      await addNoteButton.click({ force: true })
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000)
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
 
     // Get lanes
     const laneA = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("A")') }).first()
@@ -173,12 +165,12 @@ test.describe('Note Management', () => {
     const laneC = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("C")') }).first()
 
     // Create notes
-    await createNoteInLane(laneA, 'Note A1')
-    await createNoteInLane(laneB, 'Note B1')
-    await createNoteInLane(laneB, 'Note B2')
-    await createNoteInLane(laneC, 'Note C1')
-    await createNoteInLane(laneC, 'Note C2')
-    await createNoteInLane(laneC, 'Note C3')
+    await createNoteInLane(page, laneA, 'Note A1')
+    await createNoteInLane(page, laneB, 'Note B1')
+    await createNoteInLane(page, laneB, 'Note B2')
+    await createNoteInLane(page, laneC, 'Note C1')
+    await createNoteInLane(page, laneC, 'Note C2')
+    await createNoteInLane(page, laneC, 'Note C3')
 
     // Wait for all notes to be visible
     await page.waitForTimeout(3000)
@@ -220,25 +212,6 @@ test.describe('Note Management', () => {
     await setupNoteManagementBoard(page)
 
     // Create initial notes: 1 in A, 2 in B, 3 in C
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-      await addNoteButton.click({ force: true })
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000)
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
 
     // Get lanes
     const laneA = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("A")') }).first()
@@ -246,12 +219,12 @@ test.describe('Note Management', () => {
     const laneC = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("C")') }).first()
 
     // Create notes
-    await createNoteInLane(laneA, 'Note A1')
-    await createNoteInLane(laneB, 'Note B1')
-    await createNoteInLane(laneB, 'Note B2')
-    await createNoteInLane(laneC, 'Note C1')
-    await createNoteInLane(laneC, 'Note C2')
-    await createNoteInLane(laneC, 'Note C3')
+    await createNoteInLane(page, laneA, 'Note A1')
+    await createNoteInLane(page, laneB, 'Note B1')
+    await createNoteInLane(page, laneB, 'Note B2')
+    await createNoteInLane(page, laneC, 'Note C1')
+    await createNoteInLane(page, laneC, 'Note C2')
+    await createNoteInLane(page, laneC, 'Note C3')
 
     // Wait for all notes to be visible
     await page.waitForTimeout(3000)
@@ -292,25 +265,6 @@ test.describe('Note Management', () => {
     await setupNoteManagementBoard(page)
 
     // Create initial notes: 1 in A, 1 in B, 1 in C
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-      await addNoteButton.click({ force: true })
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000)
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
 
     // Get lanes
     const laneA = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("A")') }).first()
@@ -318,9 +272,9 @@ test.describe('Note Management', () => {
     const laneC = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("C")') }).first()
 
     // Create one note in each lane
-    await createNoteInLane(laneA, 'Note A1')
-    await createNoteInLane(laneB, 'Note B1')
-    await createNoteInLane(laneC, 'Note C1')
+    await createNoteInLane(page, laneA, 'Note A1')
+    await createNoteInLane(page, laneB, 'Note B1')
+    await createNoteInLane(page, laneC, 'Note C1')
 
     // Wait for all notes to be visible
     await page.waitForTimeout(3000)
@@ -380,25 +334,6 @@ test.describe('Note Management', () => {
     await setupNoteManagementBoard(page)
 
     // Create initial notes: 1 in A, 2 in B, 1 in C
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-      await addNoteButton.click({ force: true })
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000)
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
 
     // Helper function to delete a note
     const deleteNote = async (noteCard) => {
@@ -433,10 +368,10 @@ test.describe('Note Management', () => {
     const laneC = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("C")') }).first()
 
     // Create notes
-    await createNoteInLane(laneA, 'Note A1')
-    await createNoteInLane(laneB, 'Note B1')
-    await createNoteInLane(laneB, 'Note B2')
-    await createNoteInLane(laneC, 'Note C1')
+    await createNoteInLane(page, laneA, 'Note A1')
+    await createNoteInLane(page, laneB, 'Note B1')
+    await createNoteInLane(page, laneB, 'Note B2')
+    await createNoteInLane(page, laneC, 'Note C1')
 
     // Wait for all notes to be visible
     await page.waitForTimeout(3000)
@@ -472,25 +407,6 @@ test.describe('Note Management', () => {
     await setupNoteManagementBoard(page)
 
     // Create initial notes: 1 in A, 2 in B, 3 in C (same as test 1)
-    const createNoteInLane = async (lane, title) => {
-      const addNoteButton = lane.locator('button.lane-action-btn:not(.delete):has-text("+")')
-      await expect(addNoteButton).toBeVisible()
-      await addNoteButton.click({ force: true })
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).toBeVisible({ timeout: 2000 })
-      const modalInput = page.locator('input[x-model="modalManager.modalInput"]')
-      await expect(modalInput).toBeVisible()
-      await modalInput.fill(title)
-
-      const modal = page.locator('div[x-show="modalManager.showModal"]')
-      const confirmButton = modal.locator('button:has-text("OK")')
-      await expect(confirmButton).toBeVisible()
-      await confirmButton.click()
-
-      await expect(page.locator('div[x-show="modalManager.showModal"]')).not.toBeVisible({ timeout: 2000 })
-      await page.waitForTimeout(2000)
-      await expect(lane.locator('.note-card .note-title:has-text("' + title + '")')).toBeVisible({ timeout: 5000 })
-    }
 
     // Helper function to delete a note
     const deleteNote = async (noteCard) => {
@@ -525,12 +441,12 @@ test.describe('Note Management', () => {
     const laneC = page.locator('.lane').filter({ has: page.locator('span[x-text="lane.name"]:has-text("C")') }).first()
 
     // Create the same distribution as test 1
-    await createNoteInLane(laneA, 'Note A1')
-    await createNoteInLane(laneB, 'Note B1')
-    await createNoteInLane(laneB, 'Note B2')
-    await createNoteInLane(laneC, 'Note C1')
-    await createNoteInLane(laneC, 'Note C2')
-    await createNoteInLane(laneC, 'Note C3')
+    await createNoteInLane(page, laneA, 'Note A1')
+    await createNoteInLane(page, laneB, 'Note B1')
+    await createNoteInLane(page, laneB, 'Note B2')
+    await createNoteInLane(page, laneC, 'Note C1')
+    await createNoteInLane(page, laneC, 'Note C2')
+    await createNoteInLane(page, laneC, 'Note C3')
 
     // Wait for all notes to be visible
     await page.waitForTimeout(3000)
