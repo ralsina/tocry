@@ -1926,19 +1926,36 @@ function createToCryStore () {
       // Add CSS styles for better markdown rendering in comparison
       const style = document.createElement('style')
       style.textContent = `
-        .ai-modal .original-text h1, .ai-modal .modified-text h1 { font-size: 1.5em; margin: 0.67em 0; font-weight: 600; }
-        .ai-modal .original-text h2, .ai-modal .modified-text h2 { font-size: 1.3em; margin: 0.83em 0; font-weight: 600; }
-        .ai-modal .original-text h3, .ai-modal .modified-text h3 { font-size: 1.1em; margin: 1em 0; font-weight: 600; }
-        .ai-modal .original-text p, .ai-modal .modified-text p { margin: 0.5em 0; }
-        .ai-modal .original-text ul, .ai-modal .modified-text ul { margin: 0.5em 0; padding-left: 1.5em; }
-        .ai-modal .original-text ol, .ai-modal .modified-text ol { margin: 0.5em 0; padding-left: 1.5em; }
-        .ai-modal .original-text li, .ai-modal .modified-text li { margin: 0.25em 0; }
-        .ai-modal .original-text code, .ai-modal .modified-text code { background: rgba(0,0,0,0.1); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
-        .ai-modal .original-text pre, .ai-modal .modified-text pre { background: rgba(0,0,0,0.05); padding: 1em; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
-        .ai-modal .original-text pre code, .ai-modal .modified-text pre code { background: none; padding: 0; }
-        .ai-modal .original-text blockquote, .ai-modal .modified-text blockquote { border-left: 4px solid var(--pico-muted-color, #666); padding-left: 1em; margin: 0.5em 0; color: var(--pico-muted-color, #666); font-style: italic; }
-        .ai-modal .original-text strong, .ai-modal .modified-text strong { font-weight: 600; }
-        .ai-modal .original-text em, .ai-modal .modified-text em { font-style: italic; }
+        .modal .original-text h1, .modal .modified-text h1 { font-size: 1.5em; margin: 0.67em 0; font-weight: 600; }
+        .modal .original-text h2, .modal .modified-text h2 { font-size: 1.3em; margin: 0.83em 0; font-weight: 600; }
+        .modal .original-text h3, .modal .modified-text h3 { font-size: 1.1em; margin: 1em 0; font-weight: 600; }
+        .modal .original-text p, .modal .modified-text p { margin: 0.5em 0; }
+        .modal .original-text ul, .modal .modified-text ul { margin: 0.5em 0; padding-left: 1.5em; }
+        .modal .original-text ol, .modal .modified-text ol { margin: 0.5em 0; padding-left: 1.5em; }
+        .modal .original-text li, .modal .modified-text li { margin: 0.25em 0; }
+        .modal .original-text code, .modal .modified-text code { background: rgba(0,0,0,0.1); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+        .modal .original-text pre, .modal .modified-text pre { background: rgba(0,0,0,0.05); padding: 1em; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
+        .modal .original-text pre code, .modal .modified-text pre code { background: none; padding: 0; }
+        .modal .original-text blockquote, .modal .modified-text blockquote { border-left: 4px solid var(--pico-muted-color, #666); padding-left: 1em; margin: 0.5em 0; color: var(--pico-muted-color, #666); font-style: italic; }
+        .modal .original-text strong, .modal .modified-text strong { font-weight: 600; }
+        .modal .original-text em, .modal .modified-text em { font-style: italic; }
+
+        /* Remove bullet decorations from task lists in AI assistant modal */
+        .modal .original-text ul:has(input[type="checkbox"]), .modal .modified-text ul:has(input[type="checkbox"]) {
+          list-style: none !important;
+          padding-left: 0 !important;
+          margin-left: 0 !important;
+        }
+
+        .modal .original-text ul:has(input[type="checkbox"]) li, .modal .modified-text ul:has(input[type="checkbox"]) li {
+          list-style: none !important;
+          padding-left: 0 !important;
+          margin-left: 0 !important;
+        }
+
+        .modal .original-text ul:has(input[type="checkbox"]) li::before, .modal .modified-text ul:has(input[type="checkbox"]) li::before {
+          content: none !important;
+        }
       `
       document.head.appendChild(style)
 
