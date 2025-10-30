@@ -56,10 +56,9 @@ class UpdateNoteTool < MCP::AbstractTool
       },
     },
     "required" => ["note_id", "board_name"],
-}.to_json
+  }.to_json
 
   # Register this tool when the file is loaded
-
 
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String) : Hash(String, JSON::Any) | Hash(String, Array(JSON::Any))
     note_id = params["note_id"].as_s

@@ -140,16 +140,22 @@ module MCPTestHelpers
   end
 
   # Helper to assert MCP response structure
-  def assert_success_response(response : String)
-    parsed = JSON.parse(response)
+  def assert_success_response(response)
+    # Convert any response to JSON string, then parse to JSON::Any
+    json_string = response.to_json
+    parsed = JSON.parse(json_string)
+
     parsed["success"].as_bool.should be_true
     if keys = parsed.as_h?.try(&.keys)
       keys.should_not contain("error")
     end
   end
 
-  def assert_error_response(response : String)
-    parsed = JSON.parse(response)
+  def assert_error_response(response)
+    # Convert any response to JSON string, then parse to JSON::Any
+    json_string = response.to_json
+    parsed = JSON.parse(json_string)
+
     parsed["success"].as_bool.should be_false
     if keys = parsed.as_h?.try(&.keys)
       keys.should contain("error")
@@ -157,9 +163,11 @@ module MCPTestHelpers
     parsed["error"].as_s.should_not be_empty
   end
 
-  # Helper to parse JSON string response to Hash for test assertions
-  def parse_mcp_response(response : String) : JSON::Any
-    JSON.parse(response)
+  # Helper to parse response to JSON::Any for test assertions
+  def parse_mcp_response(response) : JSON::Any
+    # Convert any response to JSON string, then parse to JSON::Any
+    json_string = response.to_json
+    JSON.parse(json_string)
   end
 
   # Helper to create parameter hashes for MCP tools

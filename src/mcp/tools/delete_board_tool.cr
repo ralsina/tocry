@@ -20,7 +20,6 @@ class DeleteBoardTool < MCP::AbstractTool
 
   # Register this tool when the file is loaded
 
-
   def invoke_with_user(params : Hash(String, JSON::Any), user_id : String)
     board_name = params["board_name"].as_s
 
