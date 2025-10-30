@@ -41,7 +41,13 @@ test.describe('Alpine Store Debugging', () => {
       }
     })
 
-    console.log('Debug data:', JSON.stringify(debugData, null, 2))
+    console.log('Debug data:', JSON.stringify(debugData, (key, value) => {
+      // Handle circular references by excluding problematic properties
+      if (key === 'store' || key === 'themeManager' || key === 'api') {
+        return '[Object]'
+      }
+      return value
+    }, 2))
 
     // If we have Alpine data, let's see its structure
     if (debugData.alpineData) {
@@ -68,7 +74,13 @@ test.describe('Alpine Store Debugging', () => {
         }
         return null
       })
-      console.log('App structure:', JSON.stringify(appStructure, null, 2))
+      console.log('App structure:', JSON.stringify(appStructure, (key, value) => {
+        // Handle circular references by excluding problematic properties
+        if (key === 'store' || key === 'themeManager' || key === 'api') {
+          return '[Object]'
+        }
+        return value
+      }, 2))
     }
   })
 })

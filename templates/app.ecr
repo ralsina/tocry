@@ -107,7 +107,7 @@
                    :aria-expanded="themeManager.showColorSelector">
               </div>
               <select :value="currentColorScheme"
-                      @input="currentBoard.colorScheme = $event.target.value; themeManager.updateColorScheme(); themeManager.closeColorSelector()"
+                      @input="currentBoard.colorScheme = $event.target.value; themeManager.currentColorScheme = $event.target.value; themeManager.updateColorScheme(); themeManager.closeColorSelector()"
                       id="color-scheme-switcher"
                       aria-label="Color scheme">
                 <option value="amber">Amber</option>

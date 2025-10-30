@@ -84,7 +84,7 @@ module ToCry
     # Uses Sepia-based BoardIndex and BoardReference for user-specific names.
     def create(name : String, user : String) : Board
       # Create the board using Sepia
-      board = Board.new(name: name)
+      board = Board.new(name)
       board.save
       uuid = board.sepia_id
 
