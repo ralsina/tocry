@@ -218,7 +218,7 @@ export class ThemeManager {
       // Save to backend only if requested and we have a current board
       if (saveToBackend && this.store.currentBoardName && this.store.currentBoardName !== '') {
         try {
-          await this.store.api.updateBoard(this.store.currentBoardName, { colorScheme: this.currentColorScheme })
+          await this.store.api.updateBoard(this.store.currentBoardName, { color_scheme: this.currentColorScheme })
         } catch (error) {
           console.error('Error saving color scheme:', error)
           this.showError('Failed to save color scheme')

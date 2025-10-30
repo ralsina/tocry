@@ -55,7 +55,11 @@
       "Bash(pre-commit run:*)",
       "Read(//tmp/**)",
       "Bash(netstat:*)",
-      "Read(//home/ralsina/code/**)"
+      "Read(//home/ralsina/code/**)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_select_option",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_type"
     ],
     "deny": [],
     "ask": []

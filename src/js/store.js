@@ -170,14 +170,10 @@ function createToCryStore () {
     },
 
     get currentColor () {
-      // Compute hex color from current scheme and theme
-      const scheme = this.colorSchemes[this.currentColorScheme]
-      if (!scheme) return '#1d88fe'
+      // Delegate to ThemeManager for color computation
+      if (!this.themeManager) return '#1d88fe'
 
-      const currentTheme = this.isDarkMode ? 'dark' : 'light'
-      const colors = scheme[currentTheme] || scheme.light
-      const primaryRgb = colors['primary-rgb']
-
+      const primaryRgb = this.themeManager.getCurrentPrimaryRgb()
       if (!primaryRgb) return '#1d88fe'
 
       const rgbValues = primaryRgb.split(',').map(v => parseInt(v.trim()))
