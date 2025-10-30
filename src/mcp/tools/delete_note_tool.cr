@@ -20,7 +20,7 @@ class DeleteNoteTool < MCP::AbstractTool
       },
     },
     "required" => ["note_id", "board_name"],
-}.to_json
+  }.to_json
 
   # Register this tool when the file is loaded
 

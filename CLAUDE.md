@@ -32,6 +32,9 @@ crystal spec
 # Run integration tests only (requires Playwright)
 ./run_integration.sh
 
+# Run E2E tests (requires Playwright)
+cd src/js && npm run test:e2e
+
 # Both tests run automatically on commit (via pre-commit hooks)
 ```
 

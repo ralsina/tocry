@@ -72,6 +72,10 @@ shards:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
 
+  rate_limiter:
+    path: rate_limiter
+    version: 0.1.0
+
   sepia:
     git: https://github.com/ralsina/sepia.git
     version: 0.1.0+git.commit.ddf8ac654b51e083c61ce7e980c0675194cc198e
