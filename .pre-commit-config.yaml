@@ -43,7 +43,7 @@ repos:
     hooks:
       - id: tests
         name: Run tests
-        entry: ./scripts/run_tests.sh
+        entry: ./scripts/run_all_tests.sh
         pass_filenames: false
         language: script
         stages: [pre-commit]

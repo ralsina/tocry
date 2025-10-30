@@ -66,10 +66,25 @@ watch:
 	@echo "Press Ctrl+C to stop"
 	@find src | entr -rn ./scripts/run_server.sh
 
-# Run all tests (Crystal and JavaScript)
-test: generate-clients-force test-js
+# Run all tests (JavaScript unit, Crystal, and E2E)
+test: generate-clients-force
 	@echo "Running all tests..."
+	./scripts/run_all_tests.sh
+
+# Run JavaScript unit tests only
+test-js: generate-clients-force
+	@echo "Running JavaScript unit tests..."
+	cd src/js && npm test
+
+# Run Crystal backend tests only
+test-crystal: generate-clients-force
+	@echo "Running Crystal backend tests..."
 	SKIP_JS_TESTS=true ./scripts/run_tests.sh
+
+# Run E2E tests only
+test-e2e: generate-clients-force
+	@echo "Running E2E tests..."
+	cd src/js && npm run test:e2e
 
 # Run tests with coverage
 test-coverage: test-js-coverage
