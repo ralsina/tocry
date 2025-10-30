@@ -1,0 +1,25 @@
+# ToCry Rate Limiting Configuration
+# This file contains the default rate limiting settings
+# Environment variables can override these values
+
+rate_limiting:
+  # Enable or disable rate limiting entirely
+  enabled: true
+
+  # Rate limits in format "requests/window_seconds"
+  # Examples:
+  #   "500/3600" = 500 requests per 3600 seconds (1 hour)
+  #   "50/3600"  = 50 requests per hour
+  #   "20/900"   = 20 requests per 900 seconds (15 minutes)
+  limits:
+    # General API requests per user (regular usage)
+    user: "500/3600"
+
+    # AI completion requests per user (expensive operations)
+    ai: "50/3600"
+
+    # File upload requests per user
+    upload: "50/3600"
+
+    # Authentication attempts per user (login, etc.)
+    auth: "20/900"

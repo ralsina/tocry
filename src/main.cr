@@ -8,13 +8,14 @@ require "baked_file_handler"
 require "./migrations"
 require "ecr" # Required for render
 require "baked_file_system"
-require "docopt"              # Keep docopt
-require "./auth"              # Add auth (defines Google OAuth routes and current_user helper)
-require "./endpoints"         # Add this line to include your new endpoints file
-require "./auth_helpers"      # New: Contains authentication mode setup functions
-require "./demo"              # Demo mode functionality
-require "./websocket_handler" # WebSocket support for real-time synchronization
-require "./mcp/kemal_handler" # MCP (Model Context Protocol) integration
+require "docopt"                        # Keep docopt
+require "./auth"                        # Add auth (defines Google OAuth routes and current_user helper)
+require "./endpoints"                   # Add this line to include your new endpoints file
+require "./auth_helpers"                # New: Contains authentication mode setup functions
+require "./demo"                        # Demo mode functionality
+require "./websocket_handler"           # WebSocket support for real-time synchronization
+require "./mcp/kemal_handler"           # MCP (Model Context Protocol) integration
+require "./services/rate_limit_service" # Rate limiting service
 require "kemal-basic-auth"
 require "kemal"
 require "kemal-session"
@@ -171,6 +172,37 @@ def main
     setup_basic_auth_mode
   else # No Auth
     setup_no_auth_mode
+  end
+
+  # Initialize rate limiting service
+  rate_limit_config = ToCry::RateLimitConfig.load
+  rate_limit_service = ToCry::RateLimitService.new(rate_limit_config)
+
+  # Log rate limiting configuration
+  ToCry::Log.info do
+    config_info = rate_limit_config.to_h.map { |k, v| "#{k}: #{v}" }.join(", ")
+    "Rate limiting initialized - #{config_info}"
+  end
+
+  # Add rate limiting middleware
+  before_all do |env|
+    # Get user ID from session (will be "root" for no-auth mode)
+    user_id = env.session.string?("user_id")
+
+    if user_id
+      # Extract endpoint path for rate limiting decisions
+      endpoint = env.request.path
+
+      # Check if request is allowed by rate limiting
+      unless rate_limit_service.allow_request?(user_id, nil, endpoint)
+        response = {
+          "error"       => "Rate limit exceeded",
+          "message"     => "Too many requests. Please try again later.",
+          "retry_after" => 60,
+        }.to_json
+        halt env, status_code: 429, response: response
+      end
+    end
   end
 
   # Serve OpenAPI spec statically

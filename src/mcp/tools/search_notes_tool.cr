@@ -91,6 +91,7 @@ class SearchNotesTool < MCP::AbstractTool
 
       {
         "success"         => JSON::Any.new(true),
+        "results"         => JSON.parse(results.to_json),
         "count"           => JSON::Any.new(results.size),
         "query"           => JSON::Any.new(query),
         "boards_searched" => JSON::Any.new(boards_to_search.size),
