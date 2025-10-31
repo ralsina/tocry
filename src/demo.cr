@@ -18,7 +18,7 @@ module ToCry::Demo
     Log.info { "Configuring in-memory storage for demo mode..." }
 
     # Configure Sepia to use in-memory backend
-    Sepia::Storage.configure(:memory)
+    Sepia::Storage.configure(:memory, {} of String => String)
 
     # Start the periodic reset timer
     start_reset_timer

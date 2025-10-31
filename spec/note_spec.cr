@@ -338,10 +338,20 @@ describe ToCry::Note do
         note = lane.note_add("Note to Delete", ["test"], "Content to delete")
         board.save(board_data_dir) # Save the board to persist the note and create symlinks
 
-        # Verify initial state
+        # Verify initial state - notes are saved in TEST_PATH (current storage), symlinks in board_data_dir
         note_file_path = File.join(TEST_PATH, "ToCry::Note", note.sepia_id)
-        lane_dir = File.join(board_data_dir, "lanes", "0000_#{lane.sepia_id}")
-        note_symlink_path = File.join(lane_dir, "notes", "0000_#{note.sepia_id}")
+        # Lane directories use position prefixes, find the correct lane directory
+        lane_dir = nil
+        lanes_base_dir = File.join(board_data_dir, "lanes")
+        Dir.each_child(lanes_base_dir) do |child|
+          child_path = File.join(lanes_base_dir, child)
+          if child.ends_with?(lane.sepia_id.to_s) && Dir.exists?(child_path)
+            lane_dir = child_path
+            break
+          end
+        end
+        lane_dir.should_not be_nil # Should find the lane directory
+        note_symlink_path = File.join(lane_dir.not_nil!, "notes", "0000_#{note.sepia_id}")
 
         File.exists?(note_file_path).should be_true
         File.symlink?(note_symlink_path).should be_true
