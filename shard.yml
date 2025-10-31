@@ -31,7 +31,7 @@ dependencies:
   mcp:
     github: ralsina/mcp
   rate_limiter:
-    path: rate_limiter
+    github: ralsina/rate_limiter
 
 authors:
   - Roberto Alsina <roberto.alsina@gmail.com>
