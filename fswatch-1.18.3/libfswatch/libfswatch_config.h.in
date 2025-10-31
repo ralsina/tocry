@@ -1,0 +1,207 @@
+/* libfswatch/libfswatch_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if translation of program messages to the user's native
+   language is requested. */
+#undef ENABLE_NLS
+
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
+/* Define to 1 if you have the <CoreServices/CoreServices.h> header file. */
+#undef HAVE_CORESERVICES_CORESERVICES_H
+
+/* define if the compiler supports basic C++17 syntax */
+#undef HAVE_CXX17
+
+/* CygWin API present. */
+#undef HAVE_CYGWIN
+
+/* Define if the GNU dcgettext() function is already present or preinstalled.
+   */
+#undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the declaration of `cygwin_create_path', and to 0
+   if you don't. */
+#undef HAVE_DECL_CYGWIN_CREATE_PATH
+
+/* Define to 1 if you have the declaration of `FindCloseChangeNotification',
+   and to 0 if you don't. */
+#undef HAVE_DECL_FINDCLOSECHANGENOTIFICATION
+
+/* Define to 1 if you have the declaration of `FindFirstChangeNotification',
+   and to 0 if you don't. */
+#undef HAVE_DECL_FINDFIRSTCHANGENOTIFICATION
+
+/* Define to 1 if you have the declaration of `FindNextChangeNotification',
+   and to 0 if you don't. */
+#undef HAVE_DECL_FINDNEXTCHANGENOTIFICATION
+
+/* Define to 1 if you have the declaration of `inotify_add_watch', and to 0 if
+   you don't. */
+#undef HAVE_DECL_INOTIFY_ADD_WATCH
+
+/* Define to 1 if you have the declaration of `inotify_init', and to 0 if you
+   don't. */
+#undef HAVE_DECL_INOTIFY_INIT
+
+/* Define to 1 if you have the declaration of `inotify_rm_watch', and to 0 if
+   you don't. */
+#undef HAVE_DECL_INOTIFY_RM_WATCH
+
+/* Define to 1 if you have the declaration of `kevent', and to 0 if you don't.
+   */
+#undef HAVE_DECL_KEVENT
+
+/* Define to 1 if you have the declaration of `kqueue', and to 0 if you don't.
+   */
+#undef HAVE_DECL_KQUEUE
+
+/* Define to 1 if you have the declaration of `port_create', and to 0 if you
+   don't. */
+#undef HAVE_DECL_PORT_CREATE
+
+/* Define to 1 if you have the declaration of `ReadDirectoryChangesW', and to
+   0 if you don't. */
+#undef HAVE_DECL_READDIRECTORYCHANGESW
+
+/* Define to 1 if you have the declaration of `WaitForSingleObject', and to 0
+   if you don't. */
+#undef HAVE_DECL_WAITFORSINGLEOBJECT
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define if macOS FSEvents API is supported. */
+#undef HAVE_FSEVENTS
+
+/* Define if macOS FSEvents API supports file events. */
+#undef HAVE_FSEVENTS_FILE_EVENTS
+
+/* Define if macOS FSEvents API supports the FSEventStreamSetDispatchQueue
+   function. */
+#undef HAVE_FSEVENTS_FSEVENTSTREAMSETDISPATCHQUEUE
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#undef HAVE_GETTEXT
+
+/* Define if you have the iconv() function and it works. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `c' library (-lc). */
+#undef HAVE_LIBC
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_10
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_13
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_5
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_6
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_7
+
+/* "macOS is at least the specified version" */
+#undef HAVE_MACOS_GE_10_9
+
+/* Define to 1 if you have the <port.h> header file. */
+#undef HAVE_PORT_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if `st_mtime' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIME
+
+/* Define to 1 if `st_mtimespec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIMESPEC
+
+/* Define to 1 if you have the <sys/cygwin.h> header file. */
+#undef HAVE_SYS_CYGWIN_H
+
+/* Define to 1 if you have the <sys/event.h> header file. */
+#undef HAVE_SYS_EVENT_H
+
+/* Define to 1 if you have the <sys/inotify.h> header file. */
+#undef HAVE_SYS_INOTIFY_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Windows API present. */
+#undef HAVE_WINDOWS
+
+/* Define to 1 if you have the <windows.h> header file. */
+#undef HAVE_WINDOWS_H
+
+/* Define to 1 if `lstat' dereferences a symlink specified with a trailing
+   slash. */
+#undef LSTAT_FOLLOWS_SLASHED_SYMLINK
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION

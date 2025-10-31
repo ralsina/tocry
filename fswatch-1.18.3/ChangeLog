@@ -1,0 +1,8 @@
+ChangeLog
+*********
+
+This file has been automatically generated using the following command:
+
+    $ git log --oneline --decorate
+
+17d1939 (grafted, HEAD, tag: 1.18.3) Bump v. 1.18.3

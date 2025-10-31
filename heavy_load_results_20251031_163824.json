@@ -1,0 +1,206 @@
+{
+  "rapid_board_creation": {
+    "total_boards": 100,
+    "successful_creations": 100,
+    "failed_creations": 0,
+    "total_time": 0.19341989,
+    "avg_creation_time": 1.9288794999999999,
+    "min_creation_time": 0.971191,
+    "max_creation_time": 13.37995,
+    "creation_rate": 517.0099104078696,
+    "success_rate": 100.0
+  },
+  "massive_concurrent_load": {
+    "1": {
+      "avg_response_time": 2.43260555,
+      "p95_response_time": 2.947798,
+      "p99_response_time": 2.947798,
+      "errors": 0,
+      "success_count": 20,
+      "total_requests": 20,
+      "total_time": 0.250554159,
+      "requests_per_second": 79.82306132862875,
+      "success_rate": 100.0
+    },
+    "5": {
+      "avg_response_time": 2.44957229,
+      "p95_response_time": 5.381748,
+      "p99_response_time": 6.439616,
+      "errors": 0,
+      "success_count": 100,
+      "total_requests": 100,
+      "total_time": 0.255288521,
+      "requests_per_second": 391.7136564083898,
+      "success_rate": 100.0
+    },
+    "10": {
+      "avg_response_time": 3.2588854150000004,
+      "p95_response_time": 6.718297,
+      "p99_response_time": 10.042768,
+      "errors": 0,
+      "success_count": 200,
+      "total_requests": 200,
+      "total_time": 0.276412789,
+      "requests_per_second": 723.5555226064449,
+      "success_rate": 100.0
+    },
+    "20": {
+      "avg_response_time": 11.10177188,
+      "p95_response_time": 13.628529,
+      "p99_response_time": 19.324787,
+      "errors": 0,
+      "success_count": 400,
+      "total_requests": 400,
+      "total_time": 0.43944945,
+      "requests_per_second": 910.2298341709154,
+      "success_rate": 100.0
+    },
+    "50": {
+      "avg_response_time": 42.564144194,
+      "p95_response_time": 46.09796,
+      "p99_response_time": 69.026318,
+      "errors": 0,
+      "success_count": 1000,
+      "total_requests": 1000,
+      "total_time": 1.093684698,
+      "requests_per_second": 914.3403046862416,
+      "success_rate": 100.0
+    }
+  },
+  "sustained_load": {
+    "duration": 60.090966308,
+    "thread_count": 5,
+    "total_requests": 2915,
+    "successful_requests": 2915,
+    "failed_requests": 0,
+    "avg_response_time": 2.9335093845626075,
+    "p95_response_time": 5.016392,
+    "requests_per_second": 48.50978739564589,
+    "success_rate": 100.0,
+    "response_time_drift": -2.95
+  },
+  "memory_pressure": {
+    "100": {
+      "avg_time": 3.1392142,
+      "success_count": 10,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "1000": {
+      "avg_time": 3.1151247,
+      "success_count": 10,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "5000": {
+      "avg_time": 3.113805,
+      "success_count": 10,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "10000": {
+      "avg_time": 3.4258227,
+      "success_count": 10,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "20000": {
+      "avg_time": 3.3744449000000003,
+      "success_count": 10,
+      "errors": 0,
+      "success_rate": 100.0
+    }
+  },
+  "api_burst_load": {
+    "burst_1": {
+      "config": {
+        "threads": 10,
+        "requests": 5,
+        "delay": 0
+      },
+      "avg_response_time": 15.05905522,
+      "max_response_time": 16.953036,
+      "errors": 0,
+      "success_count": 50,
+      "total_time": 0.08350315,
+      "requests_per_second": 598.7798065102934,
+      "success_rate": 100.0
+    },
+    "burst_2": {
+      "config": {
+        "threads": 20,
+        "requests": 3,
+        "delay": 0
+      },
+      "avg_response_time": 27.822452583333334,
+      "max_response_time": 33.841045,
+      "errors": 0,
+      "success_count": 60,
+      "total_time": 0.103868737,
+      "requests_per_second": 577.652157260755,
+      "success_rate": 100.0
+    },
+    "burst_3": {
+      "config": {
+        "threads": 50,
+        "requests": 2,
+        "delay": 0
+      },
+      "avg_response_time": 59.346853929999995,
+      "max_response_time": 143.58911799999998,
+      "errors": 0,
+      "success_count": 100,
+      "total_time": 0.188305854,
+      "requests_per_second": 531.050935888589,
+      "success_rate": 100.0
+    }
+  },
+  "complex_workload": {
+    "total_time": 0.957073557,
+    "operations_per_second": 208.97035398920755,
+    "operation_stats": {
+      "create_board": {
+        "avg_time": 5.5675431224489795,
+        "min_time": 3.627396,
+        "max_time": 9.342665,
+        "count": 49
+      },
+      "get_boards": {
+        "avg_time": 3.469203052631579,
+        "min_time": 2.078235,
+        "max_time": 7.702008,
+        "count": 76
+      },
+      "get_home": {
+        "avg_time": 1.9652146333333333,
+        "min_time": 0.6978909999999999,
+        "max_time": 8.289823,
+        "count": 60
+      },
+      "create_note": {
+        "avg_time": 4.166663266666666,
+        "min_time": 2.4808220000000003,
+        "max_time": 7.822211000000001,
+        "count": 15
+      }
+    },
+    "operation_results": {
+      "create_board": {
+        "success": 49,
+        "errors": 0
+      },
+      "get_boards": {
+        "success": 76,
+        "errors": 0
+      },
+      "get_home": {
+        "success": 60,
+        "errors": 0
+      },
+      "create_note": {
+        "success": 15,
+        "errors": 0
+      }
+    }
+  }
+}

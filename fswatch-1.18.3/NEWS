@@ -1,0 +1,366 @@
+NEWS
+****
+
+New in 1.19.0-develop:
+
+  * Fix: spurious output 'inotify_rm_watch: Invalid argument'
+
+  * Issue 335: v. 1.18.0: build error: 'kFSEventStreamCreateFlagFileEvents' was
+    not declared in this scope.
+
+  * Grammar fix in documentation.
+
+  * Fix: typo in man page. 
+
+New in 1.18.2:
+
+  * Added event flag CloseWrite: file open for write has been closed. 
+
+  * kqueue_monitor: added support for CloseWrite, adding support for events of
+    type NOTE_CLOSE_WRITE.
+
+  * inotify_monitor: added support for CloseWrite, adding support for events of
+    type IN_CLOSE_WRITE.
+
+  * Issue 337: fswatch exits on non-existing paths.
+
+New in 1.18.1:
+
+  * Issue 333: Fix: Handle non-ASCII characters in file paths to prevent
+    segmentation faults in FSEvents callback.
+
+New in 1.18.0:
+
+  * The C++17 standard has been adopted: code has been rewritten and simplified
+    to adobe new features of the C++17 standard library such as std::filesystem.
+
+  * gettextize: gettext v. 0.22.5
+
+  * Documentation: add reference to Go bindings.
+
+  * Issue 313: Make -1, --one-event return $? when killed.
+
+  * Remove unused or obsolete configuration checks.
+
+  * Use the #include predefined notation to include generated configuration
+    headers.
+
+  * Use target CPPFLAGS instead of AM_CPPFLAGS.
+
+  * Update FSEventStreamEventFlags flags and add support to macOS 10.13+
+    features.
+
+  * Issue 278: FSEvents monitor: Add support to for extended data, to allow file
+    inodes to be collected with events.  This feature enables users to correlate
+    rename events.
+
+  * Issue 278: inotify monitor: Add support for correlation cookie.  This
+    feature enables users to correlate rename events.
+
+  * Add %c format specifier to print the event correlation id.
+
+  * Require <mutex>, <atomic> and thread_local and remove checks and conditional
+    code.
+
+New in 1.17.1:
+
+  * Issue 291: Configuration header leaked into public interface in v. 1.17.0.
+
+New in 1.17.0:
+
+  * Refactor code to replace usages of deprecated function
+    FSEventStreamScheduleWithRunLoop with FSEventStreamSetDispatchQueue.
+
+  * Issue 230: Improve responsiveness on macos: add support for
+    kFSEventStreamCreateFlagNoDefer.
+
+  * Issue 249: Man page still mentions fswatch-run.
+
+  * Issue 255: Implement event bubbling.
+
+  * Issue 256: -1 flag prints the file changed 3x before exiting.
+
+New in 1.16.0:
+
+  * Update FSEvents flags and add support to macOS 10.10+ features.
+
+  * Issue 226: Add FreeBSD installation instructions.
+
+  * Issue 243: PlatformSpecific instead of Updated on Darwin 19.4.
+
+  * Issue 248: Update fswatch.7.in to add the Event Types section to the man
+    page.
+
+  * Issue 257: Update FreeBSD installation instructions.
+
+  * Issue 260: Fix memory leak.
+
+  * Issue 269: do not use global variable in function, pass parameter
+    instead.
+
+  * Issue 270: using both AC_CONFIG_MACRO_DIR and AC_CONFIG_MACRO_DIRS is
+    deprecated in autoconf-2.71
+
+  * Issue 272: Send AttributeModified on touch when using the FSevents monitor.
+
+New in 1.14.0:
+
+  * Issue 218: fswatch v1.13 ignores the --monitor parameter and always uses the
+    default monitor.
+
+New in 1.12.0:
+
+  * Issue 178: Migrate usages of POSIX regular expressions (<regex.h>) to the
+    C++11 regex library (<regex>).
+
+  * Issue 191: Wrong error message is printed when inotify event queue
+    overflows.
+
+New in 1.11.3:
+
+  * Issue 192: Make the build reproducible.
+
+New in 1.11.2:
+
+  * Issue 182: Generate a single message catalog for both fswatch and
+    libfswatch.
+
+  * NLS support can be disabled.
+
+  * gettext is an optional dependency.
+
+New in 1.11.1:
+
+  * Issue 182: Remove mandatory dependency to git.
+
+New in 1.11.0:
+
+  * Issue 174: Allow a numeric event mask to be specified.
+
+  * Issue 181: Make gettext an optional dependency.
+
+New in 1.10.0:
+
+  * Issue 60: Allow excluding file patterns by passing in a file.
+
+  * Issue 119: Merge fswatch and libfswatch Autotools project into one.
+
+  * Issue 141: Add Docker files for Linux distributions used for testing.
+
+  * Add target to build fswatch on Alpine Linux and Debian.
+
+New in 1.9.3:
+
+  * Only libfswatch has been updated.
+
+New in 1.9.2:
+
+  * Issue 118: v. 1.9.0 breaks the -1 option.
+
+New in 1.9.1:
+
+  * Only libfswatch has been updated.
+
+New in 1.9.0:
+
+  * Issue 84: Add the possibility of scheduling a periodic event.
+
+  * Issue 114: fswatch does not track newly created directories recursively when
+    using the inotify monitor.
+
+  * The AX_CXX_COMPILE_STDCXX macro was patched so that the switches it adds to
+    the compiler are added to the preprocessor configuration as well.
+
+New in 1.8.0:
+
+  * Unsupported CMake files and CLion project files are included as a courtesy.
+
+New in 1.7.0:
+
+  * Issue 35: Support Solaris/Illumos File Events Notification API.
+
+  * Issue 98: Add (-d, --directories) option to request the monitor to watch
+    directories only during a recursive scan.
+
+  * Issue 99: A monitor using the File Events Notification API of the
+    Solaris/Illumos kernel has been added.
+
+  * Issue 101: Add flag to watch file accesses.
+
+New in 1.6.1:
+
+  * Texinfo documentation now includes @dircategory and @direntry tags to be
+    compatible with install-info.
+
+New in 1.6.0:
+
+  * fswatch can now be built on Microsoft Windows using Cygwin.
+
+  * A monitor for Microsoft Windows has been added.
+
+  * fswatch can report monitor buffer overflows (which cannot be avoided with
+    certain monitors) as regular events for callers to recover gracefully.
+
+  * Monitors can be customized by passing monitor-specific configuration
+    properties.
+
+New in 1.5.1:
+
+  * fswatch-run scripts have been removed.
+
+  * Dependency on at least one supported shell (Zsh or Bash) has been removed.
+
+  * Fixes Issue 91: Can't compile fswatch 1.5.0 on FreeBSD 9.3-RELEASE.
+
+New in 1.5.0:
+
+  * Fix issue 46: Allow filtering by event type.
+
+New in 1.4.7:
+
+  * Fix bug in exclusion filter ordering (PR 75).
+
+  * README.md improvements.
+
+  * Documentation improvements.
+
+New in 1.4.6:
+
+  * Fix issue 74: Assertion failed on fsw_destroy_session.
+
+New in 1.4.5.3:
+
+  * Fix issue 67: 100% CPU usage while using libfswatch.  This issue only
+    affects the inotify monitor, available only on Linux.
+
+New in 1.4.5.2:
+
+  * Fix issue 66: Exclude items with poll_monitor not considered.
+
+New in 1.4.5.1:
+
+  * Do not distribute wrapper scripts for shells which are not installed (the
+    FreeBSD port system checks shebangs and complains).
+
+New in 1.4.5:
+
+  * Add custom record formats.
+
+New in 1.4.4:
+
+  * Localize fswatch and libfswatch using GNU gettext.
+
+  * Add Italian (it) localization.
+
+  * Add Spanish (es) localization.
+
+New in 1.4.3.2:
+
+  * Fix Makefile.am because of broken link when DESTDIR installs are performed.
+
+New in 1.4.3.1:
+
+  * Fix bug in fswatch-run wrapper script for ZSH which caused last argument not
+    to be split when passed to xargs.
+
+New in 1.4.3:
+
+  * Add batch marker feature to delimit the boundaries of a batch of events.
+
+  * Add Texinfo documentation.
+
+  * libfswatch API is now versioned.
+
+  * Improved Autoconf checks.
+
+  * The inotify monitor now waits for events and honours the latency settings.
+
+  * Automaticaly generate the ChangeLog using Git.
+
+  * Update autogen.sh to honour some commonly used environment variables.
+
+New in 1.4.2:
+
+  * The inotify monitor now provides the same functionality provided by all the
+    other monitors.  Recursive directory monitoring is now implemented.
+
+  * Version and revision is now determined dynamically from Git by ancillary
+    scripts invoked by the GNU Build System.
+
+New in 1.4.1.1:
+
+  * fswatch does not compile on OS X < 10.9 because some required C++11 classes
+    are not supported by the C++ runtime.
+
+New in 1.4.1:
+
+  * fswatch does not compile on OS X < 10.9 because some required C++11 classes
+    are not supported by the C++ runtime.
+
+New in 1.4.0:
+
+  * The libfswatch library has been added with bindings for C and C++.
+
+  * fswatch let users specify the monitor to use by name.
+
+New in 1.3.9:
+
+  * Fix Issue 23: Add `--include [regex]` option.
+
+  * Fix Issue 25: Add `--include [regex]` option.
+
+  * Paths can be included using -i/--include and providing a set of regular
+    expressions.
+
+New in 1.3.8:
+
+  * Fix Issue 34: Diagnostic messages were output by the inotify monitor even if
+    fswatch was not run in verbose mode.
+
+New in 1.3.7:
+
+  * Fix Issue 32: Problems building fswatch 1.3.6 on Mac v10.8.5
+
+  * Remove usages of C++11 initializer lists so that fswatch builds with older
+    compiler.
+
+New in 1.3.6:
+
+  * Fix Issue 26: fswatch-run can't run a command with arguments.
+
+  * fswatch-run scripts are provided for ZSH and Bash.
+
+  * System is scanned during installation to check for ZSH and Bash
+    availability.  Path of found shells is substituted in the corresponding
+    scripts, otherwise the default /bin/[shell] is used.
+
+  * If a supported shell is found, the fswatch-run symbolic link is created in
+    the installation directory to the corresponding script.  The lookup order
+    of the shells is:
+    - ZSH.
+    - Bash.
+
+New in 1.3.5:
+
+  * Fix Issue 27: Redirect usage text to standard error unless `-h` or
+    `--help`.
+
+  * Fix bug to write usage to standard error when invalid arguments are
+    specified.
+
+New in 1.3.4:
+
+  * Fix bug in fswatch-run script to allow arguments to be passed to the
+    command to run.
+
+New in 1.3.3:
+
+  * Add -o/--one-per-batch option to print a single message with the number of
+    change events in the current batch.
+
+  * Add fswatch-run shell script to mimic the behaviour of earlier fswatch
+    versions and launch the specified command when change events are received.
+
+New in 1.3.2:
+
+  * fswatch has been merged with fsw (https://github.com/emcrisostomo/fsw).

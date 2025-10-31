@@ -1,0 +1,105 @@
+README.gnu-build-system
+=======================
+
+Introduction
+------------
+
+`fswatch` is built using the GNU Build System (a.k.a. the Autotools) and
+developers willing to modify the configuration files must have the GNU Build
+System installed in order to do so.
+
+For further information about the GNU Build System and its use, please refer to
+its official documentation.
+
+Installing the GNU Build System
+-------------------------------
+
+To install the GNU Build System, the following operations must be performed:
+
+  * Get the GNU Build System components:
+    - [Autoconf] (>= v. 2.69).
+    - [Automake]: (>= v. 1.14.1).
+    - [Libtool]: (>= v. 2.4.2).
+    - [Gettext]: (>= v. 0.19.4).
+
+  * Install the packages in the following order:
+    - Autoconf
+    - Automake
+    - Libtool
+    - Gettext
+
+  * From now on, `<bundle>` will indicate any of the above-mentioned
+     components.
+
+  * Grab the sources:
+
+        $ wget <sources-url>
+
+  * Uncompress the source bundle:
+
+        $ gunzip <bundle>.tar.gz
+        $ tar -xf <bundle>.tar
+
+  * Configure the GNU Build System using the provided `autogen.sh` script:
+
+        $ ./autogen.sh
+
+    Whenever any component of the GNU Build System is updated, the `--force`
+    option should be passed to `autogen.sh`, which in turn forwards it to
+    `autoreconf`, to make sure that automatically generated scripts and macros
+    are updated:
+
+        $ ./autogen.sh --force
+
+  * Configure the package:
+
+        $ ./configure [...]
+
+  * If you want to install the package in the default location
+    (`/usr/local/bin`) you can invoke `./configure` with no option, otherwise
+    provide the desired installation directory using the `--prefix` option:
+
+        $ ./configure --prefix=/destdir
+
+  * Build the package:
+
+        $ make
+
+  * Test the components:
+
+        $ make check
+
+  * Test the installed components:
+
+        $ make check
+
+  * Install the components:
+
+        $ make install
+
+    Depending on the installation directory additional privileges may be
+    required.
+
+  * Add the installation directory to the `PATH`, otherwise builds of the
+    package may fail:
+
+        $ export PATH=/destdir/bin:$PATH
+
+[Autoconf]: https://www.gnu.org/software/autoconf/
+[Automake]: https://www.gnu.org/software/automake/
+[Libtool]: https://www.gnu.org/software/libtool/
+[Gettext]: https://www.gnu.org/software/gettext/
+-----
+
+Copyright (c) 2014-2017 Enrico M. Crisostomo
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.

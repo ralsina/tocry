@@ -1,0 +1,257 @@
+NEWS
+****
+
+New in 1.18.0:
+
+  * Documentation: add reference to Go bindings.
+
+  * Update FSEventStreamEventFlags flags and add support to macOS 10.13+
+    features.
+
+  * Issue 278: FSEvents monitor: Add support to for extended data, to allow file
+    inodes to be collected with events.  This feature enables users to correlate
+    rename events.
+
+  * Issue 278: inotify monitor: Add support for correlation cookie.  This
+    feature enables users to correlate rename events.
+
+  * Update the event class to have a correlation id field.
+
+  * Remove private headers from the list of installed header files.
+
+  * Require <mutex>, <atomic> and thread_local and remove checks and conditional
+    code.
+
+  * Library interface does not depend on configuration any longer.
+
+New in 1.17.1:
+
+  * Issue 291: Configuration header leaked into public interface in v. 1.17.0.
+  
+New in 1.17.0:
+
+  * Refactor code to replace usages of deprecated function
+    FSEventStreamScheduleWithRunLoop with FSEventStreamSetDispatchQueue.
+
+  * Issue 230: Improve responsiveness on macos: add support for
+    kFSEventStreamCreateFlagNoDefer.
+
+  * Issue 255: Implement event bubbling.
+
+New in 1.16.0:
+
+  * Issue 260: Fix memory leak.
+
+New in 1.15.0:
+
+  * Issue 224: Add pkg-config support.
+
+New in 1.14.0:
+
+  * Issue 218: fswatch v1.13 ignores the --monitor parameter and always uses the
+    default monitor.
+
+New in 1.13.0:
+
+  * Issue 142: Static library will not have any monitor type available.
+
+New in 1.12.0:
+
+  * Issue 178: Migrate usages of POSIX regular expressions (<regex.h>) to the
+    C++11 regex library (<regex>).
+
+  * Issue 191: Wrong error message is printed when inotify event queue overflows.
+
+New in 1.11.3:
+
+  * Issue 185: Fix C99 compatibility in cevent.h.
+
+  * Issue 186: Session memory is not freed.
+
+  * Issue 188: Fix segmentation fault when starting monitor.
+
+  * Issue 189: Add function to the C API to check that a monitor is running.
+
+  * Issue 190: Fix stop sequence for FSEvents monitor.
+
+New in 1.11.2:
+
+  * Issue 182: Generate a single message catalog for both fswatch and
+    libfswatch.
+
+New in 1.11.1:
+
+  * Issue 182: Remove mandatory dependency to git.
+
+New in 1.11.0:
+
+  * Issue 181: Make gettext an optional dependency.
+
+New in 1.10.0:
+
+  * Add Doxygen documentation.
+
+  * Issue 60: Add function to load filters from a file.
+
+  * Issue 137: Deadlock on C function fsw_destroy_session if fsw_start_monitor
+    is called.
+
+  * Modify fsw_destroy_session function not to destroy a session that has a
+    running monitor.
+
+  * Issue 143: Add fsw_stop_monitor to the C API.
+
+New in 1.9.3:
+
+  * Use C header names in C headers instead of C++.
+
+  * Explicitly use the enum keyword when referring to enum types in C headers.
+
+  * Remove default argument values from C headers.
+
+New in 1.9.2:
+
+  * Issue 118: v. 1.9.0 breaks the -1 option.
+
+New in 1.9.1:
+
+  * libfswatch API version 7:0:1.
+
+New in 1.9.0:
+
+  * Update monitor::~monitor() to invoke monitor::stop(), close resources in
+    monitor::on_stop().
+
+  * Issue 84: Add the possibility of scheduling a periodic idle event.
+
+  * Run a separate thread to fire idle events.
+
+  * Improve logging.
+
+  * Do not fail if blocking calls are interrupted by a signal.
+
+  * Issue 114: fswatch does not track newly created directories recursively when
+    using the inotify monitor.
+
+  * The AX_CXX_COMPILE_STDCXX macro was patched so that the switches it adds to
+    the compiler are added to the preprocessor configuration as well.
+
+New in 1.8.0:
+
+  * Unsupported CMake files and CLion project files are included as a courtesy.
+
+  * Parts of the code have been refactored to use move semantics.
+
+  * Fixed a bug in fsw::monitor_factory::create_monitor().
+
+  * Refactor fsw::monitor_factory to dynamically create the default monitor
+    using the factory registration information.
+
+  * Generate documentation using Doxygen.
+
+  * Texinfo documentation has been obsoleted by Doxygen documentation and has
+    been removed.
+
+  * Add fsw::monitor::stop() function to allow for cooperative monitor shutdown.
+
+  * Implement fsw::monitor::stop() on all available monitors.
+
+  * Fixed a but in the Solaris/Illumos monitor that prevented it to correctly
+    detect the ETIME status code upon waiting for events.
+
+New in 1.7.0:
+
+  * Issue 35: Support Solaris/Illumos File Events Notification API.
+
+  * Issue 98: A monitor can be requested to watch directories only during a
+    recursive scan.
+
+  * Issue 99: A monitor using the File Events Notification API of the
+    Solaris/Illumos kernel has been added.
+
+  * Issue 101: Add flag to watch file accesses.
+
+New in 1.6.1:
+
+  * Texinfo documentation now includes @dircategory and @direntry tags to be
+    compatible with install-info.
+
+New in 1.6.0:
+
+  * libfswatch can now be built on Microsoft Windows using Cygwin.
+
+  * A monitor for Microsoft Windows has been added.
+
+  * libfswatch can report monitor buffer overflows (which cannot be avoided with
+    certain monitors) as regular events for callers to recover gracefully.
+
+  * Monitor can be customized by passing monitor-specific configuration
+    properties.
+
+New in 1.5.1:
+
+  * Fixes Issue 91: Can't compile fswatch 1.5.0 on FreeBSD 9.3-RELEASE.
+
+New in 1.5.0:
+
+  * Fix issue 46: Allow filtering by event type.
+
+  * Fix issue 83: Callback invocation should be moved into fsw::monitor.
+
+New in 1.4.7:
+
+  * Provide a way to pass context data to the C API monitor callback.
+
+New in 1.4.6:
+
+  * Fix issue 74: Assertion failed on fsw_destroy_session.
+
+New in 1.4.5.3:
+
+  * Fix issue 67: 100% CPU usage while using libfswatch.  This issue only
+    affects the inotify monitor, available only on Linux.
+
+New in 1.4.5.2:
+
+  * Fix issue 66: Exclude items with poll_monitor not considered.
+
+New in 1.4.4:
+
+  * Localize fswatch and libfswatch using GNU gettext.
+
+  * Add Italian (it) localization.
+
+  * Add Spanish (es) localization.
+
+New in 1.4.3:
+
+  * Add Texinfo documentation.
+
+  * libfswatch API is now versioned.
+
+  * Improved Autoconf checks.
+
+  * The inotify monitor now waits for events and honours the latency settings.
+
+  * Automaticaly generate the ChangeLog using Git.
+
+  * Update autogen.sh to honour some commonly used environment variables.
+
+New in 1.4.2:
+
+  * The inotify monitor now provides the same functionality provided by all the
+    other monitors.  Recursive directory monitoring is now implemented.
+
+  * Version and revision is now determined dynamically from Git by ancillary
+    scripts invoked by the GNU Build System.
+
+New in 1.4.0:
+
+  * The libfswatch library has been added with bindings for C and C++.
+
+  * Move monitors to separate library.
+
+  * Provide a libtool-configured library exposing the functionality of fswatch
+    monitors.
+
+  * Provide C and C++ headers and bindings.
