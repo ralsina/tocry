@@ -73,10 +73,9 @@ shards:
     version: 0.4.1
 
   rate_limiter:
-    path: rate_limiter
-    version: 0.1.0
+    git: https://github.com/ralsina/rate_limiter.git
+    version: 0.1.0+git.commit.7c0abab10a3c1739a27fdedf2d7c742ebb44f59e
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.1.0+git.commit.e67c549f40e64fe27e49b0468fa3ca31b24d2610
-
+    version: 0.1.0+git.commit.8cf757e41bb052add8f5186881c33c2a422f01d4
