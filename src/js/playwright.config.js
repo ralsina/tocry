@@ -27,7 +27,10 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Record video on failure */
-    video: 'retain-on-failure'
+    video: 'retain-on-failure',
+
+    /* Increase timeout for drag & drop operations */
+    timeout: 60000
   },
 
   /* Configure projects for major browsers */

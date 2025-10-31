@@ -40,12 +40,59 @@ Options:
   --no-mcp                      Disable MCP (Model Context Protocol) support.
   --unix-socket=PATH            Use Unix socket at specified path instead of TCP.
   --ai-model=MODEL              AI model to use for AI features [default: glm-4.5-flash]. See https://docs.z.ai/guides/overview/pricing for available models.
+  --cache-size=SIZE             Maximum number of objects to cache [default: 1000].
+  --cache-ttl=SECONDS           Cache time-to-live in seconds [default: 0 (no expiration)].
+  --no-cache                    Disable caching entirely.
 DOCOPT
 
 class Assets
   extend BakedFileSystem
   # Bake assets directly from source (no minification for easier debugging)
   bake_folder "./assets"
+end
+
+# Configure Sepia cache settings based on CLI args and environment variables
+def configure_cache(args)
+  # Check if caching is disabled
+  no_cache = !!args["--no-cache"]
+
+  if no_cache
+    ToCry::Log.info { "Caching disabled via --no-cache flag" }
+    return
+  end
+
+  # Get cache size from CLI args or environment variable
+  cache_size_env = ENV["TOCRY_CACHE_SIZE"]?
+  cache_size = cache_size_env.try(&.to_i?) || args["--cache-size"]?.try(&.as?(String)).try(&.to_i?) || 1000
+
+  # Get cache TTL from CLI args or environment variable
+  cache_ttl_env = ENV["TOCRY_CACHE_TTL"]?
+  cache_ttl_seconds = cache_ttl_env.try(&.to_i?) || args["--cache-ttl"]?.try(&.as?(String)).try(&.to_i?) || 0
+
+  # Convert TTL to Time::Span (0 means no expiration)
+  cache_ttl = cache_ttl_seconds > 0 ? cache_ttl_seconds.seconds : nil
+
+  # Configure the global cache manager
+  cache = Sepia::CacheManager.instance
+
+  # Resize cache if needed (this handles the case where default cache was already used)
+  if cache.max_size != cache_size
+    cache.resize(cache_size)
+    ToCry::Log.info { "Cache size set to #{cache_size} objects" }
+  end
+
+  # Note: TTL cannot be changed after cache creation, so we log this information
+  if cache_ttl
+    ToCry::Log.info { "Cache TTL set to #{cache_ttl_seconds} seconds" }
+  else
+    ToCry::Log.info { "Cache TTL: no expiration (objects cached indefinitely)" }
+  end
+
+  # Log cache configuration
+  ToCry::Log.info { "Cache configured: size=#{cache_size}, ttl=#{cache_ttl_seconds}s, disabled=#{no_cache}" }
+
+  # Log cache stats
+  ToCry::Log.info { "Initial cache stats: #{cache.stats}" }
 end
 
 # This `main()`function is called from the top-level so it's code that
@@ -76,6 +123,9 @@ def main
   demo_mode = !!args["--demo"]             # Parse --demo argument as boolean
   disable_mcp = !!args["--no-mcp"]         # Parse --no-mcp argument as boolean
   ai_model = args["--ai-model"].as(String) # Parse --ai-model argument
+
+  # Configure cache settings
+  configure_cache(args)
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)

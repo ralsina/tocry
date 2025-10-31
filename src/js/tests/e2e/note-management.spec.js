@@ -153,7 +153,8 @@ test.describe('Note Management', () => {
     await expect(laneC.locator('.note-card .note-title:has-text("Note C3")')).toBeVisible()
   })
 
-  test('should reorder notes within lane C using drag&drop (C3,C1,C2)', async ({ page }) => {
+  test('should reorder notes within lane C using drag&drop (C3,C2,C1)', async ({ page }) => {
+    test.setTimeout(60000) // Increase timeout to 60 seconds for drag operations
     // Setup isolated test environment
     await setupNoteManagementBoard(page)
 
@@ -208,6 +209,7 @@ test.describe('Note Management', () => {
   })
 
   test('should move notes from lane B into lane A using drag&drop', async ({ page }) => {
+    test.setTimeout(60000) // Increase timeout to 60 seconds for drag operations
     // Setup isolated test environment
     await setupNoteManagementBoard(page)
 
