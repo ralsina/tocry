@@ -14,6 +14,7 @@ export class ModalManager {
     this.showBoardMenu = false
     this.editingNote = false
     this.showAttachmentModal = false
+    this.showVersionHistory = false
 
     // Note editing states
     this.editingNoteTitle = null // Store note ID being edited
@@ -27,6 +28,13 @@ export class ModalManager {
 
     // Attachment modal data
     this.attachmentNote = null // Store the note data for attachments modal
+
+    // Version history modal data
+    this.versionHistoryNote = null // Store the note data for version history
+    this.versionHistoryLane = null // Store the lane name for context
+    this.versionHistoryData = [] // Store the version history data
+    this.versionHistoryLoading = false // Loading state for version history
+    this.versionHistoryError = null // Error state for version history
 
     // Alert/confirm modal states
     this.showModal = false
@@ -240,6 +248,80 @@ export class ModalManager {
     return this.attachmentNote
   }
 
+  // === Version History Modal ===
+
+  /**
+   * Open the version history modal for a specific note
+   * @param {Object} note - The note object for version history
+   * @param {string} laneName - The name of the lane containing the note
+   */
+  openVersionHistory (note, laneName) {
+    this.showVersionHistory = true
+    this.versionHistoryNote = note
+    this.versionHistoryLane = laneName
+    this.versionHistoryData = []
+    this.versionHistoryLoading = true
+    this.versionHistoryError = null
+  }
+
+  /**
+   * Close the version history modal
+   */
+  closeVersionHistory () {
+    this.showVersionHistory = false
+    this.versionHistoryNote = null
+    this.versionHistoryLane = null
+    this.versionHistoryData = []
+    this.versionHistoryLoading = false
+    this.versionHistoryError = null
+  }
+
+  /**
+   * Set the version history data
+   * @param {Array} data - The version history data
+   */
+  setVersionHistoryData (data) {
+    this.versionHistoryData = data
+    this.versionHistoryLoading = false
+    this.versionHistoryError = null
+  }
+
+  /**
+   * Set version history loading state
+   * @param {boolean} loading - The loading state
+   */
+  setVersionHistoryLoading (loading) {
+    this.versionHistoryLoading = loading
+    if (loading) {
+      this.versionHistoryError = null
+    }
+  }
+
+  /**
+   * Set version history error state
+   * @param {string} error - The error message
+   */
+  setVersionHistoryError (error) {
+    this.versionHistoryError = error
+    this.versionHistoryLoading = false
+  }
+
+  /**
+   * Get the current version history note
+   * @returns {Object|null}
+   */
+  getVersionHistoryNote () {
+    return this.versionHistoryNote
+  }
+
+  /**
+   * Get the current version history lane name
+   * @returns {string|null}
+   */
+  getVersionHistoryLane () {
+    return this.versionHistoryLane
+  }
+
   // === Alert/Confirm Modal ===
 
   /**
@@ -369,6 +451,7 @@ Are you sure you want to proceed?`
            this.showNewBoardModal ||
            this.editingNote ||
            this.showAttachmentModal ||
+           this.showVersionHistory ||
            this.showingPublicWarning ||
            this.isEditingNoteTitle() ||
            this.isEditingNoteTags()
@@ -383,7 +466,13 @@ Are you sure you want to proceed?`
     this.showBoardMenu = false
     this.editingNote = false
     this.showAttachmentModal = false
+    this.showVersionHistory = false
     this.attachmentNote = null
+    this.versionHistoryNote = null
+    this.versionHistoryLane = null
+    this.versionHistoryData = []
+    this.versionHistoryLoading = false
+    this.versionHistoryError = null
     this.cancelEditingNoteTitle()
     this.cancelEditingNoteTags()
     this.addingNewTag = false
@@ -422,6 +511,11 @@ Are you sure you want to proceed?`
       return true
     }
 
+    if (this.showVersionHistory) {
+      this.closeVersionHistory()
+      return true
+    }
+
     return false
   }
 
@@ -438,6 +532,7 @@ Are you sure you want to proceed?`
       showBoardMenu: this.showBoardMenu,
       editingNote: this.editingNote,
       showAttachmentModal: this.showAttachmentModal,
+      showVersionHistory: this.showVersionHistory,
       editingNoteTitle: this.editingNoteTitle,
       editingNoteTags: this.editingNoteTags,
       showModal: this.showModal,

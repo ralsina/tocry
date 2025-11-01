@@ -230,6 +230,72 @@ export class BoardApiService {
     return this.request(() => this.apiClient.deleteAttachment(boardName, noteId, attachment))
   }
 
+  // Version history operations
+
+  /**
+   * Get version history for a note
+   * @param {string} boardName - Name of the board
+   * @param {string} noteId - ID of the note
+   * @returns {Promise<Array>} Array of note versions
+   */
+  async getNoteVersions (boardName, noteId) {
+    const response = await fetch(this.resolvePath(`/api/v1/boards/${encodeURIComponent(boardName)}/note/${encodeURIComponent(noteId)}/versions`))
+
+    if (!response.ok) {
+      if (response.status === 503) {
+        // Service unavailable - likely generations not enabled
+        throw new Error('Version history is not available on this server. The generations feature may not be enabled.')
+      }
+      throw new Error(`Failed to get note versions: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data.versions || []
+  }
+
+  /**
+   * Get a specific version of a note
+   * @param {string} boardName - Name of the board
+   * @param {string} noteId - ID of the note
+   * @param {number} generation - Generation number to retrieve
+   * @returns {Promise<Object>} Note version data
+   */
+  async getNoteVersion (boardName, noteId, generation) {
+    const response = await fetch(this.resolvePath(`/api/v1/boards/${encodeURIComponent(boardName)}/note/${encodeURIComponent(noteId)}/versions/${generation}`))
+
+    if (!response.ok) {
+      throw new Error(`Failed to get note version: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  /**
+   * Revert a note to a specific generation
+   * @param {string} boardName - Name of the board
+   * @param {string} noteId - ID of the note
+   * @param {number} generation - Generation number to revert to
+   * @returns {Promise<Object>} Updated note data
+   */
+  async revertNoteToVersion (boardName, noteId, generation) {
+    const response = await fetch(this.resolvePath(`/api/v1/boards/${encodeURIComponent(boardName)}/note/${encodeURIComponent(noteId)}/revert/${generation}`), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 503) {
+        // Service unavailable - likely generations not enabled
+        throw new Error('Version history is not available on this server. The generations feature may not be enabled.')
+      }
+      throw new Error(`Failed to revert note: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
   // Auth operations using generated API client
 
   /**

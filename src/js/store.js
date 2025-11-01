@@ -239,6 +239,16 @@ function createToCryStore () {
         }
       }, { deep: true })
 
+      // Add reactive watcher for version history modal
+      this.$watch('modalManager.showVersionHistory', (showModal) => {
+        if (showModal) {
+          // Auto-fetch version history when modal opens
+          this.$nextTick(() => {
+            this.fetchVersionHistory()
+          })
+        }
+      })
+
       // Store initialization complete - WebSocket client will poll for availability
       this.$nextTick(() => {
         // Prevent multiple ready events
@@ -2087,6 +2097,67 @@ function createToCryStore () {
         this.showError('Failed to delete note')
         // Reload on error
         await this.loadBoard(this.currentBoardName)
+      }
+    },
+
+    // === Version History Methods ===
+
+    // Fetch version history for a note
+    async fetchVersionHistory () {
+      const note = this.modalManager.getVersionHistoryNote()
+      const laneName = this.modalManager.getVersionHistoryLane()
+
+      if (!note || !laneName) {
+        console.error('Missing note or lane information for version history')
+        return
+      }
+
+      try {
+        this.modalManager.setVersionHistoryLoading(true)
+        const versions = await this.api.getNoteVersions(this.currentBoardName, note.sepiaId)
+        this.modalManager.setVersionHistoryData(versions)
+      } catch (error) {
+        console.error('Error fetching version history:', error)
+        this.modalManager.setVersionHistoryError(error.message || 'Failed to load version history')
+      }
+    },
+
+    // Revert note to a specific version
+    async revertToVersion (generation) {
+      const note = this.modalManager.getVersionHistoryNote()
+      const laneName = this.modalManager.getVersionHistoryLane()
+
+      if (!note || !laneName) {
+        console.error('Missing note or lane information for version revert')
+        return
+      }
+
+      try {
+        // Show confirmation dialog
+        const confirmed = await this.modalManager.showConfirm(
+          'Revert Note Version',
+          `Are you sure you want to revert this note to generation ${generation}? This will create a new version with the content from generation ${generation}.`,
+          'Revert',
+          'Cancel'
+        )
+
+        if (!confirmed) {
+          return
+        }
+
+        // Perform the revert
+        await this.api.revertNoteToVersion(this.currentBoardName, note.sepiaId, generation)
+
+        // Close the version history modal
+        this.modalManager.closeVersionHistory()
+
+        // Reload the board to show the changes
+        await this.loadBoard(this.currentBoardName)
+
+        this.showSuccess(`Note reverted to generation ${generation}`)
+      } catch (error) {
+        console.error('Error reverting note:', error)
+        this.showError('Failed to revert note: ' + (error.message || 'Unknown error'))
       }
     },
 
