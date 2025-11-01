@@ -225,6 +225,11 @@
       font-weight: 600;
     }
 
+    /* Improve contrast for note counters in light mode */
+    [data-theme="light"] .note-count {
+      color: color-mix(in srgb, var(--pico-secondary) 60%, black 40%);
+    }
+
     .lane-action-group {
       display: inline-flex;
       border-radius: var(--pico-border-radius);
@@ -240,11 +245,16 @@
       padding: 0.125rem 0.4rem;
       font-size: 1.2rem;
       transition: all 0.2s ease;
-      opacity: 0.9;
+      opacity: 1;
       border-radius: 0;
       margin: 0;
       position: relative;
       line-height: 1;
+    }
+
+    /* Improve contrast for add note buttons in light mode */
+    [data-theme="light"] .lane-action-btn {
+      color: color-mix(in srgb, var(--pico-primary) 60%, black 40%);
     }
 
     .lane-action-btn:first-child {
@@ -594,6 +604,28 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    /* Modal close button with proper contrast */
+    .modal-close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1.5rem;
+      color: var(--pico-color);
+      opacity: 0.8;
+      transition: all 0.2s ease;
+      border-radius: var(--pico-border-radius);
+    }
+
+    .modal-close-btn:hover {
+      opacity: 1;
+      background: var(--pico-secondary-background);
+    }
+
+    .modal-close-btn:active {
+      transform: scale(0.95);
     }
 
     .modal-body {
@@ -1217,7 +1249,7 @@
     }
 
     .separator-control:disabled {
-      opacity: 0.3;
+      opacity: 0.6;
       cursor: not-allowed;
     }
 
