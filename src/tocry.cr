@@ -57,6 +57,11 @@ module ToCry
     @@ai_model = model
   end
 
+  # Check if generations feature is enabled
+  def self.generations_enabled? : Bool
+    ENV["USE_GENERATIONS"]? == "true"
+  end
+
   @@_board_manager : BoardManager? = nil
 
   # Getter for the BoardManager instance.

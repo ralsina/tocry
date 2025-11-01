@@ -63,7 +63,9 @@
       "Bash(shards update:*)",
       "Bash(./scripts/build_static.sh:*)",
       "Bash(ruby:*)",
-      "Bash(gem install:*)"
+      "Bash(gem install:*)",
+      "Bash(export:*)",
+      "Bash(USE_GENERATIONS=true timeout:*)"
     ],
     "deny": [],
     "ask": []

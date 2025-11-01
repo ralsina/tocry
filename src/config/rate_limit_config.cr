@@ -8,6 +8,7 @@ module ToCry
     def enabled? : Bool
       @enabled
     end
+
     property user_requests : Int32
     property user_window : Int32
     property ai_requests : Int32
@@ -19,15 +20,15 @@ module ToCry
 
     # Default values matching current hardcoded limits
     DEFAULTS = {
-      enabled: true,
-      user_requests: 500,
-      user_window: 3600,      # 1 hour
-      ai_requests: 50,
-      ai_window: 3600,        # 1 hour
+      enabled:         true,
+      user_requests:   500,
+      user_window:     3600, # 1 hour
+      ai_requests:     50,
+      ai_window:       3600, # 1 hour
       upload_requests: 50,
-      upload_window: 3600,    # 1 hour
-      auth_requests: 20,
-      auth_window: 900,       # 15 minutes
+      upload_window:   3600, # 1 hour
+      auth_requests:   20,
+      auth_window:     900, # 15 minutes
     }
 
     def initialize(
@@ -85,44 +86,42 @@ module ToCry
 
     # Load configuration from YAML file
     private def self.load_from_file(config : RateLimitConfig, file_path : String)
-      begin
-        yaml_content = File.read(file_path)
-        data = YAML.parse(yaml_content)
+      yaml_content = File.read(file_path)
+      data = YAML.parse(yaml_content)
 
-        if rate_limiting = data["rate_limiting"]?
-          if enabled = rate_limiting["enabled"]?
-            config.enabled = enabled.as_bool
+      if rate_limiting = data["rate_limiting"]?
+        if enabled = rate_limiting["enabled"]?
+          config.enabled = enabled.as_bool
+        end
+
+        if limits = rate_limiting["limits"]?
+          if user_limit = limits["user"]?
+            if parsed = parse_rate_limit_string(user_limit.as_s)
+              config.user_requests, config.user_window = parsed
+            end
           end
 
-          if limits = rate_limiting["limits"]?
-            if user_limit = limits["user"]?
-              if parsed = parse_rate_limit_string(user_limit.as_s)
-                config.user_requests, config.user_window = parsed
-              end
+          if ai_limit = limits["ai"]?
+            if parsed = parse_rate_limit_string(ai_limit.as_s)
+              config.ai_requests, config.ai_window = parsed
             end
+          end
 
-            if ai_limit = limits["ai"]?
-              if parsed = parse_rate_limit_string(ai_limit.as_s)
-                config.ai_requests, config.ai_window = parsed
-              end
+          if upload_limit = limits["upload"]?
+            if parsed = parse_rate_limit_string(upload_limit.as_s)
+              config.upload_requests, config.upload_window = parsed
             end
+          end
 
-            if upload_limit = limits["upload"]?
-              if parsed = parse_rate_limit_string(upload_limit.as_s)
-                config.upload_requests, config.upload_window = parsed
-              end
-            end
-
-            if auth_limit = limits["auth"]?
-              if parsed = parse_rate_limit_string(auth_limit.as_s)
-                config.auth_requests, config.auth_window = parsed
-              end
+          if auth_limit = limits["auth"]?
+            if parsed = parse_rate_limit_string(auth_limit.as_s)
+              config.auth_requests, config.auth_window = parsed
             end
           end
         end
-      rescue ex
-        Log.warn(exception: ex) { "Failed to load rate limit config from #{file_path}, using defaults" }
       end
+    rescue ex
+      Log.warn(exception: ex) { "Failed to load rate limit config from #{file_path}, using defaults" }
     end
 
     # Load configuration overrides from environment variables
@@ -212,11 +211,11 @@ module ToCry
     # Get configuration as a hash for logging
     def to_h : Hash(String, String | Bool)
       {
-        "enabled" => enabled?,
-        "user_limit" => "#{@user_requests}/#{@user_window}",
-        "ai_limit" => "#{@ai_requests}/#{@ai_window}",
+        "enabled"      => enabled?,
+        "user_limit"   => "#{@user_requests}/#{@user_window}",
+        "ai_limit"     => "#{@ai_requests}/#{@ai_window}",
         "upload_limit" => "#{@upload_requests}/#{@upload_window}",
-        "auth_limit" => "#{@auth_requests}/#{@auth_window}",
+        "auth_limit"   => "#{@auth_requests}/#{@auth_window}",
       }
     end
   end

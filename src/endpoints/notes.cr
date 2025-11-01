@@ -4,6 +4,7 @@ require "../tocry"
 require "../websocket_handler"
 require "./helpers"
 require "../services/note_service"
+require "../services/websocket_events"
 require "uuid"       # For generating unique filenames
 require "file_utils" # For creating directories
 
@@ -78,6 +79,7 @@ module ToCry::Endpoints::Notes
           start_date:  note.start_date,
           end_date:    note.end_date,
           priority:    note.priority.to_s,
+          generation:  result.generation,
         }
 
         ToCry::Endpoints::Helpers.created_response(env, {
@@ -162,6 +164,7 @@ module ToCry::Endpoints::Notes
           start_date:  note.start_date,
           end_date:    note.end_date,
           priority:    note.priority.to_s,
+          generation:  result.generation,
         }
 
         ToCry::Endpoints::Helpers.success_response(env, {
@@ -566,6 +569,225 @@ module ToCry::Endpoints::Notes
       ToCry::Log.error(exception: ex) { "Error loading public note '#{note_id}': #{ex.message}" }
       env.response.status_code = 500
       render "templates/404.ecr"
+    end
+  end
+
+  # API Endpoint to get version history for a note
+  # Expects the board name and note ID in the URL/path, e.g.:
+  # GET /boards/My%20Board/note/note-uuid/versions
+  get "/api/v1/boards/:board_name/note/:note_id/versions" do |env|
+    begin
+      board_name = env.params.url["board_name"].as(String)
+      note_id = env.params.url["note_id"].as(String)
+      user = ToCry.get_current_user_id(env)
+
+      # Validate board access
+      board = ToCry.board_manager.get(board_name, user)
+      unless board
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Board not found")
+      end
+
+      # Find the note
+      found_note_and_lane = board.note(note_id)
+      unless found_note_and_lane
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found")
+      end
+
+      current_note, _lane = found_note_and_lane
+
+      # Get base ID for versions (strip generation if present)
+      base_id = current_note.sepia_id.includes?(".") ? current_note.sepia_id.split(".", 2)[0] : current_note.sepia_id
+
+      # Get all versions if generations are enabled
+      if ToCry.generations_enabled?
+        versions = ToCry::Note.versions(base_id)
+
+        versions_data = versions.map do |version_note|
+          {
+            sepia_id:    version_note.sepia_id,
+            generation:  version_note.generation,
+            title:       version_note.title,
+            content:     version_note.content,
+            tags:        version_note.tags,
+            expanded:    version_note.expanded,
+            public:      version_note.public,
+            attachments: version_note.attachments,
+            start_date:  version_note.start_date,
+            end_date:    version_note.end_date,
+            priority:    version_note.priority.try(&.to_s),
+          }
+        end
+
+        ToCry::Endpoints::Helpers.success_response(env, {
+          success:  true,
+          versions: versions_data,
+          total:    versions_data.size,
+          base_id:  base_id,
+        })
+      else
+        ToCry::Endpoints::Helpers.error_response(env, "Generations feature not enabled", 503)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error getting version history for note '#{env.params.url["note_id"]}' in board '#{env.params.url["board_name"]}': #{ex.message}" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to get version history", 500)
+    end
+  end
+
+  # API Endpoint to get a specific version of a note
+  # Expects the board name, note ID, and generation in the URL/path, e.g.:
+  # GET /boards/My%20Board/note/note-uuid/versions/3
+  get "/api/v1/boards/:board_name/note/:note_id/versions/:generation" do |env|
+    begin
+      board_name = env.params.url["board_name"].as(String)
+      note_id = env.params.url["note_id"].as(String)
+      generation_str = env.params.url["generation"].as(String)
+      user = ToCry.get_current_user_id(env)
+
+      # Validate generation parameter
+      unless generation_str.matches?(/^\d+$/)
+        next ToCry::Endpoints::Helpers.error_response(env, "Invalid generation format", 400)
+      end
+
+      # Validate board access
+      board = ToCry.board_manager.get(board_name, user)
+      unless board
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Board not found")
+      end
+
+      # Find the current note to get base ID
+      found_note_and_lane = board.note(note_id)
+      unless found_note_and_lane
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found")
+      end
+
+      current_note, _lane = found_note_and_lane
+      base_id = current_note.sepia_id.includes?(".") ? current_note.sepia_id.split(".", 2)[0] : current_note.sepia_id
+
+      # Get specific version if generations are enabled
+      if ToCry.generations_enabled?
+        version_id = "#{base_id}.#{generation_str}"
+
+        begin
+          version_note = ToCry::Note.load(version_id)
+        rescue
+          next ToCry::Endpoints::Helpers.not_found_response(env, "Version not found")
+        end
+
+        version_data = {
+          sepia_id:    version_note.sepia_id,
+          generation:  version_note.generation,
+          title:       version_note.title,
+          content:     version_note.content,
+          tags:        version_note.tags,
+          expanded:    version_note.expanded,
+          public:      version_note.public,
+          attachments: version_note.attachments,
+          start_date:  version_note.start_date,
+          end_date:    version_note.end_date,
+          priority:    version_note.priority.try(&.to_s),
+        }
+
+        ToCry::Endpoints::Helpers.success_response(env, {
+          success: true,
+          version: version_data,
+        })
+      else
+        ToCry::Endpoints::Helpers.error_response(env, "Generations feature not enabled", 503)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error getting version '#{env.params.url["generation"]}' for note '#{env.params.url["note_id"]}' in board '#{env.params.url["board_name"]}': #{ex.message}" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to get version", 500)
+    end
+  end
+
+  # API Endpoint to revert a note to a specific version
+  # Expects the board name, note ID, and generation in the URL/path, e.g.:
+  # POST /boards/My%20Board/note/note-uuid/revert/3
+  post "/api/v1/boards/:board_name/note/:note_id/revert/:generation" do |env|
+    begin
+      board_name = env.params.url["board_name"].as(String)
+      note_id = env.params.url["note_id"].as(String)
+      generation_str = env.params.url["generation"].as(String)
+      user = ToCry.get_current_user_id(env)
+
+      # Validate generation parameter
+      unless generation_str.matches?(/^\d+$/)
+        next ToCry::Endpoints::Helpers.error_response(env, "Invalid generation format", 400)
+      end
+
+      # Validate board access
+      board = ToCry.board_manager.get(board_name, user)
+      unless board
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Board not found")
+      end
+
+      # Find the current note
+      found_note_and_lane = board.note(note_id)
+      unless found_note_and_lane
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found")
+      end
+
+      current_note, _lane = found_note_and_lane
+      base_id = current_note.sepia_id.includes?(".") ? current_note.sepia_id.split(".", 2)[0] : current_note.sepia_id
+
+      # Get the target version if generations are enabled
+      if ToCry.generations_enabled?
+        version_id = "#{base_id}.#{generation_str}"
+
+        begin
+          version_note = ToCry::Note.load(version_id)
+        rescue
+          next ToCry::Endpoints::Helpers.not_found_response(env, "Version not found")
+        end
+
+        # Create a new version with the old content (revert)
+        current_note.title = version_note.title
+        current_note.content = version_note.content
+        current_note.tags = version_note.tags
+        current_note.expanded = version_note.expanded
+        current_note.public = version_note.public
+        current_note.attachments = version_note.attachments
+        current_note.start_date = version_note.start_date
+        current_note.end_date = version_note.end_date
+        current_note.priority = version_note.priority
+
+        # Save as new generation
+        reverted_note = current_note.save_with_generation
+
+        if reverted_note
+          # Broadcast WebSocket notification
+          event = ToCry::Services::NoteUpdatedEvent.new(current_note, board_name, _lane.name, user, ToCry::WebSocketHandler.extract_client_id(env))
+          ToCry::Services::WebSocketNotifier.broadcast(event)
+
+          ToCry::Log.info { "Note '#{current_note.title}' reverted to generation #{generation_str} (now generation #{reverted_note.generation}) in board '#{board_name}' by user '#{user}'" }
+
+          response_data = {
+            sepia_id:    current_note.sepia_id,
+            title:       current_note.title,
+            content:     current_note.content,
+            tags:        current_note.tags,
+            expanded:    current_note.expanded,
+            public:      current_note.public,
+            attachments: current_note.attachments,
+            start_date:  current_note.start_date,
+            end_date:    current_note.end_date,
+            priority:    current_note.priority.try(&.to_s),
+            generation:  reverted_note.generation,
+          }
+
+          ToCry::Endpoints::Helpers.success_response(env, {
+            success: "Note reverted successfully",
+            note:    response_data,
+          })
+        else
+          ToCry::Endpoints::Helpers.error_response(env, "Failed to create reverted version", 500)
+        end
+      else
+        ToCry::Endpoints::Helpers.error_response(env, "Generations feature not enabled", 503)
+      end
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error reverting note '#{env.params.url["note_id"]}' to generation '#{env.params.url["generation"]}' in board '#{env.params.url["board_name"]}': #{ex.message}" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to revert note", 500)
     end
   end
 end

@@ -419,6 +419,7 @@ describe('ModalManager', () => {
         showBoardMenu: false,
         editingNote: false,
         showAttachmentModal: false,
+        showVersionHistory: false,
         editingNoteTitle: 'note123',
         editingNoteTags: null,
         showModal: false,

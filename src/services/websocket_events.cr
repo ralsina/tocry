@@ -76,7 +76,7 @@ module ToCry::Services
     end
 
     def to_hash : Hash(String, JSON::Any)
-      {
+      data = {
         "id"         => JSON::Any.new(@note.sepia_id),
         "title"      => JSON::Any.new(@note.title),
         "content"    => JSON::Any.new(@note.content),
@@ -87,6 +87,39 @@ module ToCry::Services
         "end_date"   => JSON::Any.new(@note.end_date),
         "public"     => JSON::Any.new(@note.public),
         "expanded"   => JSON::Any.new(@note.expanded),
+      }
+
+      # Add generation info if using generations
+      if ToCry.generations_enabled?
+        data["generation"] = JSON::Any.new(@note.generation)
+      end
+
+      data
+    end
+  end
+
+  class NoteConflictEvent < NoteEvent
+    def type : WebSocketHandler::MessageType
+      WebSocketHandler::MessageType::NOTE_UPDATED
+    end
+
+    property note_title : String
+    property lane_name : String
+    property your_generation : Int32
+    property current_generation : Int32
+
+    def initialize(@note_id : String, @note_title : String, @lane_name : String, @board_name : String, @your_generation : Int32, @current_generation : Int32, @user_id : String? = nil, @exclude_client_id : String? = nil)
+    end
+
+    def to_hash : Hash(String, JSON::Any)
+      {
+        "id"                 => JSON::Any.new(@note_id),
+        "title"              => JSON::Any.new(@note_title),
+        "lane_name"          => JSON::Any.new(@lane_name),
+        "conflict"           => JSON::Any.new(true),
+        "your_generation"    => JSON::Any.new(@your_generation),
+        "current_generation" => JSON::Any.new(@current_generation),
+        "message"            => JSON::Any.new("Note was modified by another user"),
       }
     end
   end
