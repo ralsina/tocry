@@ -64,7 +64,10 @@
       "Bash(./scripts/build_static.sh:*)",
       "Bash(ruby:*)",
       "Bash(gem install:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_evaluate"
     ],
     "deny": [],
     "ask": []
