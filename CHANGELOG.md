@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0] - 2025-11-01
+
+### 🚀 Features
+
+- Add markdown content pages for new website structure
+- Major FE refactor
+- New note creation flow
+- Migrate to new simplified MCP shard interface
+- Improve test pipeline to include E2E and JS unit tests
+- Implement configurable rate limiting system
+- Add comprehensive performance testing
+- Remove local rate_limiter directory after migration to standalone shard
+- Implement comprehensive note versioning system with generations
+- Merge generations feature into main
+
+### 🐛 Bug Fixes
+
+- Color scheme selection and persistence
+- Improve UI contrast across light and dark themes
+
+### 🎨 Styling
+
+- Remove bullet decorations from task lists in AI assistant modal
+
 ## [0.24.0] - 2025-10-20
 
 ### 🚀 Features
@@ -21,6 +45,10 @@ All notable changes to this project will be documented in this file.
 - *(mcp)* Fix JSON-RPC 2.0 compliance in error responses
 - *(mcp)* Fix board names in MCP tools to use user-specific names
 - *(progress-bar)* Prevent infinite spinning when progress is 0%
+
+### 💼 Other
+
+- Release v0.24.0
 
 ### 🚜 Refactor
 
