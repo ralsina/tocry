@@ -225,6 +225,7 @@ module ToCry
             example:     "medium",
             enum:        ["high", "medium", "low"],
           },
+          generation: {type: "integer", description: "Generation number for version tracking (null if generations disabled)", example: 2},
         },
       }
     end

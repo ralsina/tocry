@@ -17,8 +17,9 @@ module ToCry::Services
       property note : ToCry::Note? = nil
       property lane_name : String = ""
       property board_name : String = ""
+      property generation : Int32? = nil
 
-      def initialize(@success : Bool = false, @message : String = "", @note : ToCry::Note? = nil, @lane_name : String = "", @board_name : String = "")
+      def initialize(@success : Bool = false, @message : String = "", @note : ToCry::Note? = nil, @lane_name : String = "", @board_name : String = "", @generation : Int32? = nil)
       end
     end
 
@@ -231,8 +232,21 @@ module ToCry::Services
           end
         end
 
-        # Save the board
-        board.save
+        # Save the board with versioning for the note
+        updated_note = nil
+        if ToCry.generations_enabled?
+          # Use sepia generations to create a new version of the note
+          updated_note = current_note.save_with_generation
+          if updated_note
+            generation_num = updated_note.generation
+            ToCry::Log.info { "Note '#{current_note.title}' updated to generation #{generation_num} in board '#{board_name}' by user '#{user_id}'" }
+          else
+            ToCry::Log.warn { "Failed to create new generation for note '#{current_note.title}' in board '#{board_name}'" }
+          end
+        else
+          # Fallback to traditional board saving
+          board.save
+        end
 
         # Broadcast WebSocket notification using event pattern
         event = NoteUpdatedEvent.new(current_note, board_name, final_lane_name, user_id, exclude_client_id)
@@ -240,12 +254,20 @@ module ToCry::Services
 
         ToCry::Log.info { "Note '#{current_note.title}' updated in board '#{board_name}' by user '#{user_id}' with WebSocket broadcast" }
 
+        # Extract generation info if using generations
+        generation_num = if ToCry.generations_enabled? && updated_note
+                           updated_note.generation
+                         else
+                           nil
+                         end
+
         NoteResponse.new(
           success: true,
           message: "Note updated successfully",
           note: current_note,
           lane_name: final_lane_name,
-          board_name: board_name
+          board_name: board_name,
+          generation: generation_num
         )
       rescue ex
         NoteResponse.new(

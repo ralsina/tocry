@@ -7,11 +7,11 @@ module ToCry
     @@instance : RateLimitService?
 
     # Rate limiters for different purposes
-    property user_limiter : RateLimiter           # Per user rate limiting (general usage)
-    property ai_limiter : RateLimiter             # Per user AI operations (expensive)
-    property auth_limiter : RateLimiter           # Authentication attempts
-    property upload_limiter : RateLimiter         # File uploads
-    property config : RateLimitConfig             # Configuration settings
+    property user_limiter : RateLimiter   # Per user rate limiting (general usage)
+    property ai_limiter : RateLimiter     # Per user AI operations (expensive)
+    property auth_limiter : RateLimiter   # Authentication attempts
+    property upload_limiter : RateLimiter # File uploads
+    property config : RateLimitConfig     # Configuration settings
 
     def initialize(@config : RateLimitConfig = RateLimitConfig.load)
       # Configure rate limits from configuration
