@@ -43,6 +43,7 @@ Options:
   --cache-size=SIZE             Maximum number of objects to cache [default: 1000].
   --cache-ttl=SECONDS           Cache time-to-live in seconds [default: 0 (no expiration)].
   --no-cache                    Disable caching entirely.
+  --generations                 Enable note version history (generations) support.
 DOCOPT
 
 class Assets
@@ -119,8 +120,14 @@ def main
       data_path = File.join(home_dir, ".local", "share", "tocry")
     end
   end
-  safe_mode = !!args["--safe-mode"]        # Safely parse --safe-mode argument as boolean
-  demo_mode = !!args["--demo"]             # Parse --demo argument as boolean
+  safe_mode = !!args["--safe-mode"]             # Safely parse --safe-mode argument as boolean
+  demo_mode = !!args["--demo"]                  # Parse --demo argument as boolean
+  generations_enabled = !!args["--generations"] # Parse --generations argument as boolean
+
+  # Set environment variable for generations if flag is provided
+  if generations_enabled
+    ENV["USE_GENERATIONS"] = "true"
+  end
   disable_mcp = !!args["--no-mcp"]         # Parse --no-mcp argument as boolean
   ai_model = args["--ai-model"].as(String) # Parse --ai-model argument
 
