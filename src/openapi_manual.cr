@@ -44,6 +44,7 @@ module ToCry::OpenAPIManual
                   },
                 },
               },
+              "429" => rate_limit_response,
             },
           },
           post: {
@@ -74,6 +75,7 @@ module ToCry::OpenAPIManual
                 },
               },
               "400" => error_response("Invalid board name or data"),
+              "429" => rate_limit_response,
             },
           },
         },
@@ -119,6 +121,7 @@ module ToCry::OpenAPIManual
               "200" => success_response("Board updated successfully"),
               "404" => error_response("Board not found"),
               "400" => error_response("Invalid update data"),
+              "429" => rate_limit_response,
             },
           },
           delete: {
@@ -188,6 +191,7 @@ module ToCry::OpenAPIManual
               },
               "404" => error_response("Board or lane not found"),
               "400" => error_response("Invalid note data"),
+              "429" => rate_limit_response,
             },
           },
         },
@@ -225,6 +229,7 @@ module ToCry::OpenAPIManual
               },
               "404" => error_response("Note not found"),
               "400" => error_response("Invalid note data"),
+              "429" => rate_limit_response,
             },
           },
           delete: {
@@ -384,6 +389,7 @@ module ToCry::OpenAPIManual
               },
               "400" => error_response("No file uploaded or invalid file type"),
               "413" => error_response("Payload Too Large"),
+              "429" => rate_limit_response,
             },
           },
         },
@@ -618,6 +624,29 @@ module ToCry::OpenAPIManual
             type:       "object",
             properties: {
               error: {type: "string", description: "Error message"},
+            },
+          },
+        },
+      },
+    }
+  end
+
+  private def rate_limit_response
+    {
+      description: "Rate limit exceeded",
+      content:     {
+        "application/json" => {
+          schema: {
+            type:       "object",
+            properties: {
+              error:       {type: "string", description: "Error type"},
+              message:     {type: "string", description: "Error message"},
+              retry_after: {type: "integer", description: "Seconds to wait before retrying"},
+            },
+            example: {
+              error:       "Rate limit exceeded",
+              message:     "Too many requests. Please try again later.",
+              retry_after: 60,
             },
           },
         },
