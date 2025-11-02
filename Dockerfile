@@ -22,7 +22,7 @@ RUN mkdir -p /app
 COPY . /app
 
 WORKDIR /app
-RUN shards build --static --release
+RUN shards build --static --release -Dno_fswatch
 RUN upx bin/tocry
 
 FROM scratch
