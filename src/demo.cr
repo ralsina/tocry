@@ -143,6 +143,25 @@ module ToCry::Demo
     date_note.end_date = (Time.utc + 7.days).to_s("%Y-%m-%d")
     date_note.save
 
+    task_note = try_lane.note_add(
+      "Task Management Example",
+      ["tasks", "markdown"],
+      <<-CONTENT
+      This note demonstrates task tracking using Markdown checkboxes:
+
+      - [x] Set up project structure
+      - [x] Design database schema
+      - [ ] Implement user authentication
+      - [ ] Create main dashboard
+      - [ ] Add reporting features
+
+      Progress: 2/5 tasks completed (40%)
+
+      Tasks are automatically tracked and displayed as progress indicators!
+      CONTENT
+    )
+    task_note.save
+
     # "Demo Limitations" lane
     limitations_lane = board.lane_add("⚠️  Demo Limitations")
 
@@ -187,6 +206,7 @@ module ToCry::Demo
     # Use BoardManager to properly create and register the board
     board = ToCry.board_manager.create("📋 Project Alpha", "root")
     board.color_scheme = "Green"
+  board.first_visible_lane = 1
 
     # Project lanes
     backlog = board.lane_add("📝 Backlog")

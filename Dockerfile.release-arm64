@@ -1,0 +1,11 @@
+# ARM64 Release Dockerfile - uses pre-built static binary
+FROM busybox AS builder
+
+FROM scratch
+COPY --from=builder /tmp /tmp
+
+# Copy the pre-built ARM64 static binary
+COPY bin/tocry-static-linux-arm64 /tocry
+
+# Set the entrypoint to run the application
+ENTRYPOINT ["/tocry", "-b", "0.0.0.0"]
