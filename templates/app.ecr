@@ -638,27 +638,36 @@
       </div>
 
       <!-- Board Selection Screen -->
-      <div x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound" x-cloak style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box;">
-        <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--pico-primary);">Select a Board</h2>
-        <p style="font-size: 1.25rem; margin-bottom: 2rem; color: var(--pico-muted-color);">Choose a board to start organizing your tasks</p>
-
-        <div style="background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 2rem; margin-bottom: 2rem; max-height: 60vh; overflow-y: auto;">
-          <h3 style="margin-bottom: 1.5rem; position: sticky; top: -2rem; background: var(--pico-background-color); padding: 2rem 2rem 0.5rem 2rem; margin: -2rem -2rem 1.5rem -2rem; z-index: 1; border-bottom: 1px solid var(--pico-border-color);">Your Boards</h3>
-          <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
-            <template x-for="board in boards" :key="board">
-              <div @click="loadBoard(board)"
-                   style="padding: 1rem 1.5rem; background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); cursor: pointer; text-align: left; font-size: 1rem; transition: all 0.2s ease; user-select: none;"
-                   @mouseover="$event.target.style.background = 'var(--pico-secondary-hover)'"
-                   @mouseout="$event.target.style.background = 'var(--pico-secondary-background)'">
-                <div style="font-weight: 600; margin-bottom: 0.25rem;" x-text="board"></div>
-                <div style="font-size: 0.875rem; opacity: 0.7;">Click to open board</div>
-              </div>
-            </template>
+      <div x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound" x-cloak style="padding: 2rem; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">
+        <div class="board-selection-container" style="display: flex; gap: 1.5rem; overflow-x: auto; flex: 1; align-items: center;">
+          <!-- Select Board Card -->
+          <div style="flex: 0 0 320px; background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 2rem; text-align: center; height: fit-content;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--pico-primary);">Select Your Board</h3>
+            <p style="font-size: 1rem; margin-bottom: 1.5rem; color: var(--pico-muted-color);">Choose an existing board or create a new one to get started</p>
+            <button @click="handleNewBoard()"
+                    style="width: 100%; padding: 0.75rem 1.5rem; background: var(--pico-primary); color: var(--pico-primary-inverse); border: none; border-radius: var(--pico-border-radius); cursor: pointer; font-size: 1rem;">
+              Create New Board
+            </button>
           </div>
-          <button @click="handleNewBoard()"
-                  style="padding: 0.75rem 1.5rem; background: var(--pico-primary); color: var(--pico-primary-inverse); border: none; border-radius: var(--pico-border-radius); cursor: pointer; position: sticky; bottom: 0; margin-top: 1rem;">
-            Create New Board
-          </button>
+
+          <!-- Board Cards -->
+          <template x-for="board in boards" :key="board">
+            <div class="board-card" @click="loadBoard(board)"
+                 style="flex: 0 0 280px; background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); cursor: pointer; text-align: left; font-size: 1rem; user-select: none; padding: 1.5rem; height: fit-content;"
+                 @mouseover="$event.target.style.background = 'var(--pico-secondary-hover)'"
+                 @mouseout="$event.target.style.background = 'var(--pico-secondary-background)'">
+              <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem;" x-text="board"></div>
+              <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1rem;">Click to open board</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.6;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="9" x2="15" y2="9"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                Kanban Board
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
