@@ -50,6 +50,25 @@ find src/assets/api_client_ts_dist -name "*.js" -type f -exec sed -i "s|from '\.
 
 echo "ESM build copied and fixed at: src/assets/api_client_ts_dist/"
 
+# Create top-level assets directory
+mkdir -p assets
+
+# Copy source CSS files to assets directory
+echo "Copying CSS files to assets directory..."
+cp src/assets/*.css assets/ 2>/dev/null || echo "No CSS files to copy"
+
+# Copy other static assets to assets directory
+echo "Copying static assets to assets directory..."
+cp -r src/assets/icons assets/ 2>/dev/null || echo "No icons directory to copy"
+cp src/assets/favicon.ico assets/ 2>/dev/null || echo "No favicon.ico to copy"
+cp src/assets/manifest.json assets/ 2>/dev/null || echo "No manifest.json to copy"
+cp src/assets/screenshot.png assets/ 2>/dev/null || echo "No screenshot.png to copy"
+cp src/assets/website.html assets/ 2>/dev/null || echo "No website.html to copy"
+
+# Copy OpenAPI spec to assets directory
+echo "Copying OpenAPI spec to assets directory..."
+cp openapi.json assets/ 2>/dev/null || echo "No openapi.json to copy"
+
 # Build the main JavaScript application with Parcel
 echo "Building main JavaScript application with Parcel..."
 cd src/js
@@ -60,11 +79,16 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Build the application
+# Build the application to top-level assets directory
 echo "Bundling JavaScript with Parcel..."
 npm run build
 
 cd ../..
 
 echo "JavaScript application built successfully!"
-echo "Bundled application available at: src/assets/app.js"
+echo "Bundled application available at: assets/app.js"
+
+# Copy API client to assets directory
+echo "Copying API client to assets directory..."
+rm -rf assets/api_client_ts_dist
+cp -r src/assets/api_client_ts_dist assets/ 2>/dev/null || echo "No API client dist to copy"

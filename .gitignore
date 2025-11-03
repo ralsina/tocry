@@ -28,6 +28,10 @@ src/assets/api_client_ts_dist/
 src/assets/app.js
 src/assets/app.js.map
 
+# Generated assets directory (built from src/assets/)
+assets/
+!assets/.gitkeep
+
 # Environment variables
 .env
 .env.local
