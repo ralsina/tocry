@@ -206,7 +206,7 @@ module ToCry::Demo
     # Use BoardManager to properly create and register the board
     board = ToCry.board_manager.create("📋 Project Alpha", "root")
     board.color_scheme = "Green"
-  board.first_visible_lane = 1
+    board.first_visible_lane = 1
 
     # Project lanes
     backlog = board.lane_add("📝 Backlog")

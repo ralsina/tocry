@@ -39,7 +39,7 @@ The OpenAPI specification includes rate limit information for all endpoints. Eac
 
 Different API endpoints have different rate limits based on their resource usage:
 
-### User Operations (500 requests/hour)
+### User Operations (100 requests/minute)
 - `GET /api/v1/boards`
 - `GET /api/v1/boards/{id}`
 - `GET /api/v1/boards/{id}/lanes`
@@ -47,19 +47,21 @@ Different API endpoints have different rate limits based on their resource usage
 - `PUT /api/v1/notes/{id}`
 - `DELETE /api/v1/notes/{id}`
 
-### AI Operations (50 requests/hour)
+### AI Operations (10 requests/minute)
 - `POST /api/v1/ai/generate`
 - `POST /api/v1/ai/edit`
 - `POST /api/v1/ai/complete`
 
-### Upload Operations (50 requests/hour)
+### Upload Operations (5 requests/minute)
 - `POST /api/v1/uploads`
 - `DELETE /api/v1/uploads/{id}`
 
-### Authentication Operations (20 requests/15 minutes)
+### Authentication Operations (10 requests/minute)
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
+
+**Note**: These are the default limits. Rate limits can be configured via CLI arguments, environment variables, or configuration files. See the [configuration documentation](../configuration/rate-limiting.md) for details on customization.
 
 ## Rate Limit Behavior
 
@@ -314,6 +316,17 @@ hey -n 100 -c 10 -H "Content-Type: application/json" http://localhost:3000/api/v
 
 # Test with wrk (30 seconds, 10 connections)
 wrk -t12 -c400 -d30s http://localhost:3000/api/v1/boards
+
+# Test with custom rate limits (low limits for testing)
+tocry --rate-limit-user=5 --rate-limit-ai=2 &
+hey -n 20 -c 5 http://localhost:3000/api/v1/boards
+
+# Test rate limiting behavior for different endpoints
+# General endpoints (100/minute default)
+hey -n 150 -c 10 http://localhost:3000/api/v1/boards
+
+# AI endpoints (10/minute default)
+hey -n 20 -c 2 -m POST -H "Content-Type: application/json" -d '{"prompt":"test"}' http://localhost:3000/api/v1/ai/generate
 ```
 
 ### Rate Limit Validation

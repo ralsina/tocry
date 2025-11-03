@@ -42,3 +42,6 @@ package.json
 
 src/js/playwright-report/
 src/js/test-results/
+
+# Claude Code local settings
+.claude/settings.local.json

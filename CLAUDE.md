@@ -108,13 +108,94 @@ ToCry is a Kanban-style TODO application built in Crystal using the Kemal web fr
 - **Lane**: Column within a board containing ordered notes
 - **Note**: Individual task items with support for Markdown, priority labels (High/Medium/Low), file attachments, start/end dates, and collapsible content
 
+### Configuration System
+
+ToCry uses a unified configuration system that supports three sources with clear precedence:
+
+1. **Command Line Arguments** (highest precedence)
+2. **Environment Variables** (with `TOCRY_` prefix)
+3. **Configuration File** (YAML or JSON, lowest precedence)
+
+#### Configuration Examples
+
+**Using a configuration file:**
+```bash
+# Create config.yml
+cat > config.yml << EOF
+port: 8080
+data_path: "/custom/data/path"
+safe_mode: true
+ai_model: "glm-4-plus"
+cache_size: 2000
+EOF
+
+# Run with config file
+tocry --config config.yml
+```
+
+**Using environment variables:**
+```bash
+export TOCRY_PORT=8080
+export TOCRY_DATA_PATH="/custom/data/path"
+export TOCRY_SAFE_MODE=true
+export TOCRY_AI_MODEL="glm-4-plus"
+tocry
+```
+
+**Using command line arguments:**
+```bash
+tocry --port=8080 --data-path="/custom/data/path" --safe-mode --ai-model="glm-4-plus"
+```
+
+**Mixed configuration (precedence: CLI > env > config file):**
+```bash
+# config.yml has port: 8080
+export TOCRY_PORT=9000
+tocry --config config.yml --port=9999  # Final port will be 9999 (CLI wins)
+```
+
+**Configuration file format (YAML):**
+See `config-example.yml` for a complete example configuration file.
+
 ### Authentication Modes
 
-The application supports three authentication modes (controlled by environment variables):
+The application supports three authentication modes (determined automatically based on available credentials):
 
-1. **Google OAuth** (priority 1): Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-2. **Basic Auth** (priority 2): Requires `TOCRY_AUTH_USER` and `TOCRY_AUTH_PASS`
-3. **No Authentication** (default): Open access
+1. **Google OAuth** (priority 1): Configure via CLI, environment variables, or config file:
+   ```bash
+   # CLI
+   tocry --google-client-id="your-client-id" --google-client-secret="your-secret"
+
+   # Environment variables
+   export GOOGLE_CLIENT_ID="your-client-id"
+   export GOOGLE_CLIENT_SECRET="your-secret"
+   tocry
+
+   # Config file
+   google_client_id: "your-client-id"
+   google_client_secret: "your-secret"
+   ```
+
+2. **Basic Auth** (priority 2): Configure via CLI, environment variables, or config file:
+   ```bash
+   # CLI
+   tocry --auth-user="admin" --auth-pass="password"
+
+   # Environment variables
+   export TOCRY_AUTH_USER="admin"
+   export TOCRY_AUTH_PASS="password"
+   tocry
+
+   # Config file
+   auth_user: "admin"
+   auth_pass: "password"
+   ```
+
+3. **No Authentication** (default): Open access when no auth credentials are provided
+
+**Session Management:**
+- Session secret can be configured via `--session-secret`, `SESSION_SECRET` environment variable, or config file
+- Auto-generated session secret is used if not specified
 
 ### Data Structure
 

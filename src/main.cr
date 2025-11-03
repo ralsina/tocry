@@ -8,7 +8,8 @@ require "baked_file_handler"
 require "./migrations"
 require "ecr" # Required for render
 require "baked_file_system"
-require "docopt"                        # Keep docopt
+require "docopt"
+require "docopt-config"                 # Unified configuration management
 require "./auth"                        # Add auth (defines Google OAuth routes and current_user helper)
 require "./endpoints"                   # Add this line to include your new endpoints file
 require "./auth_helpers"                # New: Contains authentication mode setup functions
@@ -30,20 +31,32 @@ Usage:
   tocry --version
 
 Options:
-  -p PORT, --port=PORT          Port to listen on [default: 3000].
-  -b ADDRESS, --bind=ADDRESS    Address to bind to [default: 127.0.0.1].
-  -h --help                     Show this screen.
-  --version                     Show version.
-  --data-path=PATH              Path to the data directory.
-  --safe-mode                   Enable safe mode (checks data integrity).
-  --demo                        Enable demo mode (in-memory storage with sample data).
-  --no-mcp                      Disable MCP (Model Context Protocol) support.
-  --unix-socket=PATH            Use Unix socket at specified path instead of TCP.
-  --ai-model=MODEL              AI model to use for AI features [default: glm-4.5-flash]. See https://docs.z.ai/guides/overview/pricing for available models.
-  --cache-size=SIZE             Maximum number of objects to cache [default: 1000].
-  --cache-ttl=SECONDS           Cache time-to-live in seconds [default: 0 (no expiration)].
-  --no-cache                    Disable caching entirely.
-  --generations                 Enable note version history (generations) support.
+  -p PORT, --port=PORT                Port to listen on [default: 3000].
+  -b ADDRESS, --bind=ADDRESS          Address to bind to [default: 127.0.0.1].
+  -h --help                           Show this screen.
+  --version                           Show version.
+  --data-path=PATH                    Path to the data directory.
+  --safe-mode                         Enable safe mode (checks data integrity).
+  --demo                              Enable demo mode (in-memory storage with sample data).
+  --no-mcp                            Disable MCP (Model Context Protocol) support.
+  --unix-socket=PATH                  Use Unix socket at specified path instead of TCP.
+  --ai-model=MODEL                    AI model to use for AI features [default: glm-4.5-flash]. See https://docs.z.ai/guides/overview/pricing for available models.
+  --cache-size=SIZE                   Maximum number of objects to cache [default: 1000].
+  --cache-ttl=SECONDS                 Cache time-to-live in seconds [default: 0].
+  --no-cache                          Disable caching entirely.
+  --generations                       Enable note version history (generations) support.
+  --auth-user=USER                    Username for basic authentication.
+  --auth-pass=PASSWORD                Password for basic authentication.
+  --google-client-id=ID               Google OAuth client ID for authentication.
+  --google-client-secret=SECRET       Google OAuth client secret for authentication.
+  --session-secret=SECRET             Secret key for session management [default: auto-generated].
+  --z-ai-api-key=KEY                  API key for Z.AI features.
+  --rate-limit-enabled=BOOL           Enable rate limiting [default: true].
+  --rate-limit-user=LIMIT            Rate limit per user [default: 100].
+  --rate-limit-ai=LIMIT               Rate limit for AI endpoints [default: 10].
+  --rate-limit-upload=LIMIT          Rate limit for file uploads [default: 5].
+  --rate-limit-auth=LIMIT            Rate limit for authentication endpoints [default: 10].
+  --config=PATH                       Path to configuration file (YAML or JSON).
 DOCOPT
 
 class Assets
@@ -52,26 +65,24 @@ class Assets
   bake_folder "./assets"
 end
 
-# Configure Sepia cache settings based on CLI args and environment variables
-def configure_cache(args)
+# Configure Sepia cache settings based on unified configuration
+def configure_cache_with_config(config)
   # Check if caching is disabled
-  no_cache = !!args["--no-cache"]
+  no_cache = !!config["--no-cache"]
 
   if no_cache
     ToCry::Log.info { "Caching disabled via --no-cache flag" }
     return
   end
 
-  # Get cache size from CLI args or environment variable
-  cache_size_env = ENV["TOCRY_CACHE_SIZE"]?
-  cache_size = cache_size_env.try(&.to_i?) || args["--cache-size"]?.try(&.as?(String)).try(&.to_i?) || 1000
+  # Get cache size from unified configuration (CLI > env > config file > defaults)
+  cache_size = config["--cache-size"]?.try(&.to_s.to_i) || 1000
 
-  # Get cache TTL from CLI args or environment variable
-  cache_ttl_env = ENV["TOCRY_CACHE_TTL"]?
-  cache_ttl_seconds = cache_ttl_env.try(&.to_i?) || args["--cache-ttl"]?.try(&.as?(String)).try(&.to_i?) || 0
+  # Get cache TTL from unified configuration (CLI > env > config file > defaults)
+  cache_ttl_seconds = config["--cache-ttl"]?.try(&.to_s.to_i) || 0
 
   # Convert TTL to Time::Span (0 means no expiration)
-  cache_ttl = cache_ttl_seconds > 0 ? cache_ttl_seconds.seconds : nil
+  cache_ttl = cache_ttl_seconds && cache_ttl_seconds > 0 ? cache_ttl_seconds.seconds : nil
 
   # Configure the global cache manager
   cache = Sepia::CacheManager.instance
@@ -101,13 +112,29 @@ end
 
 # ameba:disable Metrics/CyclomaticComplexity
 def main
-  # We parse the command line (`ARGV`) using the help we described above.
+  # Get config file path from command line before parsing everything
+  config_file = nil
+  ARGV.each_with_index do |arg, i|
+    if arg == "--config" && i + 1 < ARGV.size
+      config_file = ARGV[i + 1]
+      break
+    end
+  end
 
-  args = Docopt.docopt(DOC, ARGV, version: ToCry::VERSION)
+  # Parse unified configuration using docopt-config
+  config = Docopt.docopt_config(
+    doc: DOC,
+    argv: ARGV,
+    config_file_path: config_file,
+    env_prefix: "TOCRY",
+    help: true,
+    version: ToCry::VERSION
+  )
+
   ARGV.clear # Clear ARGV to prevent further processing by Crystal
 
-  # Determine data path
-  data_path = args["--data-path"]?.as?(String)
+  # Get configuration values with unified precedence (CLI > env > config file > defaults)
+  data_path = config["--data-path"]?.try(&.as(String))
   if data_path.nil?
     # If no explicit data path provided, use user directory for non-root users
     # Check if we're root by checking if USER environment variable is "root"
@@ -120,19 +147,57 @@ def main
       data_path = File.join(home_dir, ".local", "share", "tocry")
     end
   end
-  safe_mode = !!args["--safe-mode"]             # Safely parse --safe-mode argument as boolean
-  demo_mode = !!args["--demo"]                  # Parse --demo argument as boolean
-  generations_enabled = !!args["--generations"] # Parse --generations argument as boolean
+
+  safe_mode = !!config["--safe-mode"]             # Parse --safe-mode argument as boolean
+  demo_mode = !!config["--demo"]                  # Parse --demo argument as boolean
+  generations_enabled = !!config["--generations"] # Parse --generations argument as boolean
 
   # Set environment variable for generations if flag is provided
   if generations_enabled
     ENV["USE_GENERATIONS"] = "true"
   end
-  disable_mcp = !!args["--no-mcp"]         # Parse --no-mcp argument as boolean
-  ai_model = args["--ai-model"].as(String) # Parse --ai-model argument
 
-  # Configure cache settings
-  configure_cache(args)
+  disable_mcp = !!config["--no-mcp"]         # Parse --no-mcp argument as boolean
+  ai_model = config["--ai-model"].as(String) # Parse --ai-model argument
+
+  # Parse authentication options (already handled by precedence in docopt-config)
+  auth_user = config["--auth-user"]?.try(&.as(String))
+  auth_pass = config["--auth-pass"]?.try(&.as(String))
+  google_client_id = config["--google-client-id"]?.try(&.as(String))
+  google_client_secret = config["--google-client-secret"]?.try(&.as(String))
+  session_secret = config["--session-secret"]?.try(&.as(String))
+  z_ai_api_key = config["--z-ai-api-key"]?.try(&.as(String))
+
+  # Set environment variables for authentication if provided
+  # This ensures existing authentication logic continues to work
+  ENV["TOCRY_AUTH_USER"] = auth_user if auth_user
+  ENV["TOCRY_AUTH_PASS"] = auth_pass if auth_pass
+  ENV["GOOGLE_CLIENT_ID"] = google_client_id if google_client_id
+  ENV["GOOGLE_CLIENT_SECRET"] = google_client_secret if google_client_secret
+  ENV["SESSION_SECRET"] = session_secret if session_secret
+  ENV["Z_AI_API_KEY"] = z_ai_api_key if z_ai_api_key
+
+  # Parse rate limiting options (already handled by precedence in docopt-config)
+  rate_limit_enabled = config["--rate-limit-enabled"]?.try { |v| v.to_s == "true" } || true
+  rate_limit_user = config["--rate-limit-user"]?.try(&.to_s.to_i) || 100
+  rate_limit_ai = config["--rate-limit-ai"]?.try(&.to_s.to_i) || 10
+  rate_limit_upload = config["--rate-limit-upload"]?.try(&.to_s.to_i) || 5
+  rate_limit_auth = config["--rate-limit-auth"]?.try(&.to_s.to_i) || 10
+
+  # Set environment variables for rate limiting if provided via CLI
+  ENV["TOCRY_RATE_LIMITING_ENABLED"] = rate_limit_enabled.to_s
+  ENV["TOCRY_RATE_LIMIT_USER"] = rate_limit_user.to_s
+  ENV["TOCRY_RATE_LIMIT_AI"] = rate_limit_ai.to_s
+  ENV["TOCRY_RATE_LIMIT_UPLOAD"] = rate_limit_upload.to_s
+  ENV["TOCRY_RATE_LIMIT_AUTH"] = rate_limit_auth.to_s
+
+  # Configure cache settings using unified config
+  configure_cache_with_config(config)
+
+  # Log config file usage
+  if config_file
+    ToCry::Log.info { "Using configuration file: #{config_file}" }
+  end
 
   # Initialize data environment using the helper
   ToCry.board_manager = ToCry::Initialization.setup_data_environment(data_path, safe_mode, true, demo_mode)
@@ -157,7 +222,7 @@ def main
   ToCry::Log.info { "AI model configured: #{ai_model}" }
 
   # Check for Unix socket option first
-  unix_socket_path = args["--unix-socket"]?.as?(String)
+  unix_socket_path = config["--unix-socket"]?.try(&.as(String))
 
   if unix_socket_path
     # Unix socket mode - ignore port and bind address
@@ -166,8 +231,8 @@ def main
     bind_address = "" # Not used in Unix socket mode
   else
     # TCP mode - parse port and bind address
-    port = args["--port"].as(String).to_i32
-    bind_address = args["--bind"].as(String)
+    port = config["--port"].as(String).to_i32
+    bind_address = config["--bind"].as(String)
     ToCry::Log.info { "Using TCP: #{bind_address}:#{port}" }
   end
 
@@ -215,11 +280,11 @@ def main
 
   # Configure sessions using the kemal-session shard.
   # A session secret is always required if sessions are used anywhere in the application.
-  Kemal::Session.config do |config|
-    config.samesite = HTTP::Cookie::SameSite::Strict
-    config.cookie_name = "session_id"
-    config.secret = ENV.fetch("SESSION_SECRET", "a_very_long_and_secret_key_that_should_be_changed")
-    config.engine = Kemal::Session::MemoryEngine.new
+  Kemal::Session.config do |session_config|
+    session_config.samesite = HTTP::Cookie::SameSite::Strict
+    session_config.cookie_name = "session_id"
+    session_config.secret = ENV.fetch("SESSION_SECRET", "a_very_long_and_secret_key_that_should_be_changed")
+    session_config.engine = Kemal::Session::MemoryEngine.new
   end
   ToCry::Log.info { "Session support enabled." }
 
@@ -336,10 +401,10 @@ def main
     ToCry::Log.info { "Starting ToCry server on Unix socket #{unix_socket_path}" }
 
     # Use Kemal's built-in Unix socket support
-    Kemal.run do |config|
+    Kemal.run do |server_config|
       # Don't bind to TCP port when using Unix socket
-      config.port = 0
-      if server = config.server
+      server_config.port = 0
+      if server = server_config.server
         server.bind_unix(unix_socket_path)
       else
         ToCry::Log.error { "Failed to get server instance for Unix socket binding" }

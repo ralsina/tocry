@@ -4,38 +4,106 @@ ToCry includes built-in rate limiting to protect against abuse and ensure fair u
 
 ## Configuration
 
-Rate limiting is controlled via the standalone `rate_limiter` shard. The limits are configured in the application code and can be customized based on your deployment needs.
+ToCry uses a unified configuration system that supports three sources with clear precedence:
+
+1. **Command Line Arguments** (highest precedence)
+2. **Environment Variables** (with `TOCRY_` prefix)
+3. **Configuration File** (YAML or JSON, lowest precedence)
 
 ### Default Limits
 
 ```crystal
 # Default rate limits in ToCry
 limits = {
-  "user" => "500/3600",     # 500 requests per hour per user
-  "ai" => "50/3600",        # 50 AI requests per hour
-  "upload" => "50/3600",    # 50 file uploads per hour
-  "auth" => "20/900"        # 20 authentication requests per 15 minutes
+  "user" => "100/60",       # 100 requests per minute per user
+  "ai" => "10/60",          # 10 AI requests per minute
+  "upload" => "5/60",       # 5 file uploads per minute
+  "auth" => "10/60"         # 10 authentication requests per minute
 }
+```
+
+### Configuration Options
+
+#### Command Line Interface
+
+```bash
+# Set custom rate limits via CLI
+tocry --rate-limit-enabled=true \
+      --rate-limit-user=150 \
+      --rate-limit-ai=15 \
+      --rate-limit-upload=10 \
+      --rate-limit-auth=20
+
+# Disable rate limiting
+tocry --rate-limit-enabled=false
+```
+
+#### Environment Variables
+
+```bash
+# Set rate limits via environment variables
+export TOCRY_RATE_LIMITING_ENABLED=true
+export TOCRY_RATE_LIMIT_USER=150      # Requests per minute for general endpoints
+export TOCRY_RATE_LIMIT_AI=15         # Requests per minute for AI endpoints
+export TOCRY_RATE_LIMIT_UPLOAD=10     # Requests per minute for file uploads
+export TOCRY_RATE_LIMIT_AUTH=20       # Requests per minute for authentication endpoints
+
+# Disable rate limiting
+export TOCRY_RATE_LIMITING_ENABLED=false
+```
+
+#### Configuration File
+
+Create a `config.yml` or `config.json` file:
+
+```yaml
+# config.yml
+rate_limit_enabled: true
+rate_limit_user: 150      # Requests per minute per user for general endpoints
+rate_limit_ai: 15         # Requests per minute per user for AI endpoints
+rate_limit_upload: 10     # Requests per minute per user for file uploads
+rate_limit_auth: 20       # Requests per minute per user for authentication endpoints
+```
+
+```json
+// config.json
+{
+  "rate_limit_enabled": true,
+  "rate_limit_user": 150,
+  "rate_limit_ai": 15,
+  "rate_limit_upload": 10,
+  "rate_limit_auth": 20
+}
+```
+
+#### Using Configuration Files
+
+```bash
+# Use with configuration file
+tocry --config config.yml
+
+# Override specific settings
+tocry --config config.yml --rate-limit-user=200  # CLI overrides config file
 ```
 
 ### Rate Limit Categories
 
-**User Requests (500/hour)**
+**User Requests (100/minute)**
 - Standard API operations (boards, lanes, notes)
 - Read operations and updates
 - Navigation and browsing
 
-**AI Requests (50/hour)**
+**AI Requests (10/minute)**
 - AI-powered content generation
 - Smart editing features
 - AI assistance functions
 
-**Upload Requests (50/hour)**
+**Upload Requests (5/minute)**
 - File uploads and attachments
 - Image uploads
 - Document imports
 
-**Authentication Requests (20/15 minutes)**
+**Authentication Requests (10/minute)**
 - Login attempts
 - Token refresh
 - OAuth operations
@@ -63,34 +131,67 @@ When limits are exceeded, ToCry returns HTTP 429 responses:
 
 ## Customizing Rate Limits
 
-You can customize rate limits by modifying the application configuration:
+You can customize rate limits using any of the three configuration methods:
 
 ### For Self-Hosted Deployments
 
-Edit the rate limit configuration in your ToCry instance:
+#### Using Command Line Arguments
+```bash
+# Higher limits for internal use
+tocry --rate-limit-user=200 \
+      --rate-limit-ai=30 \
+      --rate-limit-upload=25 \
+      --rate-limit-auth=30
+```
 
-```crystal
-# Custom rate limits example
-limits = {
-  "user" => "1000/3600",    # Higher limit for internal use
-  "ai" => "100/3600",       # More AI requests for power users
-  "upload" => "200/3600",   # More uploads for content-heavy sites
-  "auth" => "50/900"        # More auth attempts for enterprise
-}
+#### Using Environment Variables
+```bash
+# More AI requests for power users
+export TOCRY_RATE_LIMIT_USER=200
+export TOCRY_RATE_LIMIT_AI=30
+export TOCRY_RATE_LIMIT_UPLOAD=25
+export TOCRY_RATE_LIMIT_AUTH=30
+```
+
+#### Using Configuration File
+```yaml
+# config.yml for enterprise deployment
+rate_limit_enabled: true
+rate_limit_user: 200       # Higher limit for internal use
+rate_limit_ai: 30          # More AI requests for power users
+rate_limit_upload: 25      # More uploads for content-heavy sites
+rate_limit_auth: 30        # More auth attempts for enterprise
 ```
 
 ### Development Environment
 
 For development, you may want to disable or increase limits:
 
-```crystal
-# Development configuration
-limits = {
-  "user" => "10000/3600",   # Very high limit for testing
-  "ai" => "1000/3600",
-  "upload" => "1000/3600",
-  "auth" => "1000/900"
-}
+#### Disable Rate Limiting
+```bash
+# Disable for development
+tocry --rate-limit-enabled=false
+
+# Or via environment variable
+export TOCRY_RATE_LIMITING_ENABLED=false
+```
+
+#### Increase Development Limits
+```bash
+# Very high limits for testing
+tocry --rate-limit-user=1000 \
+      --rate-limit-ai=500 \
+      --rate-limit-upload=200 \
+      --rate-limit-auth=200
+```
+
+```yaml
+# config-dev.yml
+rate_limit_enabled: true
+rate_limit_user: 1000      # Very high limit for testing
+rate_limit_ai: 500
+rate_limit_upload: 200
+rate_limit_auth: 200
 ```
 
 ## Monitoring Rate Limits
@@ -191,11 +292,14 @@ async function makeRequestWithRetry(url, options = {}, maxRetries = 3) {
 Enable debug logging to troubleshoot rate limiting:
 
 ```bash
-# Start ToCry with debug logging
-tocry --debug --log-level=debug
+# Start ToCry with debug logging and custom rate limits
+tocry --debug --log-level=debug --rate-limit-user=10
 
 # Check for rate limit debug messages
 tail -f /var/log/tocry.log | grep -i "rate"
+
+# Test with very low limits to see rate limiting in action
+tocry --rate-limit-user=2 --rate-limit-ai=1
 ```
 
 For API-specific rate limiting information, see the [OpenAPI rate limiting documentation](../openapi/rate-limiting.md).

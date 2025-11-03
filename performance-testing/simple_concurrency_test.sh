@@ -26,7 +26,7 @@ for concurrency in "${CONCURRENCY_LEVELS[@]}"; do
     # Extract key metrics
     avg_response=$(echo "$hey_output" | grep "Average:" | awk '{print $2}' | sed 's/secs//')
     rps=$(echo "$hey_output" | grep "Requests/sec:" | awk '{print $2}')
-    total_requests=$(echo "$hey_output" | grep "Total:" | awk '{print $2}' | sed 's/secs//')
+    : "$(echo "$hey_output" | grep "Total:" | awk '{print $2}' | sed 's/secs//')" # Suppress unused variable warning
 
     # Calculate success rate (assuming all 200 responses if no errors)
     success_count=$(echo "$hey_output" | grep -o '\[200\]' | wc -l)

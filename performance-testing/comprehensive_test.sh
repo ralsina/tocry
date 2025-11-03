@@ -27,7 +27,7 @@ for concurrency in "${CONCURRENCY_LEVELS[@]}"; do
     # Extract metrics
     avg_sec=$(echo "$output" | grep "Average:" | awk '{print $2}')
     rps=$(echo "$output" | grep "Requests/sec:" | awk '{print $2}')
-    status=$(echo "$output" | grep -o "\[200\]" | wc -l)
+    : "$(echo "$output" | grep -o '\[200\]' | wc -l)" # Suppress unused variable warning
 
     # Convert to milliseconds
     avg_ms=$(echo "scale=2; $avg_sec * 1000" | bc)
@@ -89,7 +89,7 @@ for burst in {1..3}; do
     echo "  Response: ${avg_ms}ms avg"
     echo "  Throughput: ${rps} RPS"
 
-    if [ $burst -lt 3 ]; then
+    if [ "$burst" -lt 3 ]; then
         echo "  Waiting 5 seconds..."
         sleep 5
     fi
