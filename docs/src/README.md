@@ -8,7 +8,7 @@ ToCry is a lightweight, self-hosted task management application that helps you o
 
 Visit [tocry-demo.ralsina.me](https://tocry-demo.ralsina.me) with user `demo` and password `tocry` to see it in action.
 
-![ToCry Screenshot](screenshot.png)
+![ToCry Screenshot](/screenshot.png)
 
 ## Key Features
 
@@ -40,22 +40,21 @@ Then open http://localhost:3000 in your browser.
 This book provides comprehensive documentation for ToCry, organized into logical sections:
 
 ### Getting Started
-- [Installation Guide](installation/README.md) - Various installation methods
-- [Features Overview](features/README.md) - Complete feature documentation
+- [Installation Guide](installation/) - Various installation methods
+- [Features Overview](features/) - Complete feature documentation
 
 ### User Guide
-- [Configuration](configuration/README.md) - Environment variables and settings
-- [AI Integration](ai-editing/README.md) - Using AI features
-- [Version History](versioning/README.md) - Note versioning and rollback
+- [Configuration](configuration/) - Environment variables and settings
+- [AI Integration](ai-editing/) - Using AI features
+- [Version History](versioning/) - Note versioning and rollback
 
 ### Developer Guide
-- [OpenAPI & API](openapi/README.md) - REST API documentation and clients
-- [MCP Integration](mcp/README.md) - Model Context Protocol support
-- [Development](development/README.md) - Building from source and contributing
+- [OpenAPI & API](openapi/) - REST API documentation and clients
+- [MCP Integration](mcp/) - Model Context Protocol support
+- [Development](development/) - Building from source and contributing
 
 ### Advanced Topics
-- [Performance Optimization](performance/README.md) - Tuning and scaling
-- [Deployment & Operations](deployment/README.md) - Production deployment
+- [Performance Optimization](performance/) - Tuning and scaling
 
 ### About
-- [Project Information](about/README.md) - Philosophy, changelog, and support
+- [Project Information](about/) - Philosophy, changelog, and support
