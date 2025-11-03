@@ -355,7 +355,9 @@
                                x-show="modalManager.editingNoteTitle !== note.sepiaId"
                                x-text="note.title"
                                @dblclick="startEditingNoteTitle(note.sepiaId, lane.name, note.title)"
-                               title="Double-click to edit"></div>
+                               :title="isTitleTruncated(note.title) ? note.title : 'Double-click to edit'"
+                               :class="{ 'title-truncated': isTitleTruncated(note.title) }"
+                               x-ref="noteTitle"></div>
                           <input x-show="modalManager.editingNoteTitle === note.sepiaId"
                                  x-model="modalManager.editingNoteTitleText"
                                  @keyup.enter="confirmNoteTitleEdit()"

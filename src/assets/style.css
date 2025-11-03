@@ -388,6 +388,15 @@
       transform: translateY(-1px);
     }
 
+    .note-title.title-truncated {
+      border-bottom: 1px dashed rgba(var(--primary-rgb), 0.3);
+      cursor: help;
+    }
+
+    .note-title.title-truncated:hover {
+      border-bottom-color: rgba(var(--primary-rgb), 0.6);
+    }
+
 
     .note-title-input {
       animation: fadeIn 0.2s ease;

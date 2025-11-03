@@ -2785,6 +2785,35 @@ function createToCryStore () {
       return { total: totalTasks, completed: completedTasks, percentage }
     },
 
+    // Check if note title is truncated (for tooltip display)
+    isTitleTruncated (title) {
+      if (!title || typeof title !== 'string') {
+        return false
+      }
+
+      // Create a temporary element to measure text width
+      const tempElement = document.createElement('div')
+      tempElement.style.position = 'absolute'
+      tempElement.style.visibility = 'hidden'
+      tempElement.style.height = 'auto'
+      tempElement.style.width = 'auto'
+      tempElement.style.whiteSpace = 'nowrap'
+      tempElement.style.fontSize = '0.875rem' // Match note-title font size
+      tempElement.style.fontWeight = '300' // Match note-title font weight
+      tempElement.style.fontFamily = 'inherit'
+      tempElement.textContent = title
+
+      document.body.appendChild(tempElement)
+      const textWidth = tempElement.scrollWidth
+      document.body.removeChild(tempElement)
+
+      // Get the available width for the note title
+      // Note titles are constrained by their container width
+      const maxWidth = 180 // Approximate max width in pixels for note titles
+
+      return textWidth > maxWidth
+    },
+
     // Delete attachment from expanded note view
     async deleteAttachmentFromNote (note, attachment) {
       const confirmed = await this.showAlert(
