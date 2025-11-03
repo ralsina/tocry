@@ -242,6 +242,8 @@ function createToCryStore () {
         const newScheme = newBoard?.colorScheme
         const oldScheme = oldBoard?.colorScheme
         if (newScheme && newScheme !== oldScheme) {
+          // Synchronize theme manager with board's color scheme first
+          this.themeManager.currentColorScheme = newScheme
           // Delay color scheme application for smooth transition
           setTimeout(() => {
             this.themeManager.updateColorScheme(true) // Save to backend for manual changes
@@ -425,8 +427,6 @@ function createToCryStore () {
             firstVisibleLane: boardData.firstVisibleLane || 0,
             public: boardData._public || false
           }
-          // Synchronize theme manager with board's color scheme
-          this.themeManager.currentColorScheme = validatedColorScheme
           console.log('Set currentBoard:', this.currentBoard)
           console.log('Board public field from API:', boardData._public)
           console.log('Current board public field after assignment:', this.currentBoard.public)
