@@ -232,7 +232,7 @@ def main
     bind_address = "" # Not used in Unix socket mode
   else
     # TCP mode - parse port and bind address
-    port = config["--port"].as(Int32)
+    port = config["--port"].as(String).to_i32
     bind_address = config["--bind"].as(String)
     ToCry::Log.info { "Using TCP: #{bind_address}:#{port}" }
   end
