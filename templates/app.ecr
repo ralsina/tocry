@@ -591,56 +591,108 @@
 
       <!-- Empty Board - No Lanes -->
       <div x-show="!loading && !error && currentBoard && currentBoard.lanes && currentBoard.lanes.length === 0 && !loadingBoardFromUrl"
-           x-cloak style="text-align: center; padding: 3rem 2rem; max-width: 800px; margin: 0 auto;">
-        <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--pico-primary);">Create Your First Lanes</h2>
-        <p style="font-size: 1.1rem; margin-bottom: 2rem; color: var(--pico-muted-color);">
-          Lanes are columns where you organize your tasks. Choose a template below or create custom lanes using the menu.
-        </p>
+           x-cloak style="padding: 2rem; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">
 
-        <!-- Lane Templates -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <!-- Horizontal Container for Lane Templates -->
+        <div class="lane-selection-container" style="display: flex; gap: 1.5rem; overflow-x: auto; flex: 1; align-items: center;">
+
+          <!-- Introduction Card -->
+          <div style="flex: 0 0 320px; background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 2rem; text-align: center; height: fit-content;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--pico-primary);">Create Your First Lanes</h3>
+            <p style="font-size: 1rem; margin-bottom: 1.5rem; color: var(--pico-muted-color);">Lanes are columns where you organize your tasks. Choose a template or create custom lanes</p>
+
+            <!-- Menu Guidance -->
+            <div style="background: var(--pico-code-background-color); border-radius: var(--pico-border-radius); padding: 1rem; margin-top: 1.5rem;">
+              <p style="margin: 0; font-size: 0.875rem; color: var(--pico-muted-color);">
+                💡 For custom lane names, use the menu button in the top right corner
+              </p>
+            </div>
+          </div>
+
           <!-- Simple Template -->
-          <div @click="handleCreateLaneTemplate('simple')"
-               style="background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem; cursor: pointer; transition: all 0.2s ease;"
-               @mouseover="$event.target.style.borderColor='var(--pico-primary)'"
-               @mouseout="$event.target.style.borderColor='var(--pico-border-color)'">
-            <h4 style="margin-bottom: 0.5rem; color: var(--pico-primary);">Simple</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--pico-muted-color);">Basic workflow</p>
-            <div style="font-size: 0.85rem; color: var(--pico-color); opacity: 0.8;">
-              Todo → In Progress → Done
+          <div class="lane-template-card" @click="handleCreateLaneTemplate('simple')"
+               style="flex: 0 0 280px; background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); cursor: pointer; text-align: left; font-size: 1rem; user-select: none; padding: 1.5rem; height: fit-content;"
+               @mouseover="$event.target.style.background = 'var(--pico-secondary-hover)'"
+               @mouseout="$event.target.style.background = 'var(--pico-secondary-background)'">
+            <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--pico-primary);">Simple</div>
+            <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1rem;">Basic workflow</div>
+
+            <!-- Lane Flow Visualization -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.8; margin-bottom: 1rem;">
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">Todo</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">In Progress</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">Done</div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.6;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+              </svg>
+              <span>3 lanes</span>
             </div>
           </div>
 
           <!-- Task Management Template -->
-          <div @click="handleCreateLaneTemplate('taskmgmt')"
-               style="background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem; cursor: pointer; transition: all 0.2s ease;"
-               @mouseover="$event.target.style.borderColor='var(--pico-primary)'"
-               @mouseout="$event.target.style.borderColor='var(--pico-border-color)'">
-            <h4 style="margin-bottom: 0.5rem; color: var(--pico-primary);">Task Management</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--pico-muted-color);">Full project workflow</p>
-            <div style="font-size: 0.85rem; color: var(--pico-color); opacity: 0.8;">
-              Backlog → To Do → In Progress → Review → Done
+          <div class="lane-template-card" @click="handleCreateLaneTemplate('taskmgmt')"
+               style="flex: 0 0 280px; background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); cursor: pointer; text-align: left; font-size: 1rem; user-select: none; padding: 1.5rem; height: fit-content;"
+               @mouseover="$event.target.style.background = 'var(--pico-secondary-hover)'"
+               @mouseout="$event.target.style.background = 'var(--pico-secondary-background)'">
+            <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--pico-primary);">Task Management</div>
+            <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1rem;">Full project workflow</div>
+
+            <!-- Lane Flow Visualization -->
+            <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; opacity: 0.8; margin-bottom: 1rem; overflow: hidden;">
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color); white-space: nowrap;">Backlog</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color); white-space: nowrap;">To Do</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color); white-space: nowrap;">In Progress</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color); white-space: nowrap;">Review</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color); white-space: nowrap;">Done</div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.6;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+              </svg>
+              <span>5 lanes</span>
             </div>
           </div>
 
           <!-- Time-based Template -->
-          <div @click="handleCreateLaneTemplate('timebased')"
-               style="background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem; cursor: pointer; transition: all 0.2s ease;"
-               @mouseover="$event.target.style.borderColor='var(--pico-primary)'"
-               @mouseout="$event.target.style.borderColor='var(--pico-border-color)'">
-            <h4 style="margin-bottom: 0.5rem; color: var(--pico-primary);">Time-based</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--pico-muted-color);">Organize by time</p>
-            <div style="font-size: 0.85rem; color: var(--pico-color); opacity: 0.8;">
-              Today → This Week → Someday → Done
+          <div class="lane-template-card" @click="handleCreateLaneTemplate('timebased')"
+               style="flex: 0 0 280px; background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); cursor: pointer; text-align: left; font-size: 1rem; user-select: none; padding: 1.5rem; height: fit-content;"
+               @mouseover="$event.target.style.background = 'var(--pico-secondary-hover)'"
+               @mouseout="$event.target.style.background = 'var(--pico-secondary-background)'">
+            <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--pico-primary);">Time-based</div>
+            <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1rem;">Organize by time</div>
+
+            <!-- Lane Flow Visualization -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.8; margin-bottom: 1rem;">
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">Today</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">This Week</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">Someday</div>
+              <span>→</span>
+              <div style="background: var(--pico-background-color); padding: 0.25rem 0.5rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-border-color);">Done</div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; opacity: 0.6;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>4 lanes</span>
             </div>
           </div>
-        </div>
 
-        <!-- Menu Guidance -->
-        <div style="background: var(--pico-code-background-color); border-radius: var(--pico-border-radius); padding: 1.5rem;">
-          <p style="margin: 0; text-align: center;">
-            For custom lane names, use the menu button in the top right corner
-          </p>
         </div>
       </div>
 

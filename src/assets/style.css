@@ -1350,11 +1350,45 @@
       scroll-behavior: smooth;
     }
 
-    /* Enhanced board card hover effects */
-    .board-card {
+    /* Horizontal Lane Selection Styles */
+    .lane-selection-container {
+      scrollbar-width: thin;
+      scrollbar-color: var(--pico-muted-border-color) transparent;
+    }
+
+    .lane-selection-container::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .lane-selection-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .lane-selection-container::-webkit-scrollbar-thumb {
+      background-color: var(--pico-muted-border-color);
+      border-radius: 4px;
+      border: 2px solid transparent;
+    }
+
+    .lane-selection-container::-webkit-scrollbar-thumb:hover {
+      background-color: var(--pico-muted-color);
+    }
+
+    /* Smooth scroll behavior */
+    .lane-selection-container {
+      scroll-behavior: smooth;
+    }
+
+    /* Enhanced lane template card hover effects */
+    .lane-template-card {
       transform: translateY(0);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .lane-template-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 
     .board-card:hover {
