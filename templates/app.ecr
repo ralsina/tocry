@@ -82,19 +82,8 @@
         <ul>
           <li><strong style="font-size: 1.5rem;"><a href="https://tocry.ralsina.me" target="_blank" style="text-decoration: none; color: inherit;">ToCry</a></strong></li>
         </ul>
-        <ul x-show="boards.length > 0 && !boardNotFound">
-          <li>
-            <input
-            type="search"
-            class="search-input"
-            name="search"
-            placeholder="Search notes... (use #tag for exact tag match)"
-            x-model="searchManager.searchQuery"
-            @input="searchManager.performSearch()"
-            x-ref="searchInput"
-            aria-label="Search notes (press / to focus)"
-          />
-          </li>
+        <!-- Theme controls - always visible -->
+        <ul>
           <li>
             <div class="theme-and-color-switcher" :class="{ 'is-open': themeManager.showColorSelector }" @click.away="themeManager.closeColorSelector()">
               <button @click="themeManager.toggleTheme()"
@@ -135,7 +124,22 @@
               </select>
             </div>
           </li>
-          <li x-show="boards.length > 0 && !boardNotFound">
+        </ul>
+        <!-- Board-specific controls - only visible when a board is loaded -->
+        <ul x-show="boards.length > 0 && !boardNotFound && currentBoard">
+          <li>
+            <input
+            type="search"
+            class="search-input"
+            name="search"
+            placeholder="Search notes... (use #tag for exact tag match)"
+            x-model="searchManager.searchQuery"
+            @input="searchManager.performSearch()"
+            x-ref="searchInput"
+            aria-label="Search notes (press / to focus)"
+          />
+          </li>
+          <li>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <select x-model="currentBoardName" @change="loadBoard($event.target.value)">
                 <template x-for="board in boards" :key="board">
