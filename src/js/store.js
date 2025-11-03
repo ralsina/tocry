@@ -425,6 +425,8 @@ function createToCryStore () {
             firstVisibleLane: boardData.firstVisibleLane || 0,
             public: boardData._public || false
           }
+          // Synchronize theme manager with board's color scheme
+          this.themeManager.currentColorScheme = validatedColorScheme
           console.log('Set currentBoard:', this.currentBoard)
           console.log('Board public field from API:', boardData._public)
           console.log('Current board public field after assignment:', this.currentBoard.public)
