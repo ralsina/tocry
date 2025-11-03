@@ -1,0 +1,5 @@
+[book]
+authors = ["Roberto Alsina"]
+language = "en"
+src = "src"
+title = "ToCry Documentation"
