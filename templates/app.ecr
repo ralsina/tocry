@@ -100,7 +100,7 @@
                    :aria-expanded="themeManager.showColorSelector"
                    x-show="currentBoard && boards.length > 0 && !boardNotFound">
               </div>
-              <select :value="currentColorScheme"
+              <select :value="themeManager.currentColorScheme"
                       @input="currentBoard.colorScheme = $event.target.value; themeManager.currentColorScheme = $event.target.value; themeManager.updateColorScheme(); themeManager.closeColorSelector()"
                       id="color-scheme-switcher"
                       aria-label="Color scheme"
