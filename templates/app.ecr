@@ -85,12 +85,19 @@
         <!-- Theme controls - always visible -->
         <ul>
           <li>
+            <button @click="themeManager.toggleTheme()"
+                    id="theme-switcher"
+                    :aria-label="themeManager.isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'"
+                    outline
+                    style="margin: 0;">
+              <span x-text="themeManager.isDarkMode ? '☀️' : '🌙'"></span>
+            </button>
+          </li>
+        </ul>
+        <!-- Board-specific theme controls - only visible when a board is loaded -->
+        <ul x-show="boards.length > 0 && !boardNotFound && currentBoard">
+          <li>
             <div class="theme-and-color-switcher" :class="{ 'is-open': themeManager.showColorSelector }" @click.away="themeManager.closeColorSelector()">
-              <button @click="themeManager.toggleTheme()"
-                      id="theme-switcher"
-                      :aria-label="themeManager.isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'">
-                <span x-text="themeManager.isDarkMode ? '☀️' : '🌙'"></span>
-              </button>
               <div @click="themeManager.toggleColorSelector()"
                    id="current-color-swatch"
                    class="color-swatch"
