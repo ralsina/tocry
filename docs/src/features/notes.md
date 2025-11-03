@@ -72,4 +72,3 @@ ToCry features a powerful WYSIWYG Markdown editor with live preview and extensiv
 
 - **Live Collaboration**: See changes in real-time when multiple users are editing
 - **Conflict Resolution**: Automatic handling of simultaneous edits
-
