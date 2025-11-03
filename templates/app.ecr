@@ -92,39 +92,39 @@
                 <span x-text="themeManager.isDarkMode ? '☀️' : '🌙'"></span>
               </button>
               <!-- Color scheme selector - only visible when a board is loaded -->
-              <template x-if="currentBoard && boards.length > 0 && !boardNotFound">
-                <div @click="themeManager.toggleColorSelector()"
-                     id="current-color-swatch"
-                     class="color-swatch"
-                     :style="`background-color: ${currentColor}`"
-                     :aria-label="'Select color scheme'"
-                     :aria-expanded="themeManager.showColorSelector">
-                </div>
-                <select :value="currentColorScheme"
-                        @input="currentBoard.colorScheme = $event.target.value; themeManager.currentColorScheme = $event.target.value; themeManager.updateColorScheme(); themeManager.closeColorSelector()"
-                        id="color-scheme-switcher"
-                        aria-label="Color scheme">
-                  <option value="amber">Amber</option>
-                  <option value="blue">Blue</option>
-                  <option value="cyan">Cyan</option>
-                  <option value="fuchsia">Fuchsia</option>
-                  <option value="grey">Grey</option>
-                  <option value="green">Green</option>
-                  <option value="indigo">Indigo</option>
-                  <option value="jade">Jade</option>
-                  <option value="lime">Lime</option>
-                  <option value="orange">Orange</option>
-                  <option value="pink">Pink</option>
-                  <option value="pumpkin">Pumpkin</option>
-                  <option value="purple">Purple</option>
-                  <option value="red">Red</option>
-                  <option value="sand">Sand</option>
-                  <option value="slate">Slate</option>
-                  <option value="violet">Violet</option>
-                  <option value="yellow">Yellow</option>
-                  <option value="zinc">Zinc</option>
-                </select>
-              </template>
+              <div @click="themeManager.toggleColorSelector()"
+                   id="current-color-swatch"
+                   class="color-swatch"
+                   :style="`background-color: ${currentColor}`"
+                   :aria-label="'Select color scheme'"
+                   :aria-expanded="themeManager.showColorSelector"
+                   x-show="currentBoard && boards.length > 0 && !boardNotFound">
+              </div>
+              <select :value="currentColorScheme"
+                      @input="currentBoard.colorScheme = $event.target.value; themeManager.currentColorScheme = $event.target.value; themeManager.updateColorScheme(); themeManager.closeColorSelector()"
+                      id="color-scheme-switcher"
+                      aria-label="Color scheme"
+                      x-show="currentBoard && boards.length > 0 && !boardNotFound">
+                <option value="amber">Amber</option>
+                <option value="blue">Blue</option>
+                <option value="cyan">Cyan</option>
+                <option value="fuchsia">Fuchsia</option>
+                <option value="grey">Grey</option>
+                <option value="green">Green</option>
+                <option value="indigo">Indigo</option>
+                <option value="jade">Jade</option>
+                <option value="lime">Lime</option>
+                <option value="orange">Orange</option>
+                <option value="pink">Pink</option>
+                <option value="pumpkin">Pumpkin</option>
+                <option value="purple">Purple</option>
+                <option value="red">Red</option>
+                <option value="sand">Sand</option>
+                <option value="slate">Slate</option>
+                <option value="violet">Violet</option>
+                <option value="yellow">Yellow</option>
+                <option value="zinc">Zinc</option>
+              </select>
             </div>
           </li>
         </ul>
