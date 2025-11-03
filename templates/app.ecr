@@ -1050,8 +1050,8 @@
             <div style="font-weight: 600; margin-bottom: 0.5rem;" x-text="modalManager.versionHistoryNote?.title"></div>
             <div style="font-size: 0.875rem; color: var(--pico-muted-color);">
               Lane: <span x-text="modalManager.versionHistoryLane"></span>
-              <span x-show="modalManager.versionHistoryNote && modalManager.versionHistoryNote.generation" style="margin-left: 1rem;">
-                Current Generation: <strong x-text="modalManager.versionHistoryNote.generation"></strong>
+              <span x-show="modalManager.versionHistoryNote?.generation" style="margin-left: 1rem;">
+                Current Generation: <strong x-text="modalManager.versionHistoryNote?.generation"></strong>
               </span>
             </div>
           </div>
@@ -1075,11 +1075,11 @@
             <div style="max-height: 400px; overflow-y: auto;">
               <template x-for="(version, index) in modalManager.versionHistoryData" :key="version.generation">
                 <div style="border: 1px solid var(--pico-border-color); border-radius: var(--pico-border-radius); padding: 1rem; margin-bottom: 0.75rem;
-                           :class="{ 'current-version': modalManager.versionHistoryNote && version.generation === modalManager.versionHistoryNote.generation }">
+                           :class="{ 'current-version': modalManager.versionHistoryNote?.generation === version.generation }">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                     <div style="font-weight: 600; color: var(--pico-primary);">
                       Generation <span x-text="version.generation"></span>
-                      <span x-show="modalManager.versionHistoryNote && version.generation === modalManager.versionHistoryNote.generation" style="margin-left: 0.5rem; padding: 0.125rem 0.5rem; background: var(--pico-primary); color: white; font-size: 0.75rem; border-radius: 0.25rem;">Current</span>
+                      <span x-show="modalManager.versionHistoryNote?.generation === version.generation" style="margin-left: 0.5rem; padding: 0.125rem 0.5rem; background: var(--pico-primary); color: white; font-size: 0.75rem; border-radius: 0.25rem;">Current</span>
                     </div>
                     <div x-show="version.created_at" style="font-size: 0.875rem; color: var(--pico-muted-color);" x-text="version.created_at"></div>
                   </div>
@@ -1104,7 +1104,7 @@
                   </div>
 
                   <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
-                    <button x-show="!modalManager.versionHistoryNote || version.generation !== modalManager.versionHistoryNote.generation"
+                    <button x-show="!modalManager.versionHistoryNote?.generation || version.generation !== modalManager.versionHistoryNote?.generation"
                             @click="revertToVersion(version.generation)"
                             style="padding: 0.375rem 0.75rem; background: var(--pico-primary); color: white; border: none; border-radius: var(--pico-border-radius); cursor: pointer; font-size: 0.875rem;">
                       Revert to This Version

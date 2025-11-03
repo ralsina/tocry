@@ -34,10 +34,20 @@ const generateClientId = () => {
 // BoardApiService is now imported from './services/api.js'
 
 // eslint-disable-next-line no-unused-vars
+// Constants for lane layout calculations
+const GAP_PX = 12 // 0.75rem in pixels (12px)
+
+// eslint-disable-next-line no-unused-vars
 function createToCryStore () {
   return {
     // Client identification for echo prevention
     clientId: generateClientId(),
+
+    // Global lane width cache - calculated once from viewport, updated on resize
+    cachedLaneWidth: null,
+
+    // Separator position key for reactive updates
+    separatorPositionKey: 0,
 
     // Modal Manager - handles all modal states and operations
     modalManager: new ModalManager(),
@@ -418,6 +428,9 @@ function createToCryStore () {
           console.log('Set currentBoard:', this.currentBoard)
           console.log('Board public field from API:', boardData._public)
           console.log('Current board public field after assignment:', this.currentBoard.public)
+
+          // Initialize cached lane width immediately after board is set
+          this.cachedLaneWidth = this.calculateLaneWidthFromViewport()
 
           // Apply color scheme immediately to ensure lane borders are visible (don't save to backend)
           this.themeManager.updateColorScheme(false)
@@ -2945,10 +2958,7 @@ function createToCryStore () {
 
       // Get the same step size as separator positioning
       const calculatedWidth = this.calculateDynamicLaneWidth()
-      const boardStyle = window.getComputedStyle(board)
-      const gapValue = boardStyle.gap || '0.75rem'
-      const laneGap = parseInt(gapValue) || 12
-      const stepSize = calculatedWidth + laneGap + 40 // Same as separator step
+      const stepSize = calculatedWidth + GAP_PX // Same as separator step
 
       let targetScrollPosition
       if (direction === 'left') {
@@ -2978,9 +2988,6 @@ function createToCryStore () {
 
       // Get dynamic lane width for visible lanes and standard width for hidden lanes
       const dynamicLaneWidth = this.calculateDynamicLaneWidth()
-      const boardStyle = window.getComputedStyle(kanbanBoard)
-      const gapValue = boardStyle.gap || '0.75rem'
-      const laneGap = parseInt(gapValue) || 12
 
       const viewportWidth = window.innerWidth
 
@@ -2989,10 +2996,10 @@ function createToCryStore () {
       let allLanesWidth = 0
 
       for (let i = 0; i < totalLanes; i++) {
-        const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
-        allLanesWidth += laneWidth
+        // All lanes have the same dynamic width
+        allLanesWidth += dynamicLaneWidth
         if (i < totalLanes - 1) {
-          allLanesWidth += laneGap
+          allLanesWidth += GAP_PX
         }
       }
 
@@ -3002,13 +3009,13 @@ function createToCryStore () {
       let hiddenLanesWidth = 0
 
       for (let i = 0; i < totalLanes; i++) {
-        const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
+        // All lanes have the same dynamic width
         if (i < firstVisibleLane) {
-          hiddenLanesWidth += laneWidth + laneGap
+          hiddenLanesWidth += dynamicLaneWidth + GAP_PX
         } else {
-          visibleLanesWidth += laneWidth
+          visibleLanesWidth += dynamicLaneWidth
           if (i < totalLanes - 1) {
-            visibleLanesWidth += laneGap
+            visibleLanesWidth += GAP_PX
           }
         }
       }
@@ -3027,34 +3034,42 @@ function createToCryStore () {
     },
 
     // Calculate dynamic lane width based on available space and total lanes
-    calculateDynamicLaneWidth () {
+    // Calculate lane width using viewport information only (no DOM dependency)
+    calculateLaneWidthFromViewport () {
       if (!this.currentBoard || !this.currentBoard.lanes) return 280
 
-      const boardContainer = document.querySelector('.board-container')
-      const kanbanBoard = document.querySelector('.kanban-board')
+      // Use window.innerWidth for viewport width (available immediately)
+      const viewportWidth = window.innerWidth
 
-      if (!boardContainer || !kanbanBoard) return 280
+      // Estimate available width (viewport minus padding and scroll buttons)
+      // This is a reasonable approximation that works without DOM elements
+      const availableWidth = viewportWidth - 200 // Subtract estimated padding/scroll buttons
 
-      // Get available width (board container width minus scroll buttons and padding)
-      const availableWidth = boardContainer.offsetWidth - 120 // Subtract space for scroll buttons
-      const gap = 12 // 0.75rem in pixels
-
-      // Calculate width based on TOTAL lanes in the board, not just visible ones
-      // This ensures lane widths remain consistent when separator moves
+      // Calculate width based on TOTAL lanes in the board
       const totalLanes = this.currentBoard.lanes.length
-
       if (totalLanes <= 0) return 280
 
       // Calculate ideal width based on total lanes
-      const totalGapWidth = (totalLanes - 1) * gap
+      const totalGapWidth = (totalLanes - 1) * GAP_PX
       const availableLaneWidth = availableWidth - totalGapWidth
       const idealLaneWidth = availableLaneWidth / totalLanes
 
-      // Apply constraints
-      const MIN_LANE_WIDTH = 250
+      // Apply constraints (match CSS min-width)
+      const MIN_LANE_WIDTH = 290
       const MAX_LANE_WIDTH = 400
 
       return Math.max(MIN_LANE_WIDTH, Math.min(MAX_LANE_WIDTH, idealLaneWidth))
+    },
+
+    calculateDynamicLaneWidth () {
+      // If we have a cached width, use it
+      if (this.cachedLaneWidth) {
+        return this.cachedLaneWidth
+      }
+
+      // Calculate and cache the width using viewport information
+      this.cachedLaneWidth = this.calculateLaneWidthFromViewport()
+      return this.cachedLaneWidth
     },
 
     // Update lane widths dynamically
@@ -3067,13 +3082,9 @@ function createToCryStore () {
       const calculatedWidth = this.calculateDynamicLaneWidth()
       const lanes = kanbanBoard.querySelectorAll('.lane')
 
-      lanes.forEach((lane, index) => {
-        // Only apply dynamic width to visible lanes
-        if (this.isLaneHidden(index)) {
-          lane.style.width = '280px' // Keep fixed width for hidden lanes
-        } else {
-          lane.style.width = `${calculatedWidth}px`
-        }
+      // Apply the same dynamic width to ALL lanes (both hidden and visible)
+      lanes.forEach((lane) => {
+        lane.style.width = `${calculatedWidth}px`
       })
     },
 
@@ -3109,13 +3120,26 @@ function createToCryStore () {
           const debouncedResize = () => {
             clearTimeout(resizeTimeout)
             resizeTimeout = setTimeout(() => {
+              // Update padding first based on current layout
               this.updateKanbanPadding()
-              this.updateLaneWidths()
-              // Re-scroll to maintain hidden lanes state after resize
-              this.setInitialScrollPosition()
+
+              // Then update lane widths with proper DOM synchronization
+              this.$nextTick(() => {
+                this.updateLaneWidths()
+              })
             }, 250) // Debounce for 250ms
           }
           window.addEventListener('resize', debouncedResize)
+
+          // Add immediate resize listener for separator position updates
+          const immediateResize = () => {
+            // Update cached lane width immediately on resize
+            this.cachedLaneWidth = this.calculateLaneWidthFromViewport()
+
+            // Force separator position recalculation immediately on resize
+            this.separatorPositionKey = (this.separatorPositionKey || 0) + 1
+          }
+          window.addEventListener('resize', immediateResize)
 
           // Initial padding calculation
           this.updateKanbanPadding()
@@ -3313,13 +3337,10 @@ function createToCryStore () {
       // Get gap from kanban board computed style
       const kanbanBoard = document.querySelector('.kanban-board')
       if (kanbanBoard) {
-        const boardStyle = window.getComputedStyle(kanbanBoard)
-        const gapValue = boardStyle.gap || '0.75rem'
-        const laneGap = parseInt(gapValue) || 12
-        const separatorWidth = 12 // Separator width matches the gap
+        const separatorWidth = GAP_PX // Separator width matches the gap
 
-        // Position separator
-        const position = laneIndex * (calculatedWidth + laneGap + 40)
+        // Position separator at the start of the first visible lane
+        const position = laneIndex * (calculatedWidth + GAP_PX)
         return position - separatorWidth
       }
     },
@@ -3410,11 +3431,17 @@ function createToCryStore () {
       }
     },
 
-    setInitialScrollPosition () {
+    setInitialScrollPosition (attempt = 0) {
       if (!this.currentBoard || !this.currentBoard.lanes) return
 
       const kanbanBoard = document.querySelector('.kanban-board')
-      if (!kanbanBoard) return
+      if (!kanbanBoard) {
+        // DOM not ready yet, retry after a short delay (with max attempts)
+        if (attempt < 5) {
+          setTimeout(() => this.setInitialScrollPosition(attempt + 1), 50)
+        }
+        return
+      }
 
       // Update padding first to ensure sufficient scrollable space
       this.updateKanbanPadding()
@@ -3430,16 +3457,27 @@ function createToCryStore () {
 
       // Use dynamic width calculation for consistent scroll positioning
       const dynamicLaneWidth = this.calculateDynamicLaneWidth()
-      const boardStyle = window.getComputedStyle(kanbanBoard)
-      const gapValue = boardStyle.gap || '0.75rem'
-      const laneGap = parseInt(gapValue) || 12
+
+      // Verify that the kanban board has the correct dimensions before setting scroll
+      // This ensures the lane widths have been applied to the DOM
+      if (kanbanBoard.scrollWidth <= kanbanBoard.clientWidth && firstVisibleLane > 0) {
+        // Board doesn't have overflow yet, lanes may not be properly rendered
+        if (attempt < 5) {
+          setTimeout(() => this.setInitialScrollPosition(attempt + 1), 50)
+        }
+        return
+      }
 
       // Calculate scroll position needed to bring first_visible_lane to left edge
       let scrollPosition = 0
       for (let i = 0; i < firstVisibleLane; i++) {
-        const laneWidth = this.isLaneHidden(i) ? 280 : dynamicLaneWidth
-        scrollPosition += laneWidth + laneGap
+        // All lanes have the same dynamic width
+        scrollPosition += dynamicLaneWidth + GAP_PX
       }
+
+      // Ensure we don't scroll beyond the available scroll width
+      const maxScroll = kanbanBoard.scrollWidth - kanbanBoard.clientWidth
+      scrollPosition = Math.min(scrollPosition, maxScroll)
 
       kanbanBoard.scrollLeft = scrollPosition
     },
