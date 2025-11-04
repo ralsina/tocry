@@ -580,8 +580,9 @@ export async function dragLaneWithValidation (page, sourceLaneName, targetLaneNa
   const initialOrder = await getCurrentLaneOrder(page)
   console.log('Initial lane order:', initialOrder)
 
-  // Perform the drag operation
-  await sourceLane.dragTo(targetLane)
+  // Perform the drag operation using manual event simulation
+  // Playwright's dragTo() doesn't work with ToCry's HTML5 drag-and-drop
+  await simulateHTML5DragAndDrop(page, sourceLane, targetLane)
 
   // Wait for the reordering to complete with validation
   await waitForLaneOrder(page, expectedOrder)
@@ -594,6 +595,51 @@ export async function dragLaneWithValidation (page, sourceLaneName, targetLaneNa
   if (JSON.stringify(finalOrder) !== JSON.stringify(expectedOrder)) {
     throw new Error(`Lane reordering failed. Expected: [${expectedOrder.join(', ')}], Got: [${finalOrder.join(', ')}]`)
   }
+}
+
+/**
+ * Simulate HTML5 drag and drop events manually
+ * @param {Page} page - Playwright page object
+ * @param {Locator} sourceElement - Element to drag
+ * @param {Locator} targetElement - Element to drop on
+ * @returns {Promise<void>}
+ */
+export async function simulateHTML5DragAndDrop (page, sourceElement, targetElement) {
+  // Get the bounding boxes of source and target elements
+  const sourceBox = await sourceElement.boundingBox()
+  const targetBox = await targetElement.boundingBox()
+
+  if (!sourceBox || !targetBox) {
+    throw new Error('Could not get element bounding boxes for drag operation')
+  }
+
+  // Calculate center positions
+  const sourceX = sourceBox.x + sourceBox.width / 2
+  const sourceY = sourceBox.y + sourceBox.height / 2
+  const targetX = targetBox.x + targetBox.width / 2
+  const targetY = targetBox.y + targetBox.height / 2
+
+  // Simulate the drag and drop sequence
+  await page.mouse.move(sourceX, sourceY)
+  await page.mouse.down()
+
+  // Start drag
+  await sourceElement.dispatchEvent('dragstart')
+  await page.mouse.move(sourceX + 10, sourceY + 10) // Small movement to initiate drag
+
+  // Move to target position
+  await page.mouse.move(targetX, targetY)
+
+  // Trigger dragover on target
+  await targetElement.dispatchEvent('dragover')
+  await targetElement.dispatchEvent('drop')
+
+  // End drag
+  await sourceElement.dispatchEvent('dragend')
+  await page.mouse.up()
+
+  // Wait a moment for the drag operation to complete
+  await page.waitForTimeout(500)
 }
 
 /**

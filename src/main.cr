@@ -187,10 +187,10 @@ def main
   # Set environment variables for rate limiting if provided via CLI
   # Convert integer limits to rate strings (requests/time_window_seconds)
   ENV["TOCRY_RATE_LIMITING_ENABLED"] = rate_limit_enabled.to_s
-  ENV["TOCRY_RATE_LIMIT_USER"] = "#{rate_limit_user}/3600"  # Per hour
-  ENV["TOCRY_RATE_LIMIT_AI"] = "#{rate_limit_ai}/3600"      # Per hour
-  ENV["TOCRY_RATE_LIMIT_UPLOAD"] = "#{rate_limit_upload}/3600"  # Per hour
-  ENV["TOCRY_RATE_LIMIT_AUTH"] = "#{rate_limit_auth}/900"   # Per 15 minutes
+  ENV["TOCRY_RATE_LIMIT_USER"] = "#{rate_limit_user}/3600"     # Per hour
+  ENV["TOCRY_RATE_LIMIT_AI"] = "#{rate_limit_ai}/3600"         # Per hour
+  ENV["TOCRY_RATE_LIMIT_UPLOAD"] = "#{rate_limit_upload}/3600" # Per hour
+  ENV["TOCRY_RATE_LIMIT_AUTH"] = "#{rate_limit_auth}/900"      # Per 15 minutes
 
   # Configure cache settings using unified config
   configure_cache_with_config(config)

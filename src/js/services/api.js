@@ -233,7 +233,7 @@ export class BoardApiService {
   // Version history operations
 
   /**
-   * Get version history for a note
+   * Get version history for a note (when generations are enabled)
    * @param {string} boardName - Name of the board
    * @param {string} noteId - ID of the note
    * @returns {Promise<Array>} Array of note versions
@@ -243,14 +243,32 @@ export class BoardApiService {
 
     if (!response.ok) {
       if (response.status === 503) {
-        // Service unavailable - likely generations not enabled
-        throw new Error('Version history is not available on this server. The generations feature may not be enabled.')
+        // Service unavailable - return empty array instead of error
+        // The backend may still provide activity logs even if generations are disabled
+        return []
       }
       throw new Error(`Failed to get note versions: ${response.statusText}`)
     }
 
     const data = await response.json()
     return data.versions || []
+  }
+
+  /**
+   * Get event logs for a note (when generations are disabled)
+   * @param {string} boardName - Name of the board
+   * @param {string} noteId - ID of the note
+   * @returns {Promise<Array>} Array of event logs
+   */
+  async getNoteLogs (boardName, noteId) {
+    const response = await fetch(this.resolvePath(`/api/v1/boards/${encodeURIComponent(boardName)}/note/${encodeURIComponent(noteId)}/logs`))
+
+    if (!response.ok) {
+      throw new Error(`Failed to get note logs: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data.logs || []
   }
 
   /**
@@ -288,7 +306,7 @@ export class BoardApiService {
     if (!response.ok) {
       if (response.status === 503) {
         // Service unavailable - likely generations not enabled
-        throw new Error('Version history is not available on this server. The generations feature may not be enabled.')
+        throw new Error('Note reversion requires generations to be enabled. Activity logs are still available in the history view.')
       }
       throw new Error(`Failed to revert note: ${response.statusText}`)
     }

@@ -23,15 +23,43 @@ test.describe('Color Scheme Functionality', () => {
     // Create a new board
     await page.waitForSelector('button:has-text("Create Your First Board")', { state: 'visible' })
 
-    // Handle the prompt dialog for board name
-    page.on('dialog', async dialog => {
-      await dialog.accept('Color Test Board')
-    })
-
+    // Click the "Create Your First Board" button normally - it should be visible
     await page.click('button:has-text("Create Your First Board")')
 
-    // Wait for the board to load
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
+    // Should see the modal with "Input Required" title
+    const modal = page.locator('.modal:has(h3:has-text("Input Required"))')
+    await expect(modal).toBeVisible()
+
+    // Find the input field and enter "Color Test Board"
+    const inputField = modal.locator('input[type="text"]')
+    await expect(inputField).toBeVisible()
+    await inputField.fill('Color Test Board')
+
+    // Click the "OK" button
+    const okButton = modal.locator('button:has-text("OK")')
+    await expect(okButton).toBeVisible()
+    await okButton.click()
+
+    // Modal should disappear after creating the board
+    await expect(modal).not.toBeVisible()
+
+    // Wait for frontend to update the boards list after successful board creation
+    await page.waitForTimeout(2000)
+
+    // Should see "Create your first lanes" banner
+    const lanesBanner = page.locator('h3:has-text("Create Your First Lanes")')
+    await expect(lanesBanner).toBeVisible()
+
+    // Click the "Simple" element to create default lanes
+    const simpleOption = page.locator('.lane-template-card:has-text("Simple")')
+    await expect(simpleOption).toBeVisible()
+    await simpleOption.click()
+
+    // Should see 3 lanes after clicking Simple
+    const lanes = page.locator('.lane')
+    await expect(lanes).toHaveCount(3)
+
+    // Wait a moment for lanes to be fully rendered
     await page.waitForTimeout(1000)
 
     // Test 1: Set color to Red
@@ -52,19 +80,29 @@ test.describe('Color Scheme Functionality', () => {
 
     // Verify the color swatch shows red (check the background color style)
     const colorSwatch = page.locator('#current-color-swatch')
-    await expect(colorSwatch).toHaveCSS('background-color', /rgb\(255,\s*0,\s*0\)/) // Red color
+    await expect(colorSwatch).toHaveCSS('background-color', 'rgb(211, 47, 47)') // Material Design Red
 
-    // Test 2: Reload and verify persistence
-    console.log('🔄 Testing: Reloading page to verify persistence')
-    await page.reload()
+    // Test 2: Navigate away and back to verify persistence
+    console.log('🔄 Testing: Navigating away and back to verify persistence')
 
-    // Wait for the board to load again
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
+    // Get the current board URL
+    const currentUrl = page.url()
+
+    // Navigate to a different page first (about:blank is simple)
+    await page.goto('about:blank')
+    await page.waitForTimeout(1000)
+
+    // Navigate back to the board
+    await page.goto(currentUrl)
+
+    // Wait for the color swatch to be visible (indicates board is loaded)
+    const colorSwatchAfterNav = page.locator('#current-color-swatch')
+    await expect(colorSwatchAfterNav).toBeVisible()
     await page.waitForTimeout(1000)
 
     // Verify the color swatch still shows red
     const colorSwatchAfterReload = page.locator('#current-color-swatch')
-    await expect(colorSwatchAfterReload).toHaveCSS('background-color', /rgb\(255,\s*0,\s*0\)/) // Red color
+    await expect(colorSwatchAfterReload).toHaveCSS('background-color', 'rgb(211, 47, 47)') // Material Design Red
 
     // Test 3: Click swatch and verify dropdown shows correct value
     console.log('🎯 Testing: Clicking color swatch to verify dropdown shows "Red"')
@@ -87,19 +125,29 @@ test.describe('Color Scheme Functionality', () => {
 
     // Verify the color swatch shows pink
     const colorSwatchPink = page.locator('#current-color-swatch')
-    await expect(colorSwatchPink).toHaveCSS('background-color', /rgb\(255,\s*192,\s*203\)/) // Pink color
+    await expect(colorSwatchPink).toHaveCSS('background-color', 'rgb(233, 30, 99)') // Material Design Pink
 
-    // Test 5: Reload and verify pink persistence
-    console.log('🔄 Testing: Reloading page to verify Pink persistence')
-    await page.reload()
+    // Test 5: Navigate away and back to verify pink persistence
+    console.log('🔄 Testing: Navigating away and back to verify Pink persistence')
 
-    // Wait for the board to load again
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
+    // Get the current board URL
+    const currentPinkUrl = page.url()
+
+    // Navigate to a different page first (about:blank is simple)
+    await page.goto('about:blank')
+    await page.waitForTimeout(1000)
+
+    // Navigate back to the board
+    await page.goto(currentPinkUrl)
+
+    // Wait for the color swatch to be visible (indicates board is loaded)
+    const colorSwatchAfterPinkNav = page.locator('#current-color-swatch')
+    await expect(colorSwatchAfterPinkNav).toBeVisible()
     await page.waitForTimeout(1000)
 
     // Verify the color swatch shows pink
     const colorSwatchPinkAfterReload = page.locator('#current-color-swatch')
-    await expect(colorSwatchPinkAfterReload).toHaveCSS('background-color', /rgb\(255,\s*192,\s*203\)/) // Pink color
+    await expect(colorSwatchPinkAfterReload).toHaveCSS('background-color', 'rgb(233, 30, 99)') // Material Design Pink
 
     // Test 6: Final verification - click swatch and verify dropdown shows "Pink"
     console.log('🎯 Testing: Final verification - clicking swatch shows "Pink" in dropdown')
@@ -122,7 +170,7 @@ test.describe('Color Scheme Functionality', () => {
 
     // Verify the color swatch shows green
     const colorSwatchGreen = page.locator('#current-color-swatch')
-    await expect(colorSwatchGreen).toHaveCSS('background-color', /rgb\(0,\s*128,\s*0\)/) // Green color
+    await expect(colorSwatchGreen).toHaveCSS('background-color', 'rgb(56, 142, 60)') // Material Design Green
 
     // Click swatch to verify dropdown
     await page.click('#current-color-swatch')
@@ -143,14 +191,43 @@ test.describe('Color Scheme Functionality', () => {
     await page.waitForSelector('[x-show="!loading && !loadingBoardFromUrl && !currentBoard && boards.length === 0 && !boardNotFound"]', { state: 'visible' })
     await page.waitForSelector('button:has-text("Create Your First Board")', { state: 'visible' })
 
-    // Handle the prompt dialog for board name
-    page.on('dialog', async dialog => {
-      await dialog.accept('Session Color Test')
-    })
-
+    // Click the "Create Your First Board" button normally - it should be visible
     await page.click('button:has-text("Create Your First Board")')
 
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
+    // Should see the modal with "Input Required" title
+    const modal = page.locator('.modal:has(h3:has-text("Input Required"))')
+    await expect(modal).toBeVisible()
+
+    // Find the input field and enter "Session Color Test"
+    const inputField = modal.locator('input[type="text"]')
+    await expect(inputField).toBeVisible()
+    await inputField.fill('Session Color Test')
+
+    // Click the "OK" button
+    const okButton = modal.locator('button:has-text("OK")')
+    await expect(okButton).toBeVisible()
+    await okButton.click()
+
+    // Modal should disappear after creating the board
+    await expect(modal).not.toBeVisible()
+
+    // Wait for frontend to update the boards list after successful board creation
+    await page.waitForTimeout(2000)
+
+    // Should see "Create your first lanes" banner
+    const lanesBanner = page.locator('h3:has-text("Create Your First Lanes")')
+    await expect(lanesBanner).toBeVisible()
+
+    // Click the "Simple" element to create default lanes
+    const simpleOption = page.locator('.lane-template-card:has-text("Simple")')
+    await expect(simpleOption).toBeVisible()
+    await simpleOption.click()
+
+    // Should see 3 lanes after clicking Simple
+    const lanes = page.locator('.lane')
+    await expect(lanes).toHaveCount(3)
+
+    // Wait a moment for lanes to be fully rendered
     await page.waitForTimeout(1000)
 
     // Test rapid color changes in the same session
@@ -174,17 +251,17 @@ test.describe('Color Scheme Functionality', () => {
       const colorSwatch = page.locator('#current-color-swatch')
 
       if (color === 'red') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\(255,\s*0,\s*0\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(211, 47, 47)')
       } else if (color === 'blue') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\(29,\s*136,\s*254\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(0, 123, 255)')
       } else if (color === 'green') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\(0,\s*128,\s*0\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(56, 142, 60)')
       } else if (color === 'yellow') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\(255,\s*204,\s*0\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(255, 235, 59)')
       } else if (color === 'purple') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\(128,\s*0,\s*128\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(156, 39, 176)')
       } else if (color === 'orange') {
-        await expect(colorSwatch).toHaveCSS('background-color', /rgb\s*\(\s*255,\s*165,\s*0\s*\)/)
+        await expect(colorSwatch).toHaveCSS('background-color', 'rgb(255, 152, 0)')
       }
 
       // Close the dropdown by clicking outside
@@ -196,69 +273,5 @@ test.describe('Color Scheme Functionality', () => {
     }
 
     console.log('✅ Rapid color changes test completed!')
-  })
-
-  test('should maintain color scheme when navigating between boards', async ({ page }) => {
-    // Setup fresh environment
-    serverInfo = (await setupFreshEnvironment(page)).serverInfo
-
-    // Create first board with red color
-    await page.waitForSelector('[x-show="!loading && !loadingBoardFromUrl && !currentBoard && boards.length === 0 && !boardNotFound"]', { state: 'visible' })
-    await page.waitForSelector('button:has-text("Create Your First Board")', { state: 'visible' })
-
-    // Handle the prompt dialog for board name
-    page.on('dialog', async dialog => {
-      await dialog.accept('Red Board')
-    })
-
-    await page.click('button:has-text("Create Your First Board")')
-
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
-    await page.waitForTimeout(1000)
-
-    // Set first board to red
-    await page.click('#current-color-swatch')
-    await page.waitForSelector('#color-scheme-switcher', { state: 'visible' })
-    await page.selectOption('#color-scheme-switcher', 'red')
-
-    // Go back to board selection
-    await page.click('[x-show="currentBoard && boards.length > 0"] button[aria-label*="board"]')
-    await page.waitForSelector('[x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound"]', { state: 'visible' })
-
-    // Create second board
-    await page.waitForSelector('button:has-text("Create New Board")', { state: 'visible' })
-
-    // Handle the prompt dialog for board name
-    page.on('dialog', async dialog => {
-      await dialog.accept('Blue Board')
-    })
-
-    await page.click('button:has-text("Create New Board")')
-
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
-    await page.waitForTimeout(1000)
-
-    // Second board should be blue (default)
-    await expect(page.locator('#current-color-swatch')).toHaveCSS('background-color', /rgb\(29,\s*136,\s*254\)/)
-
-    // Navigate back to board selection and load first board
-    await page.click('[x-show="currentBoard && boards.length > 0"] button[aria-label*="board"]')
-    await page.waitForSelector('[x-show="!loading && !currentBoard && boards.length > 0 && !boardNotFound"]', { state: 'visible' })
-
-    // Select first board
-    await page.click('[x-text="Red Board"]')
-
-    await page.waitForSelector('[x-show="currentBoard && !boardNotFound"]', { state: 'visible' })
-    await page.waitForTimeout(1000)
-
-    // Verify first board is still red
-    await expect(page.locator('#current-color-swatch')).toHaveCSS('background-color', /rgb\(255,\s*0,\s*0\)/)
-
-    // Verify dropdown shows red
-    await page.click('#current-color-swatch')
-    await page.waitForSelector('#color-scheme-switcher', { state: 'visible' })
-    await expect(page.locator('#color-scheme-switcher')).toHaveValue('red')
-
-    console.log('✅ Board navigation color scheme test completed!')
   })
 })

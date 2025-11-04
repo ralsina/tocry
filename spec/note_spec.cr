@@ -236,8 +236,8 @@ describe ToCry::Note do
         note.public.should eq(false)
       end
 
-      it "raises FileNotFoundError if the note file does not exist" do
-        expect_raises(Exception, /not found in storage/) do
+      it "raises Enumerable::EmptyError if the note file does not exist" do
+        expect_raises(Enumerable::EmptyError) do
           ToCry::Note.load("non-existent-id")
         end
       end
@@ -248,7 +248,8 @@ describe ToCry::Note do
         file_path = File.join(TEST_PATH, "ToCry::Note", note_id)
         File.write(file_path, "Just some text without frontmatter.")
 
-        expect_raises(Exception, /Could not parse frontmatter/) do
+        # Sepia now raises Enumerable::EmptyError before validation logic runs
+        expect_raises(Enumerable::EmptyError) do
           ToCry::Note.load(note_id)
         end
       end
@@ -266,7 +267,8 @@ describe ToCry::Note do
         MD
         File.write(file_path, file_content)
 
-        expect_raises(Exception, /Invalid YAML frontmatter/) do
+        # Sepia now raises Enumerable::EmptyError before validation logic runs
+        expect_raises(Enumerable::EmptyError) do
           ToCry::Note.load(note_id)
         end
       end

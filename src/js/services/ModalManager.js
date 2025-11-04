@@ -278,10 +278,11 @@ export class ModalManager {
 
   /**
    * Set the version history data
-   * @param {Array} data - The version history data
+   * @param {Array} data - The version history data (should already be sorted newest first)
    */
   setVersionHistoryData (data) {
-    this.versionHistoryData = data
+    // Data should already be sorted newest first by fetchVersionHistory
+    this.versionHistoryData = data.slice()
     this.versionHistoryLoading = false
     this.versionHistoryError = null
   }

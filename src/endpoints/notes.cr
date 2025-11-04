@@ -603,6 +603,29 @@ module ToCry::Endpoints::Notes
         versions = ToCry::Note.versions(base_id)
 
         versions_data = versions.map do |version_note|
+          # Get events for this version to extract user attribution and action info
+          events = Sepia::Storage.object_events(ToCry::Note, version_note.sepia_id)
+
+          # Find the event that corresponds to this version generation
+          version_event = events.find { |event| event.generation == version_note.generation }
+
+          # Extract event metadata
+          event_info = if version_event
+                         {
+                           user:      version_event.metadata["user"]?,
+                           action:    version_event.metadata["action"]?,
+                           type:      version_event.event_type.to_s.downcase,
+                           timestamp: version_event.timestamp,
+                         }
+                       else
+                         {
+                           user:      nil,
+                           action:    nil,
+                           type:      "unknown",
+                           timestamp: nil,
+                         }
+                       end
+
           {
             sepia_id:    version_note.sepia_id,
             generation:  version_note.generation,
@@ -615,6 +638,7 @@ module ToCry::Endpoints::Notes
             start_date:  version_note.start_date,
             end_date:    version_note.end_date,
             priority:    version_note.priority.try(&.to_s),
+            event:       event_info,
           }
         end
 
@@ -630,6 +654,65 @@ module ToCry::Endpoints::Notes
     rescue ex
       ToCry::Log.error(exception: ex) { "Error getting version history for note '#{env.params.url["note_id"]}' in board '#{env.params.url["board_name"]}': #{ex.message}" }
       ToCry::Endpoints::Helpers.error_response(env, "Failed to get version history", 500)
+    end
+  end
+
+  # API Endpoint to get event logs for a note
+  # Expects the board name and note ID in the URL/path, e.g.:
+  # GET /boards/My%20Board/note/note-uuid/logs
+  get "/api/v1/boards/:board_name/note/:note_id/logs" do |env|
+    begin
+      board_name = env.params.url["board_name"].as(String)
+      note_id = env.params.url["note_id"].as(String)
+      user = ToCry.get_current_user_id(env)
+
+      # Validate board access
+      board = ToCry.board_manager.get(board_name, user)
+      unless board
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Board not found")
+      end
+
+      # Find the note
+      found_note_and_lane = board.note(note_id)
+      unless found_note_and_lane
+        next ToCry::Endpoints::Helpers.not_found_response(env, "Note not found")
+      end
+
+      current_note, _lane = found_note_and_lane
+
+      # Get all events for this note
+      events = Sepia::Storage.object_events(ToCry::Note, current_note.sepia_id)
+
+      # Convert events to a more usable format for the frontend
+      events_data = events.map do |event|
+        {
+          id:         events.index(event), # Use index as ID for ordering
+          timestamp:  event.timestamp,
+          event_type: event.event_type.to_s.downcase,
+          generation: event.generation,
+          metadata:   event.metadata.as_h,
+          # Extract commonly used fields for convenience
+          user:       event.metadata["user"]?.try(&.as_s),
+          action:     event.metadata["action"]?.try(&.as_s),
+          # For activity events, extract additional context
+          context:    case event.event_type.to_s.downcase
+                      when "activity"
+                        event.metadata.as_h.reject("user", "action")
+                      else
+                        {} of String => String
+                      end
+        }
+      end
+
+      ToCry::Endpoints::Helpers.success_response(env, {
+        success:  true,
+        logs:     events_data,
+        total:    events_data.size,
+        note_id:  current_note.sepia_id,
+      })
+    rescue ex
+      ToCry::Log.error(exception: ex) { "Error getting event logs for note '#{env.params.url["note_id"]}' in board '#{env.params.url["board_name"]}': #{ex.message}" }
+      ToCry::Endpoints::Helpers.error_response(env, "Failed to get event logs", 500)
     end
   end
 
@@ -673,6 +756,29 @@ module ToCry::Endpoints::Notes
           next ToCry::Endpoints::Helpers.not_found_response(env, "Version not found")
         end
 
+        # Get events for this version to extract user attribution and action info
+        events = Sepia::Storage.object_events(ToCry::Note, version_note.sepia_id)
+
+        # Find the event that corresponds to this version generation
+        version_event = events.find { |event| event.generation == version_note.generation }
+
+        # Extract event metadata
+        event_info = if version_event
+                       {
+                         user:      version_event.metadata["user"]?,
+                         action:    version_event.metadata["action"]?,
+                         type:      version_event.event_type.to_s.downcase,
+                         timestamp: version_event.timestamp,
+                       }
+                     else
+                       {
+                         user:      nil,
+                         action:    nil,
+                         type:      "unknown",
+                         timestamp: nil,
+                       }
+                     end
+
         version_data = {
           sepia_id:    version_note.sepia_id,
           generation:  version_note.generation,
@@ -685,6 +791,7 @@ module ToCry::Endpoints::Notes
           start_date:  version_note.start_date,
           end_date:    version_note.end_date,
           priority:    version_note.priority.try(&.to_s),
+          event:       event_info,
         }
 
         ToCry::Endpoints::Helpers.success_response(env, {

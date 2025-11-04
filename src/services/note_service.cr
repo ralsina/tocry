@@ -90,6 +90,11 @@ module ToCry::Services
 
         # Add note to the lane
         target_lane.notes << new_note
+
+        # Save the note with user attribution to log creation event
+        Sepia::Storage.save(new_note, metadata: {"user" => user_id, "action" => "create"})
+
+        # Save board to persist lane changes
         board.save
 
         # Broadcast WebSocket notification using event pattern
@@ -155,17 +160,23 @@ module ToCry::Services
 
         current_note, current_lane = found_note_and_lane
 
-        # Update note properties if provided
-        if title
+        # Track if any note content actually changed
+        content_changed = false
+
+        # Update note properties if provided and track changes
+        if title && title != current_note.title
           current_note.title = title
+          content_changed = true
         end
 
-        if content
+        if content && content != current_note.content
           current_note.content = content
+          content_changed = true
         end
 
-        if tags
+        if tags && tags != current_note.tags
           current_note.tags = tags
+          content_changed = true
         end
 
         if priority
@@ -175,23 +186,34 @@ module ToCry::Services
                           when "low"    then ToCry::Priority::Low
                           else               nil
                           end
-          current_note.priority = priority_enum
+          if priority_enum != current_note.priority
+            current_note.priority = priority_enum
+            content_changed = true
+          end
         end
 
-        if start_date
+        if start_date && start_date != current_note.start_date
           current_note.start_date = start_date
+          content_changed = true
         end
 
-        if end_date
+        if end_date && end_date != current_note.end_date
           current_note.end_date = end_date
+          content_changed = true
         end
 
         unless public.nil?
-          current_note.public = public
+          if public != current_note.public
+            current_note.public = public
+            content_changed = true
+          end
         end
 
         unless expanded.nil?
-          current_note.expanded = expanded
+          if expanded != current_note.expanded
+            current_note.expanded = expanded
+            content_changed = true
+          end
         end
 
         # Handle lane change if specified
@@ -214,6 +236,14 @@ module ToCry::Services
           # Add note to target lane (at the end)
           target_lane.notes << current_note
           final_lane_name = new_lane_name
+
+          # Log lane movement as an activity event
+          current_note.log_activity("moved_lane", {
+            "from_lane"  => current_lane.name,
+            "to_lane"    => new_lane_name,
+            "user"       => user_id,
+            "note_title" => current_note.title,
+          })
         end
 
         # Handle position changes if specified
@@ -232,21 +262,28 @@ module ToCry::Services
           end
         end
 
-        # Save the board with versioning for the note
+        # Only save note if content actually changed
         updated_note = nil
-        if ToCry.generations_enabled?
-          # Use sepia generations to create a new version of the note
-          updated_note = current_note.save_with_generation
-          if updated_note
-            generation_num = updated_note.generation
-            ToCry::Log.info { "Note '#{current_note.title}' updated to generation #{generation_num} in board '#{board_name}' by user '#{user_id}'" }
+        if content_changed
+          if ToCry.generations_enabled?
+            # Use save with force_new_generation flag to create new generation
+            updated_note = current_note.save(force_new_generation: true, metadata: {"user" => user_id, "action" => "update"})
+            if updated_note
+              generation_num = updated_note.generation
+              ToCry::Log.info { "Note '#{current_note.title}' updated to generation #{generation_num} in board '#{board_name}' by user '#{user_id}'" }
+            else
+              ToCry::Log.warn { "Failed to create new generation for note '#{current_note.title}' in board '#{board_name}'" }
+            end
           else
-            ToCry::Log.warn { "Failed to create new generation for note '#{current_note.title}' in board '#{board_name}'" }
+            # Save note directly with user attribution when generations not enabled
+            updated_note = current_note.save(metadata: {"user" => user_id, "action" => "update"})
           end
         else
-          # Fallback to traditional board saving
-          board.save
+          ToCry::Log.info { "Note '#{current_note.title}' moved/positioned in board '#{board_name}' by user '#{user_id}' (no content change)" }
         end
+
+        # Always save board to persist structural changes (lane movements, position changes)
+        board.save
 
         # Broadcast WebSocket notification using event pattern
         event = NoteUpdatedEvent.new(current_note, board_name, final_lane_name, user_id, exclude_client_id)

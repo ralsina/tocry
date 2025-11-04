@@ -60,11 +60,11 @@ test.describe('Basic App Functionality', () => {
     // Skip this verification for now and focus on the rest of the flow
 
     // Should see "Create your first lanes" banner
-    const lanesBanner = page.locator('h2:has-text("Create Your First Lanes")')
+    const lanesBanner = page.locator('h3:has-text("Create Your First Lanes")')
     await expect(lanesBanner).toBeVisible()
 
-    // Click the "Simple" H4 element to create default lanes
-    const simpleOption = page.locator('h4:has-text("Simple")')
+    // Click the "Simple" element to create default lanes
+    const simpleOption = page.locator('.lane-template-card:has-text("Simple")')
     await expect(simpleOption).toBeVisible()
     await simpleOption.click()
 

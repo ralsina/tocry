@@ -31,6 +31,69 @@ const generateClientId = () => {
 
   return clientId
 }
+
+// Helper functions for unified history view
+function getEventIcon (eventType, action) {
+  const normalizedAction = (action || '').toLowerCase()
+  const normalizedType = (eventType || '').toLowerCase()
+
+  if (normalizedAction === 'created' || normalizedType === 'created') return '📝'
+  if (normalizedAction === 'updated' || normalizedType === 'updated') return '✏️'
+  if (normalizedAction === 'moved_lane' || normalizedAction.includes('moved')) return '🔄'
+  if (normalizedAction === 'deleted' || normalizedType === 'deleted') return '🗑️'
+
+  // Default icon for unknown actions
+  return '📋'
+}
+
+function getEventDescription (eventType, action, metadata) {
+  const normalizedAction = (action || '').toLowerCase()
+  const normalizedType = (eventType || '').toLowerCase()
+
+  if (normalizedAction === 'created' || normalizedType === 'created') return 'Note created'
+  if (normalizedAction === 'updated' || normalizedType === 'updated') return 'Note edited'
+  if (normalizedAction === 'moved_lane') {
+    const fromLane = metadata?.from_lane || 'unknown lane'
+    const toLane = metadata?.to_lane || 'unknown lane'
+    return `Moved from ${fromLane} to ${toLane}`
+  }
+  if (normalizedAction === 'deleted' || normalizedType === 'deleted') return 'Note deleted'
+
+  // Fallback to action or type
+  return action || eventType || 'unknown action'
+}
+
+function formatRelativeTime (timestamp) {
+  if (!timestamp) return ''
+
+  const now = new Date()
+  const time = new Date(timestamp)
+  const diffMs = now - time
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffSecs < 10) return 'just now'
+  if (diffSecs < 60) return `${diffSecs} seconds ago`
+  if (diffMins < 60) return `${diffMins} minutes ago`
+  if (diffHours < 24) return `${diffHours} hours ago`
+  if (diffDays < 7) return `${diffDays} days ago`
+
+  // For older dates, show the actual date
+  return time.toLocaleDateString()
+}
+
+function isGenerationVersion (version) {
+  // A version is revertable if:
+  // 1. Generations are enabled globally
+  // 2. It has a generation number > 0
+  // 3. It's not an activity event
+  return window.GENERATIONS_ENABLED &&
+         version.generation > 0 &&
+         (!version.event || version.event.type !== 'activity')
+}
+
 // BoardApiService is now imported from './services/api.js'
 
 // eslint-disable-next-line no-unused-vars
@@ -251,12 +314,12 @@ function createToCryStore () {
         }
       }, { deep: true })
 
-      // Add reactive watcher for version history modal
+      // Add reactive watcher for event timeline modal
       this.$watch('modalManager.showVersionHistory', (showModal) => {
         if (showModal) {
-          // Auto-fetch version history when modal opens
+          // Auto-fetch event timeline when modal opens
           this.$nextTick(() => {
-            this.fetchVersionHistory()
+            this.fetchEventTimeline()
           })
         }
       })
@@ -2115,25 +2178,96 @@ function createToCryStore () {
       }
     },
 
-    // === Version History Methods ===
+    // === Event Timeline Methods ===
 
-    // Fetch version history for a note
-    async fetchVersionHistory () {
+    // Fetch event timeline for a note - shows logs with generation content when available
+    async fetchEventTimeline () {
       const note = this.modalManager.getVersionHistoryNote()
       const laneName = this.modalManager.getVersionHistoryLane()
 
       if (!note || !laneName) {
-        console.error('Missing note or lane information for version history')
+        console.error('Missing note or lane information for event timeline')
         return
       }
 
       try {
         this.modalManager.setVersionHistoryLoading(true)
-        const versions = await this.api.getNoteVersions(this.currentBoardName, note.sepiaId)
-        this.modalManager.setVersionHistoryData(versions)
+
+        // Fetch logs (these are the primary events we want to show)
+        console.log('Fetching event logs...')
+        const logs = await this.api.getNoteLogs(this.currentBoardName, note.sepiaId)
+        console.log('Found logs:', logs.length, 'events')
+
+        // If generations are enabled, fetch them to enrich log entries with content
+        const generationsByNumber = new Map()
+        if (window.GENERATIONS_ENABLED) {
+          try {
+            const generations = await this.api.getNoteVersions(this.currentBoardName, note.sepiaId)
+            console.log('Found generations:', generations.length, 'versions')
+
+            // Create a lookup map for quick access to generation content
+            generations.forEach(gen => {
+              if (gen.generation !== undefined) {
+                generationsByNumber.set(gen.generation, gen)
+              }
+            })
+          } catch (error) {
+            console.warn('Failed to fetch generations (may be disabled):', error.message)
+          }
+        }
+
+        // Process logs into events, enriching with generation content when available
+        const events = logs.map(log => {
+          // Find matching generation if one exists for this log entry
+          const generation = generationsByNumber.get(log.generation)
+
+          // Determine if this is a content-modifying event
+          const isContentEvent = log.event_type !== 'activity' && ['created', 'updated'].includes(log.event_type)
+
+          // Base event using log data
+          const event = {
+            sepia_id: note.sepia_id,
+            generation: log.generation || 0,
+            title: note.title,
+            // Only show content for content-modifying events when generation content is available
+            content: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.content : null,
+            tags: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.tags || [] : null,
+            expanded: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.expanded : null,
+            public: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.public : null,
+            attachments: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.attachments || [] : null,
+            start_date: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.start_date : null,
+            end_date: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.end_date : null,
+            priority: (window.GENERATIONS_ENABLED && generation && isContentEvent) ? generation.priority : null,
+            created_at: log.timestamp,
+            event: {
+              user: log.user,
+              action: log.action,
+              type: log.event_type,
+              timestamp: log.timestamp,
+              metadata: log.metadata || {},
+              context: log.context
+            },
+            // Store whether this entry has generation content available
+            hasGenerationContent: window.GENERATIONS_ENABLED && !!generation && isContentEvent
+          }
+
+          return event
+        })
+
+        // Sort events by timestamp (newest first)
+        events.sort((a, b) => {
+          const timeA = new Date(a.event?.timestamp || a.created_at)
+          const timeB = new Date(b.event?.timestamp || b.created_at)
+          return timeB - timeA // Newest first
+        })
+
+        console.log('Final events:', events.length)
+        this.modalManager.setVersionHistoryData(events)
       } catch (error) {
-        console.error('Error fetching version history:', error)
-        this.modalManager.setVersionHistoryError(error.message || 'Failed to load version history')
+        console.error('Error fetching event timeline:', error)
+        this.modalManager.setVersionHistoryError(error.message || 'Failed to load event timeline')
+      } finally {
+        this.modalManager.setVersionHistoryLoading(false)
       }
     },
 
@@ -2163,7 +2297,7 @@ function createToCryStore () {
         // Perform the revert
         await this.api.revertNoteToVersion(this.currentBoardName, note.sepiaId, generation)
 
-        // Close the version history modal
+        // Close the event timeline modal
         this.modalManager.closeVersionHistory()
 
         // Reload the board to show the changes
@@ -3690,7 +3824,13 @@ function createToCryStore () {
           this.showError('Failed to copy public link')
         }
       }
-    }
+    },
+
+    // Helper functions for unified history view (available to Alpine.js templates)
+    getEventIcon,
+    getEventDescription,
+    formatRelativeTime,
+    isGenerationVersion
 
   }
 }

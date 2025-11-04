@@ -23,6 +23,7 @@ dependencies:
     github: kemalcr/kemal-session
   sepia:
     github: ralsina/sepia
+    branch: main
   crystar:
     github: naqvis/crystar
   crest:

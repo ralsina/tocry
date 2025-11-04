@@ -13,7 +13,7 @@ module ToCry::Initialization
     else
       # Regular filesystem-based setup
       ToCry.data_directory = data_path
-      Sepia::Storage::INSTANCE.path = data_path
+      Sepia::Storage.configure(:filesystem, {"path" => data_path})
       ToCry.safe_mode_enabled = safe_mode
       if run_migrations
         ToCry::Migration.run

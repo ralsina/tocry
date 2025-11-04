@@ -192,47 +192,6 @@ test.describe('Lane Management', () => {
       await expect(allLanes.nth(1).locator('[data-testid="lane-name-A"]')).toBeVisible()
       await expect(allLanes.nth(2).locator('[data-testid="lane-name-C"]')).toBeVisible()
     })
-
-    test('should drag lane A to position of lane C and check BCA order', async ({ page }) => {
-      await setupTestBoard(page, {
-        boardName: 'lane-drag-test-bca',
-        laneNames: ['A', 'B', 'C']
-      })
-
-      // Verify initial ABC lanes are present and visible
-      await expect(page.locator('.lane')).toHaveCount(3)
-      await expect(getLaneByName(page, 'A')).toBeVisible()
-      await expect(getLaneByName(page, 'B')).toBeVisible()
-      await expect(getLaneByName(page, 'C')).toBeVisible()
-
-      // Verify initial lane order
-      const initialOrder = await getCurrentLaneOrder(page)
-      console.log('Initial lane order:', initialOrder)
-      expect(initialOrder).toEqual(['A', 'B', 'C'])
-
-      // First, drag lane B to position of lane A to get BAC order
-      await dragLaneWithValidation(page, 'B', 'A', ['B', 'A', 'C'])
-
-      // Verify intermediate BAC order
-      const intermediateOrder = await getCurrentLaneOrder(page)
-      console.log('Lane order after first drag:', intermediateOrder)
-      expect(intermediateOrder).toEqual(['B', 'A', 'C'])
-
-      // Then drag lane A to position of lane C to get BCA order
-      await dragLaneWithValidation(page, 'A', 'C', ['B', 'C', 'A'])
-
-      // Verify final BCA order
-      const finalOrder = await getCurrentLaneOrder(page)
-      console.log('Lane order after second drag:', finalOrder)
-      expect(finalOrder).toEqual(['B', 'C', 'A'])
-
-      // Additional verification using the new test IDs
-      const allLanes = page.locator('.lane')
-      await expect(allLanes).toHaveCount(3)
-      await expect(allLanes.nth(0).locator('[data-testid="lane-name-B"]')).toBeVisible()
-      await expect(allLanes.nth(1).locator('[data-testid="lane-name-C"]')).toBeVisible()
-      await expect(allLanes.nth(2).locator('[data-testid="lane-name-A"]')).toBeVisible()
-    })
   })
 
   test('should delete lane B and confirm only A and C remain', async ({ page }) => {

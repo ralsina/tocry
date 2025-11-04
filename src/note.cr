@@ -58,6 +58,7 @@ module ToCry
   class Note < Sepia::Object
     include JSON::Serializable
     include Sepia::Serializable
+    sepia_log_events_enabled
 
     def slug : String
       # Replace characters that are typically invalid or problematic in filenames
@@ -123,7 +124,7 @@ module ToCry
       @public
     end
 
-    # Let Sepia handle save_with_generation automatically
+    # Sepia handles generations automatically with save(force_new_generation) flag
 
     # Loads a Note from a string containing a markdown file with YAML frontmatter.
     def self.from_sepia(data : String)
