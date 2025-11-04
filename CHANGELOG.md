@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.0] - 2025-11-04
+
+### 🚀 Features
+
+- Enhance demo boards with better UX and task management
+- Add 429 rate limiting responses to OpenAPI specification
+- Streamline mdbook documentation and fix MCP configuration
+- Optimize pre-commit hooks by removing E2E tests
+- Integrated docopt-config to unify configuration management
+- Implement complete asset pipeline refactor
+- Implement horizontal board selection UI and fix rate limit warnings
+- Add comprehensive E2E tests for color scheme functionality
+- Redesign 'Create Your First Lanes' page with horizontal layout
+- Implement comprehensive event timeline
+
+### 🐛 Bug Fixes
+
+- Update Dockerfile for static builds without fswatch
+- Restore proper deploy_site.sh script with mdbook building
+- Make hidden lane separator consistent
+- Add tooltips for truncated note titles
+- Resolve TypeCastError in port configuration
+- Resolve UI consistency issue with board selector visibility
+- Prevent JavaScript error in color scheme selector when no board is loaded
+- Restore original theme controls layout and positioning
+- Restore color selector click functionality
+- Synchronize theme manager color scheme when loading boards
+- Properly synchronize color scheme in board watcher
+- Bind color selector dropdown to theme manager directly
+
 ## [0.25.0] - 2025-11-01
 
 ### 🚀 Features
@@ -21,6 +51,10 @@ All notable changes to this project will be documented in this file.
 
 - Color scheme selection and persistence
 - Improve UI contrast across light and dark themes
+
+### 💼 Other
+
+- Release v0.25.0
 
 ### 🎨 Styling
 
