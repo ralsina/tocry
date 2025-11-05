@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.1] - 2025-11-05
+
+### 🐛 Bug Fixes
+
+- Resolve TypeCastError in port configuration
+
 ## [0.26.0] - 2025-11-04
 
 ### 🚀 Features
@@ -31,6 +37,10 @@ All notable changes to this project will be documented in this file.
 - Synchronize theme manager color scheme when loading boards
 - Properly synchronize color scheme in board watcher
 - Bind color selector dropdown to theme manager directly
+
+### 💼 Other
+
+- Release v0.26.0
 
 ## [0.25.0] - 2025-11-01
 
