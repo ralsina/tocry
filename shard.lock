@@ -52,6 +52,10 @@ shards:
     git: https://github.com/mamantoha/http_proxy.git
     version: 0.13.1
 
+  inotify:
+    git: https://github.com/petoem/inotify.cr.git
+    version: 1.2.0
+
   kemal:
     git: https://github.com/kemalcr/kemal.git
     version: 1.7.3
@@ -82,4 +86,4 @@ shards:
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.1.0+git.commit.c4888fd0604758570e8ad30395bedae7eaf67e84
+    version: 0.2.0+git.commit.5104e16feede0128d8c9aa89c21fee7e11f53db1
