@@ -12,15 +12,12 @@ module ToCry::Initialization
       ToCry.safe_mode_enabled = safe_mode
       # Skip migrations in demo mode - we have fresh seeded data
     else
-      # Regular filesystem-based setup with configurable file watching
+      # Regular filesystem-based setup with file watching enabled
       ToCry.data_directory = data_path
-
-      # Check if file watching is enabled via environment variable
-      file_watching_enabled = ENV["TOCRY_FILE_WATCHING_ENABLED"]? == "true"
 
       Sepia::Storage.configure(:filesystem, {
         "path"  => data_path,
-        "watch" => file_watching_enabled
+        "watch" => !demo_mode
       })
       ToCry.safe_mode_enabled = safe_mode
       if run_migrations
@@ -33,9 +30,8 @@ module ToCry::Initialization
     ToCry.board_manager = board_manager
 
     # Initialize multi-instance coordinator for file system change handling
-    # This will set up file system watchers if enabled
-    file_watching_enabled = ENV["TOCRY_FILE_WATCHING_ENABLED"]? == "true" && !demo_mode
-    ToCry::MultiInstanceCoordinator.initialize(watcher_enabled: file_watching_enabled)
+    # This will set up file system watchers if enabled (disabled in demo mode)
+    ToCry::MultiInstanceCoordinator.initialize(watcher_enabled: !demo_mode)
 
     # Now seed demo data after BoardManager is available
     if demo_mode

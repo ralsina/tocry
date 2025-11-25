@@ -79,7 +79,6 @@ test.describe('Multi-instance synchronization', () => {
       'src/main.cr',
       '--port', port1.toString(),
       '--data-path', dataDir1,
-      '--multi-instance',
       '--demo' // Use demo mode for testing
     ], {
       stdio: 'pipe',
@@ -111,7 +110,6 @@ test.describe('Multi-instance synchronization', () => {
       'src/main.cr',
       '--port', port2.toString(),
       '--data-path', dataDir1, // Same data directory!
-      '--multi-instance',
       '--demo' // Use demo mode for testing
     ], {
       stdio: 'pipe',
@@ -148,7 +146,6 @@ test.describe('Multi-instance synchronization', () => {
       'src/main.cr',
       '--port', port1.toString(),
       '--data-path', dataDir1,
-      '--multi-instance',
       '--demo'
     ], {
       stdio: 'pipe',
@@ -162,7 +159,6 @@ test.describe('Multi-instance synchronization', () => {
       'src/main.cr',
       '--port', port2.toString(),
       '--data-path', dataDir1,
-      '--multi-instance',
       '--demo'
     ], {
       stdio: 'pipe',

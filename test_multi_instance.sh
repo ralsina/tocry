@@ -69,7 +69,6 @@ echo "Starting first ToCry instance (port: $PORT1)..."
 ./bin/tocry \
     --port="$PORT1" \
     --data-path="$DATA_DIR" \
-    --multi-instance \
     --demo \
     > /tmp/tocry-test-1-$$.log 2>&1 &
 PID1=$!
@@ -106,7 +105,6 @@ echo "Starting second ToCry instance (port: $PORT2)..."
 ./bin/tocry \
     --port="$PORT2" \
     --data-path="$DATA_DIR" \
-    --multi-instance \
     --demo \
     > /tmp/tocry-test-2-$$.log 2>&1 &
 PID2=$!

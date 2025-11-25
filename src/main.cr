@@ -57,8 +57,6 @@ Options:
   --rate-limit-upload=LIMIT          Rate limit for file uploads [default: 5].
   --rate-limit-auth=LIMIT            Rate limit for authentication endpoints [default: 10].
   --config=PATH                       Path to configuration file (YAML or JSON).
-  --multi-instance                    Enable multi-instance mode with file system watching.
-  --no-file-watching                  Disable file system watching even in multi-instance mode.
 DOCOPT
 
 class Assets
@@ -194,18 +192,9 @@ def main
   ENV["TOCRY_RATE_LIMIT_UPLOAD"] = "#{rate_limit_upload}/3600" # Per hour
   ENV["TOCRY_RATE_LIMIT_AUTH"] = "#{rate_limit_auth}/900"      # Per 15 minutes
 
-  # Configure multi-instance mode
-  multi_instance_enabled = !!config["--multi-instance"]
-  file_watching_disabled = !!config["--no-file-watching"]
-
-  # Determine if file watching should be enabled
-  file_watching_enabled = multi_instance_enabled && !file_watching_disabled && !demo_mode
-
-  # Set environment variable for file change handler
-  ENV["TOCRY_FILE_WATCHING_ENABLED"] = file_watching_enabled.to_s
-
-  ToCry::Log.info { "Multi-instance mode: #{multi_instance_enabled}" }
-  ToCry::Log.info { "File watching: #{file_watching_enabled ? "enabled" : "disabled"}" }
+  # Multi-instance mode is enabled by default, file watching only disabled in demo mode
+  ToCry::Log.info { "Multi-instance mode: enabled by default" }
+  ToCry::Log.info { "File watching: #{!demo_mode ? "enabled" : "disabled"}" }
 
   # Configure cache settings using unified config
   configure_cache_with_config(config)
