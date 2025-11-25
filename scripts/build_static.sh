@@ -21,7 +21,7 @@ docker run --rm --privileged \
 echo "Step 4: Building for AMD64..."
 docker build . -f Dockerfile.static -t tocry-builder
 docker run -ti --rm -v "$PWD":/app --user="$UID" tocry-builder \
-  /bin/sh -c "cd /app && shards build --static --release -Dno_fswatch -Dpreview_mt && strip bin/tocry && upx bin/tocry"
+  /bin/sh -c "cd /app && shards build --static --release -Dinotify -Dpreview_mt && strip bin/tocry && upx bin/tocry"
 mv bin/tocry bin/tocry-static-linux-amd64
 echo "✓ AMD64 build complete: bin/tocry-static-linux-amd64"
 
@@ -29,7 +29,7 @@ echo "✓ AMD64 build complete: bin/tocry-static-linux-amd64"
 echo "Step 5: Building for ARM64..."
 docker build . -f Dockerfile.static --platform linux/arm64 -t tocry-builder
 docker run -ti --rm -v "$PWD":/app --platform linux/arm64 --user="$UID" tocry-builder \
-  /bin/sh -c "cd /app && shards build --static --release -Dno_fswatch -Dpreview_mt && strip bin/tocry && upx bin/tocry"
+  /bin/sh -c "cd /app && shards build --static --release -Dinotify -Dpreview_mt && strip bin/tocry && upx bin/tocry"
 mv bin/tocry bin/tocry-static-linux-arm64
 echo "✓ ARM64 build complete: bin/tocry-static-linux-arm64"
 
