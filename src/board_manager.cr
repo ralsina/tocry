@@ -25,6 +25,7 @@ module ToCry
     Log = ::Log.for(self)
     # In-memory cache for loaded boards (board_uuid => Board instance)
     @boards = {} of String => Board
+    @cache_mutex = Mutex.new
     # ameba:disable Naming/QueryBoolMethods
     property safe_mode_enabled : Bool
 
@@ -40,15 +41,19 @@ module ToCry
 
     # Get a cached board or load it from Sepia storage
     private def get_board(board_uuid : String) : Board?
-      # Check cache first
-      if cached_board = @boards[board_uuid]?
-        return cached_board
+      @cache_mutex.synchronize do
+        # Check cache first
+        if cached_board = @boards[board_uuid]?
+          return cached_board
+        end
       end
 
       # Load from Sepia storage
       begin
         board = ToCry::Board.load(board_uuid)
-        @boards[board_uuid] = board # Cache it
+        @cache_mutex.synchronize do
+          @boards[board_uuid] = board # Cache it
+        end
         board
       rescue
         nil
@@ -96,7 +101,9 @@ module ToCry
       ToCry::BoardReference.create_reference(user, uuid, name, "owner", user)
 
       # Cache the board
-      @boards[uuid] = board
+      @cache_mutex.synchronize do
+        @boards[uuid] = board
+      end
 
       Log.info { "Board '#{name}' (#{uuid}) created and assigned to user '#{user}'" }
       board
@@ -117,7 +124,9 @@ module ToCry
 
       if reference.owner?
         # Owner deletes the entire board and all references
-        @boards.delete(uuid)           # Remove from cache
+        @cache_mutex.synchronize do
+          @boards.delete(uuid)           # Remove from cache
+        end
         ToCry::BoardIndex.remove(uuid) # Remove from board index
 
         # Remove all board references for this board
@@ -166,7 +175,9 @@ module ToCry
         end
 
         # Update cache
-        @boards[reference.board_uuid] = board
+        @cache_mutex.synchronize do
+          @boards[reference.board_uuid] = board
+        end
 
         Log.info { "Root user renamed board canonically from '#{old_name}' to '#{new_name}' (#{reference.board_uuid})" }
       else
@@ -197,6 +208,33 @@ module ToCry
       ToCry::BoardReference.create_reference(to_user, uuid, board_name, "shared", from_user)
 
       Log.info { "Shared board '#{board_name}' (#{uuid}) from user '#{from_user}' to user '#{to_user}'" }
+    end
+
+    # Invalidate cache for a specific board (used by file change handler)
+    def invalidate_cache(board_uuid : String)
+      @cache_mutex.synchronize do
+        @boards.delete(board_uuid)
+        Log.debug { "Invalidated cache for board: #{board_uuid}" }
+      end
+    end
+
+    # Clear all cache entries (useful for debugging or forced refresh)
+    def clear_cache
+      @cache_mutex.synchronize do
+        count = @boards.size
+        @boards.clear
+        Log.info { "Cleared #{count} board entries from cache" }
+      end
+    end
+
+    # Get cache statistics for monitoring
+    def cache_stats : Hash(String, Int32)
+      @cache_mutex.synchronize do
+        {
+          "cached_boards" => @boards.size,
+          "max_capacity" => Int32::MAX # No hard limit currently
+        }
+      end
     end
   end
 end

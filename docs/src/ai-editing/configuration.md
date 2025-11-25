@@ -35,7 +35,7 @@ tocry
 
 # Specify a different model
 tocry --ai-model=glm-4
-tocry --ai-model=gpt-4o-mini
+tocry --ai-model=glm-4.5-flash
 ```
 
 **Available Models**: See [z.ai pricing guide](https://docs.z.ai/guides/overview/pricing) for current model options and pricing.

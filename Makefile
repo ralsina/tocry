@@ -52,12 +52,12 @@ test-js-coverage:
 # Main build target - regenerates clients and builds everything
 build: generate-clients-force build-js install
 	@echo "Building ToCry..."
-	shards build --release
+	shards build --release -Dinotify
 
 # Development build (faster, no optimizations)
 dev: generate-clients-force build-js
 	@echo "Building ToCry (development mode)..."
-	shards build
+	shards build -Dinotify
 
 # Watch and auto-rebuild server during development
 watch:
