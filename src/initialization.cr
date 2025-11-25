@@ -1,6 +1,6 @@
 require "../src/migrations"
 require "../src/demo"
-require "../src/file_change_handler"
+require "../src/conflict_resolution"
 
 module ToCry::Initialization
   def self.setup_data_environment(data_path : String, safe_mode : Bool = false, run_migrations : Bool = true, demo_mode : Bool = false) : ToCry::BoardManager
@@ -32,10 +32,10 @@ module ToCry::Initialization
     board_manager = ToCry::BoardManager.new(safe_mode)
     ToCry.board_manager = board_manager
 
-    # Initialize file change handler for multi-instance synchronization
+    # Initialize multi-instance coordinator for file system change handling
     # This will set up file system watchers if enabled
     file_watching_enabled = ENV["TOCRY_FILE_WATCHING_ENABLED"]? == "true" && !demo_mode
-    ToCry::FileChangeHandler.initialize(watcher_enabled: file_watching_enabled)
+    ToCry::MultiInstanceCoordinator.initialize(watcher_enabled: file_watching_enabled)
 
     # Now seed demo data after BoardManager is available
     if demo_mode
